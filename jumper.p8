@@ -130,8 +130,8 @@ function draw_fireball(f)
  sspr((sp % 16) * 8 + sx,
 				 	(sp \ 16) * 8 + sy,
 					 4,4,
-  	   f.x - 2,
-   	  f.y - 2,
+  	   f.x,
+   	  f.y,
    	  4,4,
     	 f.xflip,
     	 f.yflip)
@@ -152,8 +152,8 @@ function _draw()
 
 	-- player
 	spr(p.s + p.frame,
-	    flr(p.x-p.w/2),
-	    flr(p.y-p.h),
+	    p.x,
+	    p.y,
 	    1, 1,
 	    not p.rght)
 	foreach(fireball, draw_fireball)
@@ -255,8 +255,10 @@ fireball = {}
 
 function make_fireball()
  local f = {}
- f.x = p.x
- f.y = p.y - p.h/2
+ f.w = 4
+ f.h = 4
+ f.x = p.x + (p.w - f.w)/2
+ f.y = p.y + (p.h - f.h)/2
  f.s = 80
  f.alive = true
  f.fcnt = 0
@@ -332,7 +334,7 @@ function update_fireball(f)
  for t in all(thang) do
  	if (aabb(
  									 t.x,t.y,t.w,t.h,
- 									 f.x-2,f.y-2,4,4)) then
+ 									 f.x,f.y,4,4)) then
  	 t:burn()
  	 -- don't stop on lanterns
  	 if (t.s != 82) then
@@ -374,9 +376,9 @@ function p_update()
  if (abs(p.vx) < p.min_vx) then
   p.vx = 0
  end
-
+ local pfooty = p.y + p.h
  local newx = p.x + p.vx
- if (collmap(newx,p.y-1,1)) then
+ if (collmap(newx,pfooty-1,1)) then
   p.vx = -p.vx
   newx = p.x + p.vx
  end
@@ -391,9 +393,10 @@ function p_update()
 	p.vy = clamp(p.vy, -p.max_vy, p.max_vy)
 
  local newy = p.y + p.vy
+ local newpfooty = newy + p.h
 
  if (p.vy > 0) then
-  if (collmap(newx,newy,0) and
+  if (collmap(newx,newpfooty,0) and
       -- need both checks!
       (not p.air or
       rounddown(p.y,8) < rounddown(newy,8))) then
@@ -416,7 +419,7 @@ function p_update()
 	-- p.vy < 0
  else
   -- ceiling
- 	if (collmap(p.x,newy-p.h,2)) then
+ 	if (collmap(p.x,newy,2)) then
  	 p.vy = -p.vy/3
  	end
  end
