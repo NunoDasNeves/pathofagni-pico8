@@ -12,35 +12,6 @@ dbgstr = ''
 -- disable btnp repeating
 poke(0x5f5c, 255)
 
--- player
-p = {}
-p.x = 64
-p.y = 64
-p.rght = true
-p.vx = 0
-p.vy = 0
-p.air = true
-p.frame = 0 -- displayed frame offset
-p.fcount = 0 -- counter for advancing frame
-p.s = 64 -- first sprite of current animation
-p.shcount = 0 -- shoot counter
--- constants
-p.spr = 64 -- base of sprite row
--- animations - s = offset from spr, f = num frames
-p.s_wlk = {['s']=0, ['f']=2}
-p.s_jmp = {['s']=2, ['f']=5}
-p.ftwdth = 4
-p.w = 8
-p.h = 8
-p.ax = 1
-p.max_vx = 2
-p.min_vx = 0.01
-p.g = 0.5
-p.max_vy = 5
-p.j_vy = -6
-
-fireball = {}
-
 roomx = 0
 roomy = 0
 room = {}
@@ -118,207 +89,12 @@ function update_lantern(l)
  end
 end
 
-function make_fireball()
- local f = {}
- f.x = p.x
- f.y = p.y - p.h/2
- f.s = 80
- f.alive = true
- f.frame = 0
- f.frames = 2
- f.speed = 3
- local ydir = 0
- local xdir = 0
- if (btn(⬆️)) then
-  ydir = -1
- elseif (btn(⬇️)) then
-  ydir = 1
- end
- if (p.rght) then
-  xdir = 1
- else
-  xdir = -1
- end
- -- straight up or down
- if (not btn(⬅️) and
-     not btn(➡️) and
-     ydir != 0) then
-   xdir = 0
- end
- if (xdir == 0 or ydir == 0) then
-  f.vx = xdir * f.speed
-  f.vy = ydir * f.speed
- else
-  f.vx = xdir * 0.7071 * f.speed
-  f.vy = ydir * 0.7071 * f.speed
- end
- add(fireball, f)
-end
-
-function update_fireball(f)
- if (not f.alive) then
-  if (f.frame < f.frames) then
-	  f.frame += 1
-	 else
-	  del(fireball, f)
-	 end
-  return
- end
- f.x += f.vx
- f.y += f.vy
- -- hit stuff
- for t in all(thang) do
- 	if (aabb(
- 									 t.x,t.y,t.w,t.h,
- 									 f.x-2,f.y-2,4,4)) then
- 	 t:burn()
- 	 -- don't stop on lanterns
- 	 if (t.s != 82) then
-	 	 f.alive = false
- 		 return
- 		end
- 	end
- end
- if (--collmap(f.x,f.y,0) or
-     collmap(f.x,f.y,1) or
-     collmap(f.x,f.y,2)) then
- 	f.vx = 0
- 	f.vy = 0
- 	f.alive = false
- end
-end
-
 function collmap(x,y,f)
  local mx = x/8
  local my = y/8
  local val = mget(mx,my)
 
  return (fget(val,f))
-end
-
-function p_update()
- -- change direction
- if (btnp(⬅️) or
-     btn(⬅️) and not btn(➡️)) then
-  p.rght = false
- elseif (btnp(➡️) or
-     btn(➡️) and not btn(⬅️)) then
-  p.rght = true
- end
- if (btn(⬅️) and not p.rght) then
- 	-- accel left
- 	p.vx -= p.ax
- elseif (btn(➡️) and p.rght) then
- 	-- accel right
- 	p.vx += p.ax
- end
- if (not btn(⬅️) and not btn(➡️)) then
-  p.vx -= p.vx/3
- end
- p.vx = clamp(p.vx, -p.max_vx, p.max_vx)
- if (abs(p.vx) < p.min_vx) then
-  p.vx = 0
- end
-
- local newx = p.x + p.vx
- if (collmap(newx,p.y-1,1)) then
-  p.vx = -p.vx
-  newx = p.x + p.vx
- end
-
- -- vy - jump and land
- local oldair = p.air
-	if (btn(🅾️) and not p.air) then
-		 p.vy += p.j_vy
-		 p.air = true
-	end
-	p.vy += p.g
-	p.vy = clamp(p.vy, -p.max_vy, p.max_vy)
-
- local newy = p.y + p.vy
-
- if (p.vy > 0) then
-  if (collmap(newx,newy,0) and
-      -- need both checks!
-      (not p.air or
-      rounddown(p.y,8) < rounddown(newy,8))) then
-			newy = rounddown(newy, 8)
-	  p.vy = 0
-	  p.air = false
-	 else
-	  -- fall off platform
-	  if (not p.air) then
-	   -- only fall if holding dir
-	   if ((btn(⬅️) and p.vx < 0) or
-	       (btn(➡️) and p.vx > 0)) then
-	   	p.air = true
-	   else
-	    p.vx = 0
-	    newx = p.x
-	   end
-		 end
-	 end
-	-- p.vy < 0
- else
-  -- ceiling
- 	if (collmap(p.x,newy-p.h,2)) then
- 	 p.vy = -p.vy/3
- 	end
- end
-
- p.x = newx
- p.y = newy
- 
- if (p.shcount == 0) then
-  if (btn(❎)) then
-   p.shcount = 10
-   make_fireball()
-  end
- else
- 	p.shcount -= 1
- end
- 
- if (p.y > 128) then
-  -- todo: dead
- end
-
- -- animate player
- if (not p.air) then
-  -- walk anim
-  p.s = p.spr + p.s_wlk.s
-  if (btnp(➡️) or btnp(⬅️)) then
-   p.frame = 0
-  end
-  if (btn(➡️) or btn(⬅️)) then
-  	if (p.fcount > 2) then
-	 		p.frame = (p.frame + 1) % p.s_wlk.f
-	 		p.fcount = 0
-	 	end
-	 else
-	  p.frame = 0
-	 end
- else
-  if (not oldair) then
- 		 -- start jump anim
-		 p.s = p.spr + p.s_jmp.s
-   p.frame = 0
-   p.fcount = 0
-   -- fell, not jumped
-   if (not btn(🅾️)) then
-   	p.frame = 3
-   end
-  end
-  -- jump anim
-  if (p.fcount > 2) then
-			p.frame += 1
-			-- loop last 2 frames
-			if (p.frame >= p.s_jmp.f) then
-			 p.frame -= 2
-			end
-			p.fcount = 0
- 	end
- end
- p.fcount += 1
 end
 
 function _update()
@@ -466,6 +242,232 @@ function spawn_thang()
  end
 end
 
+-->8
+-- player
+
+p = {}
+p.x = 64
+p.y = 64
+p.rght = true -- facing
+p.vx = 0
+p.vy = 0
+p.air = true
+p.frame = 0 -- displayed frame offset
+p.fcount = 0 -- counter for advancing frame
+p.s = 64 -- first sprite of current animation
+p.shcount = 0 -- shoot counter
+-- constants
+p.spr = 64 -- base of sprite row
+-- animations - s = offset from spr, f = num frames
+p.s_wlk = {['s']=0, ['f']=2}
+p.s_jmp = {['s']=2, ['f']=5}
+p.ftwdth = 4
+p.w = 8
+p.h = 8
+p.ax = 1
+p.max_vx = 2
+p.min_vx = 0.01
+p.g = 0.5
+p.max_vy = 5
+p.j_vy = -6
+
+fireball = {}
+
+function make_fireball()
+ local f = {}
+ f.x = p.x
+ f.y = p.y - p.h/2
+ f.s = 80
+ f.alive = true
+ f.frame = 0
+ f.frames = 2
+ f.speed = 3
+ local ydir = 0
+ local xdir = 0
+ if (btn(⬆️)) then
+  ydir = -1
+ elseif (btn(⬇️)) then
+  ydir = 1
+ end
+ if (p.rght) then
+  xdir = 1
+ else
+  xdir = -1
+ end
+ -- straight up or down
+ if (not btn(⬅️) and
+     not btn(➡️) and
+     ydir != 0) then
+   xdir = 0
+ end
+ if (xdir == 0 or ydir == 0) then
+  f.vx = xdir * f.speed
+  f.vy = ydir * f.speed
+ else
+  f.vx = xdir * 0.7071 * f.speed
+  f.vy = ydir * 0.7071 * f.speed
+ end
+ add(fireball, f)
+end
+
+function update_fireball(f)
+ if (not f.alive) then
+  if (f.frame < f.frames) then
+	  f.frame += 1
+	 else
+	  del(fireball, f)
+	 end
+  return
+ end
+ f.x += f.vx
+ f.y += f.vy
+ -- hit stuff
+ for t in all(thang) do
+ 	if (aabb(
+ 									 t.x,t.y,t.w,t.h,
+ 									 f.x-2,f.y-2,4,4)) then
+ 	 t:burn()
+ 	 -- don't stop on lanterns
+ 	 if (t.s != 82) then
+	 	 f.alive = false
+ 		 return
+ 		end
+ 	end
+ end
+ if (--collmap(f.x,f.y,0) or
+     collmap(f.x,f.y,1) or
+     collmap(f.x,f.y,2)) then
+ 	f.vx = 0
+ 	f.vy = 0
+ 	f.alive = false
+ end
+end
+
+
+function p_update()
+ -- change direction
+ if (btnp(⬅️) or
+     btn(⬅️) and not btn(➡️)) then
+  p.rght = false
+ elseif (btnp(➡️) or
+     btn(➡️) and not btn(⬅️)) then
+  p.rght = true
+ end
+ if (btn(⬅️) and not p.rght) then
+ 	-- accel left
+ 	p.vx -= p.ax
+ elseif (btn(➡️) and p.rght) then
+ 	-- accel right
+ 	p.vx += p.ax
+ end
+ if (not btn(⬅️) and not btn(➡️)) then
+  p.vx -= p.vx/3
+ end
+ p.vx = clamp(p.vx, -p.max_vx, p.max_vx)
+ if (abs(p.vx) < p.min_vx) then
+  p.vx = 0
+ end
+
+ local newx = p.x + p.vx
+ if (collmap(newx,p.y-1,1)) then
+  p.vx = -p.vx
+  newx = p.x + p.vx
+ end
+
+ -- vy - jump and land
+ local oldair = p.air
+	if (btn(🅾️) and not p.air) then
+		 p.vy += p.j_vy
+		 p.air = true
+	end
+	p.vy += p.g
+	p.vy = clamp(p.vy, -p.max_vy, p.max_vy)
+
+ local newy = p.y + p.vy
+
+ if (p.vy > 0) then
+  if (collmap(newx,newy,0) and
+      -- need both checks!
+      (not p.air or
+      rounddown(p.y,8) < rounddown(newy,8))) then
+			newy = rounddown(newy, 8)
+	  p.vy = 0
+	  p.air = false
+	 else
+	  -- fall off platform
+	  if (not p.air) then
+	   -- only fall if holding dir
+	   if ((btn(⬅️) and p.vx < 0) or
+	       (btn(➡️) and p.vx > 0)) then
+	   	p.air = true
+	   else
+	    p.vx = 0
+	    newx = p.x
+	   end
+		 end
+	 end
+	-- p.vy < 0
+ else
+  -- ceiling
+ 	if (collmap(p.x,newy-p.h,2)) then
+ 	 p.vy = -p.vy/3
+ 	end
+ end
+
+ p.x = newx
+ p.y = newy
+ 
+ if (p.shcount == 0) then
+  if (btn(❎)) then
+   p.shcount = 10
+   make_fireball()
+  end
+ else
+ 	p.shcount -= 1
+ end
+ 
+ if (p.y > 128) then
+  -- todo: dead
+ end
+
+ -- animate player
+ if (not p.air) then
+  -- walk anim
+  p.s = p.spr + p.s_wlk.s
+  if (btnp(➡️) or btnp(⬅️)) then
+   p.frame = 0
+  end
+  if (btn(➡️) or btn(⬅️)) then
+  	if (p.fcount > 2) then
+	 		p.frame = (p.frame + 1) % p.s_wlk.f
+	 		p.fcount = 0
+	 	end
+	 else
+	  p.frame = 0
+	 end
+ else
+  if (not oldair) then
+ 		 -- start jump anim
+		 p.s = p.spr + p.s_jmp.s
+   p.frame = 0
+   p.fcount = 0
+   -- fell, not jumped
+   if (not btn(🅾️)) then
+   	p.frame = 3
+   end
+  end
+  -- jump anim
+  if (p.fcount > 2) then
+			p.frame += 1
+			-- loop last 2 frames
+			if (p.frame >= p.s_jmp.f) then
+			 p.frame -= 2
+			end
+			p.fcount = 0
+ 	end
+ end
+ p.fcount += 1
+end
 __gfx__
 0000000000000000dddddddddddddddddddddddddddddddd00000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000dddddd00dddddddddddddddddddddd000000000000000000000000000000000000000000000000000000000000000000000000000000000
