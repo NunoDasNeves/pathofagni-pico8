@@ -17,10 +17,12 @@ roomy = 0
 room = {}
 
 function burn_bat(b)
- b.alive = false
- b.s += 2
- b.vy = 0.6
- b.deadf = 20
+ if (b.alive) then
+	 b.alive = false
+	 b.s += 2
+	 b.vy = 0.6
+	 b.deadf = 20
+	end
 end
 
 function update_bat(b)
@@ -90,8 +92,8 @@ function update_lantern(l)
 end
 
 function collmap(x,y,f)
- local mx = x/8
- local my = y/8
+ local mx = x\8
+ local my = y\8
  local val = mget(mx,my)
 
  return (fget(val,f))
@@ -180,7 +182,7 @@ function _draw()
 	if (dbg) then
 		print(dbgstr,8,0,7)
 		print(p.x..' '..p.y,8,8,7)
-		print(mget(p.x/8,p.y/8),8,16,7)
+		print(mget(p.x\8,p.y\8),8,16,7)
 	end
 end
 -->8
