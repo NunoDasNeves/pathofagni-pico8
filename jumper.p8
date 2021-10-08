@@ -384,9 +384,16 @@ end
 function _draw()
 	cls(0)
 	map(0,0,0,0,128,64)
-	for t in all(thang) do
-	 t:draw()
+
+ -- draw one layer at a time!
+	for z=max_z,0,-1 do
+		for t in all(thang) do
+	  if (t.z == z) then
+			 t:draw()
+			end
+		end
 	end
+
 	-- player
 	spr(p.s + p.frame,
 	    flr(p.x-p.w/2),
@@ -405,6 +412,9 @@ end
 
 thang = {}
 
+-- number of layers to draw
+max_z = 0
+
 function init_thang_dat()
 thang_dat = {
 	[82] = { -- lantern
@@ -412,6 +422,7 @@ thang_dat = {
 		update = update_lantern,
 		burn = burn_lantern,
 		replace = 82 + 3,
+		z = 1
 	},
 	[96] = { -- bat
 		update = update_bat,
@@ -428,6 +439,7 @@ end
 function spawn_thang()
  local roomr=roomx+15
  local roomb=roomy+15
+ max_z = 0
  for y=roomx,roomr do
   for x=roomy,roomb do
    local val = mget(x,y)
@@ -442,9 +454,11 @@ function spawn_thang()
     t.replace = 0
     t.w = 8
     t.h = 8
+    t.z = 0
     for k,v in pairs(thang_dat[val]) do
     	t[k] = v
     end
+				max_z = max(t.z, max_z)
     add(thang,t)
     mset(x,y,t.replace)
    end
