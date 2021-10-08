@@ -111,6 +111,7 @@ end
 function _init()
  init_thang_dat()
 	spawn_thang()
+	spawn_player(64,64)
 end
 -->8
 -- draw
@@ -151,7 +152,7 @@ function _draw()
 	end
 
 	-- player
-	spr(p.s + p.frame,
+	spr(p.s + p.fr,
 	    p.x,
 	    p.y,
 	    1, 1,
@@ -225,31 +226,48 @@ end
 -->8
 -- player
 
-p = {}
-p.x = 64
-p.y = 64
-p.rght = true -- facing
-p.vx = 0
-p.vy = 0
-p.air = true
-p.frame = 0 -- displayed frame offset
-p.fcount = 0 -- counter for advancing frame
-p.s = 64 -- first sprite of current animation
-p.shcount = 0 -- shoot counter
--- constants
-p.spr = 64 -- base of sprite row
--- animations - s = offset from spr, f = num frames
-p.s_wlk = {['s']=0, ['f']=2}
-p.s_jmp = {['s']=2, ['f']=5}
-p.ftwdth = 4
-p.w = 8
-p.h = 8
-p.ax = 1
-p.max_vx = 2
-p.min_vx = 0.01
-p.g = 0.5
-p.max_vy = 5
-p.j_vy = -6
+p_dat = {
+	i = 64, -- base of sprite row
+	--  animations - s = offset from spr, f = num frames
+	s_wlk = {s=0, f=2},
+	s_jmp = {s=2, f=5},
+	w = 8,
+	h = 8,
+	
+	--  physics
+	--  coll dimensions
+	cw = 4, -- < min platform width
+	ch = 7, -- < min wall height
+	--  coll box offset coords
+	cx = 2,
+	cy = 1,
+	ax = 1, -- accel
+	max_vx = 2,
+	min_vx = 0.01, -- stop threshold
+	g = 0.5, -- gravity
+	max_vy = 5,
+	j_vy = -6, -- jump accel
+}
+
+function spawn_player(x,y)
+
+ p = {}
+	p.x = x
+	p.y = y
+	p.rght = true -- facing
+	p.vx = 0
+	p.vy = 0
+	p.air = true
+	p.fr = 0 -- displayed frame offset
+	p.fcnt = 0 -- counter for advancing frame
+	p.s = 64 -- first sprite of current animation
+	p.shcount = 0 -- shoot counter
+
+	for k,v in pairs(p_dat) do
+		p[k] = v
+	end
+
+end
 
 fireball = {}
 
@@ -443,40 +461,40 @@ function p_update()
  -- animate player
  if (not p.air) then
   -- walk anim
-  p.s = p.spr + p.s_wlk.s
+  p.s = p.i + p.s_wlk.s
   if (btnp(➡️) or btnp(⬅️)) then
-   p.frame = 0
+   p.fr = 0
   end
   if (btn(➡️) or btn(⬅️)) then
-  	if (p.fcount > 2) then
-	 		p.frame = (p.frame + 1) % p.s_wlk.f
-	 		p.fcount = 0
+  	if (p.fcnt > 2) then
+	 		p.fr = (p.fr + 1) % p.s_wlk.f
+	 		p.fcnt = 0
 	 	end
 	 else
-	  p.frame = 0
+	  p.fr = 0
 	 end
  else
   if (not oldair) then
  		 -- start jump anim
-		 p.s = p.spr + p.s_jmp.s
-   p.frame = 0
-   p.fcount = 0
+		 p.s = p.i + p.s_jmp.s
+   p.fr = 0
+   p.fcnt = 0
    -- fell, not jumped
    if (not btn(🅾️)) then
-   	p.frame = 3
+   	p.fr = 3
    end
   end
   -- jump anim
-  if (p.fcount > 2) then
-			p.frame += 1
+  if (p.fcnt > 2) then
+			p.fr += 1
 			-- loop last 2 frames
-			if (p.frame >= p.s_jmp.f) then
-			 p.frame -= 2
+			if (p.fr >= p.s_jmp.f) then
+			 p.fr -= 2
 			end
-			p.fcount = 0
+			p.fcnt = 0
  	end
  end
- p.fcount += 1
+ p.fcnt += 1
 end
 __gfx__
 0000000000000000dddddddddddddddddddddddddddddddd00000000000000000000000000000000000000000000000000000000000000000000000000000000
