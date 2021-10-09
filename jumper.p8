@@ -485,7 +485,7 @@ function p_update()
 
  -- vy - jump and land
  local oldair = p.air
-	if (btn(🅾️) and not p.air) then
+	if (btnp(🅾️) and not p.air) then
 		 p.vy += p.j_vy
 		 p.air = true
 	end
@@ -543,7 +543,7 @@ function p_update()
  p.y = newy
  
  if (p.shcount == 0) then
-  if (btn(❎)) then
+  if (btnp(❎)) then
    p.shcount = 10
    make_fireball()
   end
