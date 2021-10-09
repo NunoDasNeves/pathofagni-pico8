@@ -161,7 +161,7 @@ function _init()
  init_thang_dat()
  init_lantern()
 	spawn_room()
-	spawn_player(64,64)
+	spawn_p(64,64)
 end
 -->8
 -- draw
@@ -211,7 +211,7 @@ function _draw()
 	foreach(fireball, draw_fireball)
 	if (dbg) then
 	 local txtx = room.x + 8
-		print(lantern[1],txtx,room.y,7)
+		print(dbgstr,txtx,room.y,7)
 		print(p.x..' '..p.y,txtx,room.y+8,7)
 		print(mget(p.x\8,p.y\8),txtx,room.y+16,7)
 	end
@@ -298,8 +298,10 @@ end
 p_dat = {
 	i = 64, -- base of sprite row
 	--  animations - s = offset from spr, f = num frames
-	s_wlk = {s=0, f=2},
-	s_jmp = {s=2, f=5},
+	s_wlk =  {s=0, f=2},
+	s_jmp =  {s=2, f=5},
+	s_die =  {s=7, f=6},
+	s_spwn = {s=13, f=3},
 	w = 8,
 	h = 8,
 	
@@ -319,7 +321,7 @@ p_dat = {
 	j_vy = -6, -- jump accel
 }
 
-function spawn_player(x,y)
+function spawn_p(x,y)
 
  p = {}
 	p.x = x
@@ -330,7 +332,7 @@ function spawn_player(x,y)
 	p.air = true
 	p.fr = 0 -- displayed frame offset
 	p.fcnt = 0 -- counter for advancing frame
-	p.s = 64 -- first sprite of current animation
+	p.s = p.i + p.s_spwn.s
 	p.shcount = 0 -- shoot counter
  p.teeter = false
 	for k,v in pairs(p_dat) do
@@ -541,6 +543,18 @@ function p_update()
 
  p.x = newx
  p.y = newy
+ 
+ -- hit spikes
+ local hl = p.x + 2
+ local hr = hl + 3.99
+ local ht = p.y + 2
+ local hb = ht + 3.99
+ if (collmap(hl,ht,3) or
+     collmap(hr,ht,3) or
+     collmap(hl,hb,3) or
+     collmap(hr,hb,3)) then
+  dbstr = 'dead'--kill_p()
+ end
  
  if (p.shcount == 0) then
   if (btnp(❎)) then
