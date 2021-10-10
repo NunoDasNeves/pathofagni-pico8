@@ -34,8 +34,6 @@ function init_lantern()
   add(lantern, false)
  end
  lantern[1] = true
- curr_lantern.x = 64
- curr_lantern.y = 64
 end
 
 function collmap(x,y,f)
@@ -165,6 +163,8 @@ thang_dat = {
 		z = 1
 	},
 	[96] = { -- bat
+	 vx = 0,
+	 vy = 0,
 		update = update_bat,
 		burn = burn_bat,
 		rght = true,
