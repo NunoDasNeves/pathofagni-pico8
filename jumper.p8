@@ -48,35 +48,35 @@ function restore_room()
  end
 end
 
-function room_update()
- local px = p.x + p.w/2
- local py = p.y + p.h/2
- -- todo absolute
- if (px <= room.x) then
-  room.i -= 1
-  room.x -= room.sz
- elseif (px > room.x + room.sz) then
-  room.i += 1
-  room.x += room.sz
- elseif (py <= room.y) then
-  room.y -= room.sz
-  room.i -= 8
- elseif (py > room.y + room.sz) then
-  room.y += room.sz
-  room.i += 8
- end
+function get_room_i(x,y)
+ x \= room.sz
+ y \= room.sz
+ return x % 8 + y * 8
 end
 
-function _update()
+function move_room(x,y)
+ room.i = get_room_i(x,y)
+ room.x = rounddown(x,room.sz)
+ room.y = rounddown(y,room.sz)
+ return
+end
+
+function update_room()
  local oldi = room.i
- room_update()
+ local px = p.x + p.w/2
+ local py = p.y + p.h/2
+ move_room(px,py)
  if (oldi != room.i) then
   camera(room.x, room.y)
   fireball = {}
   restore_room()
   spawn_room()
  end
+end
+
+function _update()
  dbgstr = ''
+ update_room()
 	update_p()
 	for t in all(thang) do
 	 t:update()
