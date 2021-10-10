@@ -26,14 +26,35 @@ room = {
 -- for now
 -- room index+1 -> lit
 lantern = {}
-curr_lantern = {}
+curr_lantern = 2
+
+function get_curr_lantern()
+ return lantern[curr_lantern]
+end
 
 function init_lantern()
  -- todo this properly
  for i=0,room.max_i do
-  add(lantern, false)
+  local l = {}
+  local r = get_room_xy(i)
+  local rmapx = r.x \ 8
+	 local rmapy = r.y \ 8
+	 local rmapr=rmapx+15
+	 local rmapb=rmapy+15
+	 for y=rmapy,rmapb do
+  	for x=rmapx,rmapr do
+   	local val = mget(x,y)
+   	if (val == 82) then
+   	 l.x = x*8
+   	 l.y = y*8
+   	 l.lit = false
+   	end
+   end
+  end
+  add(lantern, l)
  end
- lantern[1] = true
+ -- initial spawn
+ lantern[curr_lantern].lit = true
 end
 
 function collmap(x,y,f)
@@ -54,11 +75,18 @@ function get_room_i(x,y)
  return x % 8 + y * 8
 end
 
+function get_room_xy(i)
+ return {
+  x = (i % 8) * room.sz,
+  y = (i \ 8) * room.sz
+ }
+end
+
 function move_room(x,y)
  room.i = get_room_i(x,y)
- room.x = rounddown(x,room.sz)
- room.y = rounddown(y,room.sz)
- return
+ local r = get_room_xy(room.i)
+ room.x = r.x
+ room.y = r.y
 end
 
 function update_room()
@@ -89,7 +117,8 @@ function _init()
  init_thang_dat()
  init_lantern()
 	spawn_room()
-	spawn_p(curr_lantern.x,curr_lantern.y - p_dat.h)
+	local l = get_curr_lantern()
+	spawn_p(l.x,l.y - p_dat.h)
 end
 -->8
 -- draw
@@ -176,11 +205,10 @@ thang_dat = {
 end
 
 function init_lantern_thang(l)
- l.lit = lantern[room.i+1]
+ l.lit = lantern[room.i+1].lit
  if (l.lit) then
   l.fr = 1
-  curr_lantern.x = l.x
-  curr_lantern.y = l.y
+  curr_lantern = room.i+1
  end
 end
 
@@ -243,9 +271,8 @@ function burn_lantern(l)
  if (not l.lit) then
 	 l.lit = true
  	l.fr = 1
- 	lantern[room.i+1] = true
- 	curr_lantern.x = l.x
- 	curr_lantern.y = l.y
+ 	lantern[room.i+1].lit = true
+ 	curr_lantern = room.i+1
  end
 end
 
@@ -653,7 +680,8 @@ function respawn_update_p()
   end
 	 if (p.fr >= p.s_die.f) then
 	  -- todo update room
-   spawn_p(curr_lantern.x,curr_lantern.y - p.h)
+	  local l = get_curr_lantern()
+   spawn_p(l.x,l.y - p.h)
   end
 
  elseif (p.spawn) then
