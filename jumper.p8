@@ -38,82 +38,6 @@ function init_lantern()
  curr_lantern.y = 64
 end
 
-function burn_bat(b)
- if (b.alive) then
-	 b.alive = false
-	 b.s += 2
-	 b.vy = 0.6
-	 b.deadf = 20
-	end
-end
-
-function update_bat(b)
- if (not b.alive) then
-  b.deadf -= 1
-  if (b.deadf == 0) then
-   del(thang, b)
-  end
- end
- -- animate
-	b.fcnt += 1
-	if (b.fcnt == 4) then
-	 b.fr += 1
-	 if (b.fr > 1) then
-	  b.fr = 0
-	 end
-	 b.fcnt = 0
-	end
-	
-	if (b.alive) then
-		-- follow player
-		-- todo un-jank
-		if (b.x - p.x > 4) then
-	  b.rght = false
-	  b.vx = -0.4
-	 elseif (b.x - p.x < -4) then
-	  b.rght = true
-	  b.vx = 0.4
-	 end
-	 if (b.y - p.y > 0) then
-	  b.vy = -0.3
-	 else
-	  b.vy = 0.3
-	 end
-	
-		-- bounce
-		-- todo un-jank
-		if (b.fr == 0) then
-		 b.vy += 0.5
-		else
-	  b.vy -= 0.5
-	 end
- end
-	
- b.x += b.vx
- b.y += b.vy
-end
-
-function burn_lantern(l)
- if (not l.lit) then
-	 l.lit = true
- 	l.fr = 1
- 	lantern[room.i+1] = true
- end
-end
-
-function update_lantern(l)
- if (l.lit) then
-  l.fcnt += 1
-  if (l.fcnt == 5) then
-   l.fr += 1
-   l.fcnt = 0
-  end
-  if (l.fr > 2) then
-   l.fr = 1
-  end
- end
-end
-
 function collmap(x,y,f)
  local val = mget(x\8,y\8)
 
@@ -257,6 +181,84 @@ function init_lantern_thang(l)
   l.fr = 1
   curr_lantern.x = l.x
   curr_lantern.y = l.y
+ end
+end
+
+function burn_bat(b)
+ if (b.alive) then
+	 b.alive = false
+	 b.s += 2
+	 b.vy = 0.6
+	 b.deadf = 20
+	end
+end
+
+function update_bat(b)
+ if (not b.alive) then
+  b.deadf -= 1
+  if (b.deadf == 0) then
+   del(thang, b)
+  end
+ end
+ -- animate
+	b.fcnt += 1
+	if (b.fcnt == 4) then
+	 b.fr += 1
+	 if (b.fr > 1) then
+	  b.fr = 0
+	 end
+	 b.fcnt = 0
+	end
+	
+	if (b.alive) then
+		-- follow player
+		-- todo un-jank
+		if (b.x - p.x > 4) then
+	  b.rght = false
+	  b.vx = -0.4
+	 elseif (b.x - p.x < -4) then
+	  b.rght = true
+	  b.vx = 0.4
+	 end
+	 if (b.y - p.y > 0) then
+	  b.vy = -0.3
+	 else
+	  b.vy = 0.3
+	 end
+	
+		-- bounce
+		-- todo un-jank
+		if (b.fr == 0) then
+		 b.vy += 0.5
+		else
+	  b.vy -= 0.5
+	 end
+ end
+	
+ b.x += b.vx
+ b.y += b.vy
+end
+
+function burn_lantern(l)
+ if (not l.lit) then
+	 l.lit = true
+ 	l.fr = 1
+ 	lantern[room.i+1] = true
+ 	curr_lantern.x = l.x
+ 	curr_lantern.y = l.y
+ end
+end
+
+function update_lantern(l)
+ if (l.lit) then
+  l.fcnt += 1
+  if (l.fcnt == 5) then
+   l.fr += 1
+   l.fcnt = 0
+  end
+  if (l.fr > 2) then
+   l.fr = 1
+  end
  end
 end
 
