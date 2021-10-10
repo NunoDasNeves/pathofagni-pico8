@@ -221,6 +221,39 @@ function burn_bat(b)
 	end
 end
 
+function coll_walls(t,newx)
+ -- t = {
+ --   y  -- coord
+ --   cx -- coll x offset
+ --   cw -- coll width
+ --   cy -- coll y offset
+ --   ch -- coll height
+ --   vx -- x vel
+ -- return newx pushed out of wall
+ local cl = newx + t.cx
+ local cr = cl + t.cw
+ local ct = t.y + t.cy
+ local cb = ct + t.ch
+ -- only check left or right
+ local cx = cr
+ if (t.vx < 0) then
+  cx = cl
+ end
+ if ((t.vx != 0)
+     and
+     (collmap(cx,ct,1) or
+ 	    collmap(cx,cb,1))
+ 	  ) then
+   -- push out of wall
+   if (cx == cl) then
+   	newx = roundup(cx, 8) - t.cx - 1
+   else
+   	newx = rounddown(cx, 8) - t.w + t.cx + 1
+   end
+ end
+ return newx
+end
+
 function loop_anim(t,speed,frames)
  -- t = {
  --   s -- starting frame
@@ -532,29 +565,11 @@ function update_p()
 
  local newx = p.x + p.vx
 
- local cl = newx + p.cx
- local cr = cl + p.cw
- local ct = p.y + p.cy
- local cb = ct + p.ch
- -- only check left or right
- local cx = cr
- if (p.vx < 0) then
-  cx = cl
+ local pushedx = coll_walls(p, newx)
+ if (pushedx != newx) then
+  p.vx = 0
  end
- -- collide walls
- if ((p.vx != 0)
-     and
-     (collmap(cx,ct,1) or
- 	    collmap(cx,cb,1))
- 	  ) then
-   p.vx = 0
-   -- push out of wall
-   if (cx == cl) then
-   	newx = roundup(cx, 8) - p.cx - 1
-   else
-   	newx = rounddown(cx, 8) - p.w + p.cx + 1
-   end
- end
+ newx = pushedx
 
  -- vy - jump and land
  local oldair = p.air
