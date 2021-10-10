@@ -12,6 +12,10 @@ function rounddown(val, multiple)
     return val - val % multiple
 end
 
+function roundup(val, multiple)
+    return rounddown(val + multiple - 0.01, multiple)
+end
+
 function aabb(x0,y0,w0,h0,x1,y1,w1,h1)
     local r0 = x0 + w0
     local r1 = x1 + w1
