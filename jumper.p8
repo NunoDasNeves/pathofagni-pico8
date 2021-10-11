@@ -102,6 +102,29 @@ function update_room()
  end
 end
 
+-- spawn thangs in current room
+-- save room
+function spawn_room()
+ local rmapx = room.x \ 8
+ local rmapy = room.y \ 8
+ local rmapr=rmapx+15
+ local rmapb=rmapy+15
+ thang = {}
+ max_z = 0
+ room.old = {}
+ for y=rmapy,rmapb do
+  for x=rmapx,rmapr do
+   local val = mget(x,y)
+   if (fget(val,4)) then
+    add(room.old, {x=x,y=y,val=val})
+   	local t = spawn_thang(val,x*8,y*8)
+    max_z = max(t.z, max_z)
+    mset(x,y,t.replace)
+   end
+  end
+ end
+end
+
 function _update()
  dbgstr = ''
  update_room()
@@ -198,25 +221,17 @@ thang_dat = {
 		z = 1
 	},
 	[96] = { -- bat
-	 vx = 0,
-	 vy = 0,
 		update = update_bat,
 		burn = burn_bat,
-		rght = true,
 		w = 7,
-		h = 7,
-		alive = true
+		h = 7
 	},
 	[100] = { -- thrower
-	 vx = 0,
-	 vy = 0,
 	 update = update_thrower,
 	 burn = burn_thrower,
-	 rght = true,
 	 w = 8,
 	 h = 8,
 	 hp = 3,
-	 alive = true,
 	 burning = false,
 	 -- coll dimensions
 	 -- todo same as player..
@@ -421,45 +436,31 @@ function update_lantern(l)
  end
 end
 
--- spawn thangs in current room
--- save room
-function spawn_room()
- local rmapx = room.x \ 8
- local rmapy = room.y \ 8
- local rmapr=rmapx+15
- local rmapb=rmapy+15
- thang = {}
- max_z = 0
- room.old = {}
- for y=rmapy,rmapb do
-  for x=rmapx,rmapr do
-   local val = mget(x,y)
-   if (fget(val,4)) then
-    add(room.old, {x=x,y=y,val=val})
-   	local t = {}
-   	t.i = val
-   	t.x = x*8
-   	t.y = y*8
-   	t.s = val
-   	t.fr = 0
-    t.fcnt = 0
-    t.draw = draw_thang
-    t.replace = 0
-    t.w = 8
-    t.h = 8
-    t.z = 0
-    for k,v in pairs(thang_dat[val]) do
-    	t[k] = v
-    end
-				max_z = max(t.z, max_z)
-				if (t.init != nil) then
-				 t:init()
-				end
-    add(thang,t)
-    mset(x,y,t.replace)
-   end
-  end
+function spawn_thang(i,x,y)
+ local t = {}
+	t.i = i
+	t.x = x
+	t.y = y
+	t.vx = 0
+	t.vy = 0
+	t.s = i
+	t.fr = 0
+ t.fcnt = 0
+ t.draw = draw_thang
+ t.replace = 0
+ t.w = 8
+ t.h = 8
+ t.z = 0
+ t.rght = true
+ t.alive = true
+ for k,v in pairs(thang_dat[i]) do
+ 	t[k] = v
  end
+	if (t.init != nil) then
+	 t:init()
+	end
+ add(thang,t)
+	return t
 end
 
 -->8
