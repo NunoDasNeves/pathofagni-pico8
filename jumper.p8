@@ -158,9 +158,9 @@ function draw_thang(t)
 end
 
 function draw_fireball(f)
-	local sp = f.s + f.frame
- local sx = (f.sframe % 2) * 4
- local sy = (f.sframe \ 2) * 4
+	local sp = f.s + f.fr
+ local sx = (f.sfr % 2) * 4
+ local sy = (f.sfr \ 2) * 4
  sspr((sp % 16) * 8 + sx,
 				 	(sp \ 16) * 8 + sy,
 					 4,4,
@@ -708,7 +708,7 @@ function make_fireball()
  f.alive = true
  f.fcnt = 0
  f.speed = 3
- f.frame = 0
+ f.fr = 0
  f.draw = draw_fireball
  f.update = update_fireball
  local ydir = 0
@@ -737,13 +737,13 @@ function make_fireball()
   f.vy = ydir * 0.7071 * f.speed
  end
 
- f.sframe = 0 -- sub-frame
+ f.sfr = 0 -- sub-frame
 	if (ydir == 0) then
-  f.sframe = 1
+  f.sfr = 1
  elseif (xdir == 0) then
-  f.sframe = 2
+  f.sfr = 2
  else
-  f.sframe = 3
+  f.sfr = 3
  end
  f.xflip = false
  f.yflip = false
@@ -759,8 +759,8 @@ end
 function kill_fireball(f)
 	f.alive = false
 	f.yflip = false
-	f.sframe = 0
-	f.frame = 1
+	f.sfr = 0
+	f.fr = 1
 end
 
 function update_fireball(f)
@@ -768,7 +768,7 @@ function update_fireball(f)
   f.y -= 0.5
 	 f.fcnt += 1
 	 if (f.fcnt & 1 == 0) then
-	 	f.sframe += 1
+	 	f.sfr += 1
 	 end
 	 if (f.fcnt == 8) then
 		 del(fireball, f)
