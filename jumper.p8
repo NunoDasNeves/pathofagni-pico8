@@ -109,7 +109,9 @@ function _update()
 	for t in all(thang) do
 	 t:update()
 	end
-	foreach(fireball, update_fireball)
+	for p in all(fireball) do
+	 p:update()
+	end
 end
 
 function _init()
@@ -160,13 +162,16 @@ function _draw()
 		end
 	end
 
-	-- player
 	spr(p.s + p.fr,
 	    p.x,
 	    p.y,
 	    1, 1,
 	    not p.rght)
-	foreach(fireball, draw_fireball)
+
+	for f in all(fireball) do
+	 f:draw()
+	end
+
 	if (dbg) then
 	 local txtx = room.x + 8
 		print(dbgstr,txtx,room.y,7)
@@ -514,107 +519,6 @@ function spawn_p(x,y)
 
 end
 
-fireball = {}
-
-function make_fireball()
- local f = {}
- f.w = 4
- f.h = 4
- f.x = p.x + (p.w - f.w)/2
- f.y = p.y + (p.h - f.h)/2
- f.s = 80
- f.alive = true
- f.fcnt = 0
- f.speed = 3
- f.frame = 0
- local ydir = 0
- local xdir = 0
- if (btn(⬆️)) then
-  ydir = -1
- elseif (btn(⬇️)) then
-  ydir = 1
- end
- if (p.rght) then
-  xdir = 1
- else
-  xdir = -1
- end
- -- straight up or down
- if (not btn(⬅️) and
-     not btn(➡️) and
-     ydir != 0) then
-   xdir = 0
- end
- if (xdir == 0 or ydir == 0) then
-  f.vx = xdir * f.speed
-  f.vy = ydir * f.speed
- else
-  f.vx = xdir * 0.7071 * f.speed
-  f.vy = ydir * 0.7071 * f.speed
- end
-
- f.sframe = 0 -- sub-frame
-	if (ydir == 0) then
-  f.sframe = 1
- elseif (xdir == 0) then
-  f.sframe = 2
- else
-  f.sframe = 3
- end
- f.xflip = false
- f.yflip = false
- if (f.vy < 0) then
-  f.yflip = true
- end
- if (f.vx < 0) then
-  f.xflip = true
- end
- add(fireball, f)
-end
-
-function kill_fireball(f)
-	f.alive = false
-	f.yflip = false
-	f.sframe = 0
-	f.frame = 1
-end
-
-function update_fireball(f)
- if (not f.alive) then
-  f.y -= 0.5
-	 f.fcnt += 1
-	 if (f.fcnt & 1 == 0) then
-	 	f.sframe += 1
-	 end
-	 if (f.fcnt == 8) then
-		 del(fireball, f)
-		end
-  return
- end
- f.x += f.vx
- f.y += f.vy
- -- hit stuff
- for t in all(thang) do
- 	if (aabb(
- 									 t.x,t.y,t.w,t.h,
- 									 f.x,f.y,4,4)) then
- 	 t:burn()
- 	 -- don't stop on lanterns
- 	 if (t.i != 82) then
-	 	 kill_fireball(f)
-	 	 return
- 		end
- 	end
- end
- if (--collmap(f.x,f.y,0) or
-     collmap(f.x,f.y,1) or
-     collmap(f.x,f.y,2)) then
- 	f.vx = 0
- 	f.vy = 0
- 	kill_fireball(f)
- end
-end
-
 function kill_p()
  p.alive = false
  p.s = p.i + p.s_die.s 
@@ -789,6 +693,111 @@ function respawn_update_p()
   end
 	end
 end
+-->8
+-- fireball
+fireball = {}
+
+function make_fireball()
+ local f = {}
+ f.w = 4
+ f.h = 4
+ f.x = p.x + (p.w - f.w)/2
+ f.y = p.y + (p.h - f.h)/2
+ f.s = 80
+ f.alive = true
+ f.fcnt = 0
+ f.speed = 3
+ f.frame = 0
+ f.draw = draw_fireball
+ f.update = update_fireball
+ local ydir = 0
+ local xdir = 0
+ if (btn(⬆️)) then
+  ydir = -1
+ elseif (btn(⬇️)) then
+  ydir = 1
+ end
+ if (p.rght) then
+  xdir = 1
+ else
+  xdir = -1
+ end
+ -- straight up or down
+ if (not btn(⬅️) and
+     not btn(➡️) and
+     ydir != 0) then
+   xdir = 0
+ end
+ if (xdir == 0 or ydir == 0) then
+  f.vx = xdir * f.speed
+  f.vy = ydir * f.speed
+ else
+  f.vx = xdir * 0.7071 * f.speed
+  f.vy = ydir * 0.7071 * f.speed
+ end
+
+ f.sframe = 0 -- sub-frame
+	if (ydir == 0) then
+  f.sframe = 1
+ elseif (xdir == 0) then
+  f.sframe = 2
+ else
+  f.sframe = 3
+ end
+ f.xflip = false
+ f.yflip = false
+ if (f.vy < 0) then
+  f.yflip = true
+ end
+ if (f.vx < 0) then
+  f.xflip = true
+ end
+ add(fireball, f)
+end
+
+function kill_fireball(f)
+	f.alive = false
+	f.yflip = false
+	f.sframe = 0
+	f.frame = 1
+end
+
+function update_fireball(f)
+ if (not f.alive) then
+  f.y -= 0.5
+	 f.fcnt += 1
+	 if (f.fcnt & 1 == 0) then
+	 	f.sframe += 1
+	 end
+	 if (f.fcnt == 8) then
+		 del(fireball, f)
+		end
+  return
+ end
+ f.x += f.vx
+ f.y += f.vy
+ -- hit stuff
+ for t in all(thang) do
+ 	if (aabb(
+ 									 t.x,t.y,t.w,t.h,
+ 									 f.x,f.y,4,4)) then
+ 	 t:burn()
+ 	 -- don't stop on lanterns
+ 	 if (t.i != 82) then
+	 	 kill_fireball(f)
+	 	 return
+ 		end
+ 	end
+ end
+ if (--collmap(f.x,f.y,0) or
+     collmap(f.x,f.y,1) or
+     collmap(f.x,f.y,2)) then
+ 	f.vx = 0
+ 	f.vy = 0
+ 	kill_fireball(f)
+ end
+end
+
 __gfx__
 00000000dddddddddddddddddddddddddddddddd0000000000000000000000000000000000000000310100130101011000000000000000000000000000000000
 000000000dddddd00dddddddddddddddddddddd00000000000000000000000000000000000000000310111101001103300000000000000000000000000000000
@@ -887,7 +896,7 @@ bbbb0980008000000210712002a07120021701200000000000000000000000000000000000000000
 12121212121212121212121212121212121212121212121212121212121212121212121212121212121212121212121212121212121212121212121212121212
 12121212121212121212121212121212121212121212121212121212121212121212121212121212121212121212121212121212121212121212121212121212
 __gff__
-0001010101010001010100000000000003070703030100070000000000000000020707020200000707000000000300000607070606000007070707070707070700000000000000000000000000000000000011111101000000000000000000001000000010000000101010000000000008080808080800000000000000000000
+0001010101010001010100000000000003070703030100070000000000000000020707020200000707000000000300000607070606000007070707070707070700000000000000000000000000000000000011010101000000000000000000001000000010000000101010000000000008080808080800000000000000000000
 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 __map__
 31212121212121212121212121212121212121212121212121312121212121211a1b1b0b000b001b1a1b001a0b0021212121212121212121212121212121212121212121212121212121212121212121212121212121212121212121212121212121212121212121212121212121212121212121212121212121000000000000
