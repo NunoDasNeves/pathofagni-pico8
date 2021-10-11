@@ -29,3 +29,7 @@ function aabb(x0,y0,w0,h0,x1,y1,w1,h1)
     end
     return true
 end
+
+function dist(x0,y0,x1,y1)
+    return sqrt((x1-x0)*(x1-x0) + (y1-y0)*(y1-y0))
+end

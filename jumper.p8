@@ -157,7 +157,7 @@ function draw_thang(t)
  spr(t.s+t.fr,t.x,t.y,1,1,flp)
 end
 
-function draw_fireball(f)
+function draw_smol_thang(f)
 	local sp = f.s + f.fr
  local sx = (f.sfr % 2) * 4
  local sy = (f.sfr \ 2) * 4
@@ -232,6 +232,7 @@ thang_dat = {
 	 w = 8,
 	 h = 8,
 	 hp = 3,
+	 goingrght = true, -- going to go after throwing
 	 burning = false,
 	 -- coll dimensions
 	 -- todo same as player..
@@ -241,6 +242,23 @@ thang_dat = {
 		cw = 5.99,
 		cx = 1,
 		cy = 1,
+		shcount = 0, -- throw stuff at player
+		range = 8*6, -- only throw at player in this range
+	},
+	[107] = { -- icepick
+	 init = init_icepick,
+	 update = update_icepick,
+	 burn = kill_icepick,
+	 draw = draw_smol_thang,
+	 w = 4,
+	 h = 4,
+	 vx = 1,
+	 vy = -4,
+	 g = 0.3,
+	 max_vy = 4,
+	 sfr = 0,
+	 xflip = false,
+	 yclip = false,
 	}
 }
 end
@@ -250,6 +268,73 @@ function init_lantern_thang(l)
  if (l.lit) then
   l.s = l.i + 1
   curr_lantern = room.i+1
+ end
+end
+
+function init_icepick(t)
+	if (p.x < t.x) then
+		t.rght = false
+		t.vx = -t.vx
+	else
+		t.rght = true
+	end
+end
+
+function kill_icepick(t)
+	if (t.alive) then
+	 t.alive = false
+	 t.fr = 1
+	 t.sfr = 0
+	 t.fcnt = 0
+	end
+end
+
+function update_icepick(t)
+ if (not t.alive) then
+	 t.y += 0.5
+	 t.fcnt += 1
+	 if (t.fcnt & 1 == 0) then
+	 	t.sfr += 1
+	 end
+	 if (t.fcnt == 8) then
+		 del(thang, t)
+		end
+  return
+ end
+ -- spin around 'ax'is
+ if (t.fcnt > 0 and t.fcnt % 2 == 0) then
+  if (t.fcnt == 2) then
+   t.x += 2
+   t.y += 1
+  elseif (t.fcnt == 4) then
+   t.x -= 1
+  	t.y += 2
+  elseif (t.fcnt == 6) then
+  	t.x -= 2
+  	t.y -= 1
+  elseif (t.fcnt == 8) then
+			t.x += 1
+			t.y -= 2
+			t.fcnt = 0
+  end
+ 	if (t.sfr >= 3) then
+ 	 t.sfr = 0
+ 	else
+	 	t.sfr += 1
+	 end
+ end
+ t.fcnt += 1
+ t.vy += t.g
+ t.vy = clamp(t.vy,-t.max_vy,t.max_vy)
+ t.x += t.vx
+ t.y += t.vy
+
+ if (--collmap(f.x,f.y,0) or
+     collmap(t.x+2,t.y,1) or
+     collmap(t.x+2,t.y,2)) then
+ 	t.vx = 0
+ 	t.vy = 0
+ 	kill_icepick(t)
  end
 end
 
@@ -273,7 +358,9 @@ function update_thrower(t)
   end
   return
  end
+
  if (t.burning) then
+  t.throwing = false
   if (t.fcnt >= 4) then
    t.burning = false
    t.fcnt = 0
@@ -284,6 +371,26 @@ function update_thrower(t)
 	  return
 	 end
  end
+
+ if (t.throwing) then
+  if (p.x < t.x) then
+  	t.rght = false
+  else
+   t.rght = true
+  end
+  t.fr = 2
+	 if (t.fcnt >= 20) then
+	  t.throwing = false
+	  spawn_thang(107,t.x+4,t.y+4)
+	  t.fcnt = 0
+	  t.fr = 0
+	 else
+	  t.fcnt += 1
+	 end
+	 return
+ end
+ -- remember which way we were going
+ t.rght = t.goingrght
  if (t.rght) then
   t.vx = 0.75
  else
@@ -298,10 +405,21 @@ function update_thrower(t)
  if (coll_edge(t,newx,t.y+t.h)) then
   t.rght = not t.rght
  end
- 
- t.x = newx
 
- loop_anim(t,3,2)
+	t.goingrght = t.rght 
+	t.x = newx
+	loop_anim(t,3,2)
+
+ if (t.shcount <= 0) then
+	 if (dist(p.x,p.y,t.x,t.y) <= t.range) then
+ 	 t.throwing = true
+ 	 t.fcnt = 0
+ 	end
+ 	t.shcount = 30
+ else
+  t.shcount -= 1
+ end
+ dbgstr = t.shcount
 end
 
 function burn_bat(b)
@@ -709,7 +827,7 @@ function make_fireball()
  f.fcnt = 0
  f.speed = 3
  f.fr = 0
- f.draw = draw_fireball
+ f.draw = draw_smol_thang
  f.update = update_fireball
  local ydir = 0
  local xdir = 0
@@ -761,6 +879,7 @@ function kill_fireball(f)
 	f.yflip = false
 	f.sfr = 0
 	f.fr = 1
+	f.fcnt = 0
 end
 
 function update_fireball(f)
