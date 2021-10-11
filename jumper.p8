@@ -791,8 +791,8 @@ function update_fireball(f)
  	end
  end
  if (--collmap(f.x,f.y,0) or
-     collmap(f.x,f.y,1) or
-     collmap(f.x,f.y,2)) then
+     collmap(f.x+2,f.y+2,1) or
+     collmap(f.x+2,f.y+2,2)) then
  	f.vx = 0
  	f.vy = 0
  	kill_fireball(f)
