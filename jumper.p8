@@ -235,7 +235,12 @@ thang_dat = {
 		update = update_bat,
 		burn = burn_bat,
 		w = 7,
-		h = 7
+		h = 7,
+		range = 8*8,
+		dircount = 0,
+		xspeed = 0.5,
+		yspeed = 0.4,
+		randdir = {x=1,y=1}
 	},
 	[100] = { -- thrower
 	 update = update_thrower,
@@ -269,7 +274,7 @@ thang_dat = {
 	 max_vy = 4,
 	 sfr = 0,
 	 xflip = false,
-	 yclip = false,
+	 yflip = false,
 	}
 }
 end
@@ -561,19 +566,35 @@ function update_bat(b)
 	
 	if (b.alive) then
 		-- follow player
-		-- todo un-jank
-		if (b.x - p.x > 4) then
-	  b.rght = false
-	  b.vx = -0.4
-	 elseif (b.x - p.x < -4) then
+		local v = {x=p.x-b.x,y=p.y-b.y}
+		local l = vlen(v)
+		local following = false
+		if (l > b.range) then
+		 if (b.dircount == 0) then
+			 -- pick random direction		
+			 v.x=rnd(2)-1
+			 v.y=rnd(2)-1
+			 b.randdir = {x=v.x,y=v.y}
+		 	b.dircount = 60
+		 else
+		 	v.x = b.randdir.x
+		 	v.y = b.randdir.y
+		 	b.dircount -= 1
+		 end
+		 l = vlen(v)
+		else
+			following = true
+		end
+
+		v.x *= b.xspeed/l
+		v.y *= b.yspeed/l
+		b.vx = v.x
+		b.vy = v.y
+		if (b.vx > 0) then
 	  b.rght = true
-	  b.vx = 0.4
-	 end
-	 if (b.y - p.y > 0) then
-	  b.vy = -0.3
 	 else
-	  b.vy = 0.3
-	 end
+	  b.rght = false
+		end
 	
 		-- bounce
 		-- todo un-jank
@@ -584,8 +605,13 @@ function update_bat(b)
 	 end
  end
 	
- b.x += b.vx
- b.y += b.vy
+ local newx = b.x + b.vx
+ local newy = b.y + b.vy
+	
+	-- todo coll walls/floor/ceiling...
+	
+ b.x = newx
+ b.y = newy
 
 	if (b.alive and
 	    p.alive and
