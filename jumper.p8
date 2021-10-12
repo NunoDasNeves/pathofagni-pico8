@@ -82,6 +82,17 @@ function get_room_xy(i)
  }
 end
 
+function in_room(x,y)
+ if (x<room.x or x>room.x+room.sz) then
+  return false
+ end
+ if (y<room.y or y>room.y+room.sz) then
+  return false
+ end
+ dbgstr='true'
+ return true
+end
+
 function move_room(x,y)
  room.i = get_room_i(x,y)
  local r = get_room_xy(room.i)
@@ -252,7 +263,7 @@ thang_dat = {
 	 draw = draw_smol_thang,
 	 w = 4,
 	 h = 4,
-	 vx = 1,
+	 vx = 1.5,
 	 vy = -4,
 	 g = 0.3,
 	 max_vy = 4,
@@ -282,6 +293,8 @@ end
 
 function kill_icepick(t)
 	if (t.alive) then
+	 t.vx = 0
+ 	t.vy = 0
 	 t.alive = false
 	 t.fr = 1
 	 t.sfr = 0
@@ -332,10 +345,13 @@ function update_icepick(t)
  if (--collmap(f.x,f.y,0) or
      collmap(t.x+2,t.y,1) or
      collmap(t.x+2,t.y,2)) then
- 	t.vx = 0
- 	t.vy = 0
  	kill_icepick(t)
  end
+
+	if (p.alive and hit_p(t.x,t.y,t.w,t.h)) then
+		kill_p()
+		kill_icepick(t)
+	end
 end
 
 function burn_thrower(t)
@@ -387,39 +403,44 @@ function update_thrower(t)
 	 else
 	  t.fcnt += 1
 	 end
-	 return
- end
- -- remember which way we were going
- t.rght = t.goingrght
- if (t.rght) then
-  t.vx = 0.75
+
  else
-  t.vx = -0.75
- end
- local newx = t.x + t.vx
- local pushx = coll_walls(t,newx)
- if (pushx != newx) then
-  t.rght = not t.rght
- end
- newx = pushx
- if (coll_edge(t,newx,t.y+t.h)) then
-  t.rght = not t.rght
+	 -- remember which way we were going
+	 t.rght = t.goingrght
+	 if (t.rght) then
+	  t.vx = 0.75
+	 else
+	  t.vx = -0.75
+	 end
+	 local newx = t.x + t.vx
+	 local pushx = coll_walls(t,newx)
+	 if (pushx != newx) then
+	  t.rght = not t.rght
+	 end
+	 newx = pushx
+	 if (coll_edge(t,newx,t.y+t.h) or
+	 	   coll_room_border(t,newx)) then
+	  t.rght = not t.rght
+	 end
+
+		t.goingrght = t.rght 
+		t.x = newx
+		loop_anim(t,3,2)
+
+	 if (t.shcount <= 0) then
+		 if (dist(p.x,p.y,t.x,t.y) <= t.range) then
+	 	 t.throwing = true
+	 	 t.fcnt = 0
+	 	end
+	 	t.shcount = 30
+	 else
+	  t.shcount -= 1
+	 end
  end
 
-	t.goingrght = t.rght 
-	t.x = newx
-	loop_anim(t,3,2)
-
- if (t.shcount <= 0) then
-	 if (dist(p.x,p.y,t.x,t.y) <= t.range) then
- 	 t.throwing = true
- 	 t.fcnt = 0
- 	end
- 	t.shcount = 30
- else
-  t.shcount -= 1
- end
- dbgstr = t.shcount
+	if (p.alive and hit_p(t.x,t.y,t.w,t.h)) then
+		kill_p()
+	end
 end
 
 function burn_bat(b)
@@ -480,6 +501,34 @@ function coll_walls(t,newx)
  return newx
 end
 
+function coll_room_border(t,newx)
+ -- t = {
+ --   y  -- coord
+ --   cx -- coll x offset
+ --   cw -- coll width
+ --   cy -- coll y offset
+ --   ch -- coll height
+ --   vx -- x vel
+ -- return newx pushed back into room
+ local cl = newx + t.cx
+ local cr = cl + t.cw
+ local ct = t.y + t.cy
+ local cb = ct + t.ch
+ -- only check left or right
+ local cx = cr
+ if (t.vx < 0) then
+  cx = cl
+ end
+ if ((t.vx != 0)
+     and
+     (not in_room(cx,ct) or
+ 	    not in_room(cx,cb))
+ 	  ) then
+   return true
+ end
+ return false
+end
+
 function loop_anim(t,speed,frames)
  -- t = {
  --   s -- starting frame
@@ -537,6 +586,12 @@ function update_bat(b)
 	
  b.x += b.vx
  b.y += b.vy
+
+	if (b.alive and
+	    p.alive and
+	    hit_p(b.x,b.y,b.w,b.h)) then
+		kill_p()
+	end
 end
 
 function burn_lantern(l)
@@ -643,6 +698,13 @@ function kill_p()
  p.s = p.i + p.s_die.s 
  p.fr = 0
  p.fcnt = 0
+end
+
+function hit_p(x,y,w,h)
+	return aabb(
+ 									 x,y,w,h,
+ 									 p.x+p.hx,p.y+p.hy,
+ 									 p.hw,p.hh)
 end
 
 function update_p()
