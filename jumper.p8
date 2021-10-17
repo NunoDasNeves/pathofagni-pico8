@@ -560,49 +560,51 @@ function update_bat(b)
   if (b.deadf == 0) then
    del(thang, b)
   end
+  loop_anim(b,4,2)
+  b.x += b.vx
+	 b.y += b.vy
+	 return
  end
 
+	-- b.alive
  loop_anim(b,4,2)
-	
-	if (b.alive) then
-		-- follow player
-		local v = {x=p.x-b.x,y=p.y-b.y}
-		local l = vlen(v)
-		local following = false
-		if (l > b.range) then
-		 if (b.dircount == 0) then
-			 -- pick random direction		
-			 v.x=rnd(2)-1
-			 v.y=rnd(2)-1
-			 b.randdir = {x=v.x,y=v.y}
-		 	b.dircount = 60
-		 else
-		 	v.x = b.randdir.x
-		 	v.y = b.randdir.y
-		 	b.dircount -= 1
-		 end
-		 l = vlen(v)
-		else
-			following = true
-		end
 
-		v.x *= b.xspeed/l
-		v.y *= b.yspeed/l
-		b.vx = v.x
-		b.vy = v.y
-		if (b.vx > 0) then
-	  b.rght = true
+	local v = {x=p.x-b.x,y=p.y-b.y}
+	local l = vlen(v)
+	local following = false
+	if (l > b.range) then
+	 if (b.dircount == 0) then
+		 -- pick random direction		
+		 v.x=rnd(2)-1
+		 v.y=rnd(2)-1
+		 b.randdir = {x=v.x,y=v.y}
+	 	b.dircount = 60
 	 else
-	  b.rght = false
-		end
-	
-		-- bounce
-		-- todo un-jank
-		if (b.fr == 0) then
-		 b.vy += 0.5
-		else
-	  b.vy -= 0.5
+	 	v.x = b.randdir.x
+	 	v.y = b.randdir.y
+	 	b.dircount -= 1
 	 end
+	 l = vlen(v)
+	else
+		following = true
+	end
+
+	v.x *= b.xspeed/l
+	v.y *= b.yspeed/l
+	b.vx = v.x
+	b.vy = v.y
+	if (b.vx > 0) then
+  b.rght = true
+ else
+  b.rght = false
+	end
+
+	-- bounce
+	-- todo un-jank
+	if (b.fr == 0) then
+	 b.vy += 0.5
+	else
+  b.vy -= 0.5
  end
 	
  local newx = b.x + b.vx
@@ -613,8 +615,7 @@ function update_bat(b)
  b.x = newx
  b.y = newy
 
-	if (b.alive and
-	    p.alive and
+	if (p.alive and
 	    hit_p(b.x,b.y,b.w,b.h)) then
 		kill_p()
 	end
