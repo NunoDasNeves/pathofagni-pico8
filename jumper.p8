@@ -235,12 +235,16 @@ thang_dat = {
 		update = update_bat,
 		burn = burn_bat,
 		w = 7,
-		h = 7,
+		h = 6,
 		range = 8*8,
 		dircount = 0,
 		xspeed = 0.5,
 		yspeed = 0.4,
-		randdir = {x=1,y=1}
+		randdir = {x=1,y=1},
+		cx = 0,
+		cy = 0,
+		cw = 7,
+		ch = 6,
 	},
 	[100] = { -- thrower
 	 update = update_thrower,
@@ -424,7 +428,7 @@ function update_thrower(t)
 	 end
 	 newx = pushx
 	 if (coll_edge(t,newx,t.y+t.h) or
-	 	   coll_room_border(t,newx)) then
+	 	   coll_room_border(t)) then
 	  t.rght = not t.rght
 	 end
 
@@ -455,83 +459,6 @@ function burn_bat(b)
 	 b.vy = 0.6
 	 b.deadf = 20
 	end
-end
-
-function coll_edge(t,newx,fty)
- -- t = {
- --   ftx -- foot x offset
- --   ftw -- foot width
- -- }
- -- fty = foot y
- -- return true if 1 px from edge
- local tftxl = newx + t.ftx
- local tftxr = tftxl + t.ftw
- if (not (collmap(tftxl-1,fty,0) and
-		   collmap(tftxr+1,fty,0))) then
-	 return true
-	end
- return false
-end
-
-function coll_walls(t,newx)
- -- t = {
- --   y  -- coord
- --   cx -- coll x offset
- --   cw -- coll width
- --   cy -- coll y offset
- --   ch -- coll height
- --   vx -- x vel
- -- return newx pushed out of wall
- local cl = newx + t.cx
- local cr = cl + t.cw
- local ct = t.y + t.cy
- local cb = ct + t.ch
- -- only check left or right
- local cx = cr
- if (t.vx < 0) then
-  cx = cl
- end
- if ((t.vx != 0)
-     and
-     (collmap(cx,ct,1) or
- 	    collmap(cx,cb,1))
- 	  ) then
-   -- push out of wall
-   if (cx == cl) then
-   	newx = roundup(cx, 8) - t.cx - 1
-   else
-   	newx = rounddown(cx, 8) - t.w + t.cx + 1
-   end
- end
- return newx
-end
-
-function coll_room_border(t,newx)
- -- t = {
- --   y  -- coord
- --   cx -- coll x offset
- --   cw -- coll width
- --   cy -- coll y offset
- --   ch -- coll height
- --   vx -- x vel
- -- return newx pushed back into room
- local cl = newx + t.cx
- local cr = cl + t.cw
- local ct = t.y + t.cy
- local cb = ct + t.ch
- -- only check left or right
- local cx = cr
- if (t.vx < 0) then
-  cx = cl
- end
- if ((t.vx != 0)
-     and
-     (not in_room(cx,ct) or
- 	    not in_room(cx,cb))
- 	  ) then
-   return true
- end
- return false
 end
 
 function loop_anim(t,speed,frames)
@@ -606,14 +533,18 @@ function update_bat(b)
 	else
   b.vy -= 0.5
  end
+ 
+ --local newpos = move_coll(b)
 	
- local newx = b.x + b.vx
- local newy = b.y + b.vy
-	
-	-- todo coll walls/floor/ceiling...
-	
- b.x = newx
- b.y = newy
+ --b.x = newpos.x
+ --b.y = newpos.y
+ if (coll_room_border(b)) then
+ 	b.dircount = 0
+		b.vx = 0
+		b.vy = 0
+ end
+ b.x += b.vx
+ b.y += b.vy
 
 	if (p.alive and
 	    hit_p(b.x,b.y,b.w,b.h)) then
@@ -1005,6 +936,150 @@ function update_fireball(f)
  	f.vy = 0
  	kill_fireball(f)
  end
+end
+
+-->8
+-- collision
+
+function coll_edge(t,newx,fty)
+ -- t = {
+ --   ftx -- foot x offset
+ --   ftw -- foot width
+ -- }
+ -- fty = foot y
+ -- return true if 1 px from edge
+ local tftxl = newx + t.ftx
+ local tftxr = tftxl + t.ftw
+ if (not (collmap(tftxl-1,fty,0) and
+		   collmap(tftxr+1,fty,0))) then
+	 return true
+	end
+ return false
+end
+
+function coll_walls(t,newx)
+ -- t = {
+ --   y  -- coord
+ --   cx -- coll x offset
+ --   cw -- coll width
+ --   cy -- coll y offset
+ --   ch -- coll height
+ --   vx -- x vel
+ -- return newx pushed out of wall
+ local cl = newx + t.cx
+ local cr = cl + t.cw
+ local ct = t.y + t.cy
+ local cb = ct + t.ch
+ -- only check left or right
+ local cx = cr
+ if (t.vx < 0) then
+  cx = cl
+ end
+ if ((t.vx != 0)
+     and
+     (collmap(cx,ct,1) or
+ 	    collmap(cx,cb,1))
+ 	  ) then
+   -- push out of wall
+   if (cx == cl) then
+   	newx = roundup(cx, 8) - t.cx-- - 1
+   else
+   	newx = rounddown(cx, 8) - t.cw - t.cx + 1
+   end
+ end
+ return newx
+end
+
+function move_coll(t)
+	-- t = {
+	--	  x  -- coord
+ --   y  -- coord
+ --   cx -- coll x offset
+ --   cw -- coll width
+ --   cy -- coll y offset
+ --   ch -- coll height
+ --   vx -- x vel
+ --	  vy -- y vel
+ -- }
+ -- return {x, y} pushed out of wall
+	
+	local newx = t.x + t.vx
+	local newy = t.y + t.vy
+ local cl = newx + t.cx
+ local cr = cl + t.cw
+ local ct = newy + t.cy
+ local cb = ct + t.ch
+
+ -- only check corner in direction of vx,vy
+ local cx = cl
+ if (t.vx > 0) then
+  cx = cr
+ end
+
+ local cy = ct
+ if (vy > 0) then
+  cy = cb
+  -- platform
+  if (collmap(cx,cy,0)) then
+  	newy = rounddown(cy,8) - t.ch - t.cy - 1
+  end
+ elseif (vy < 0) then
+		-- ceiling
+		if (collmap(cx,cy,2)) then
+			newy = roundup(cy,8) - t.cy
+		end
+ end
+
+	-- todo cx
+
+	return {x=newx,y=newy}
+end
+
+function coll_room_border(t)
+ -- t = {
+ --	  x  -- coord
+ --   y  -- coord
+ --   cx -- coll x offset
+ --   cw -- coll width
+ --   cy -- coll y offset
+ --   ch -- coll height
+ --   vx -- x vel
+ --	  vy -- y vel
+ -- }
+ -- apply vx, vy, and
+ -- return true if moving into edge of room
+ local newx = t.x + t.vx
+ local newy = t.y + t.vy
+ local cl = newx + t.cx
+ local cr = cl + t.cw
+ local ct = newy + t.cy
+ local cb = ct + t.ch
+ -- only check left or right
+ local cx = cr
+ if (t.vx < 0) then
+  cx = cl
+ end
+ if ((t.vx != 0)
+     and
+     (not in_room(cx,ct) or
+ 	    not in_room(cx,cb))
+ 	  ) then
+   return true
+ end
+
+ local cy = cb
+ if (t.vy < 0) then
+  cy = ct
+ end
+ if ((t.vy != 0)
+     and
+     (not in_room(cl,cy) or
+ 	    not in_room(cr,cy))
+ 	  ) then
+   return true
+ end
+
+ return false
 end
 
 __gfx__
