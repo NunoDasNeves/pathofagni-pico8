@@ -26,7 +26,7 @@ room = {
 -- for now
 -- room index+1 -> lit
 lantern = {}
-curr_lantern = 4
+curr_lantern = room.max_i + 1 - 1
 
 function get_curr_lantern()
  return lantern[curr_lantern]
@@ -55,12 +55,6 @@ function init_lantern()
  end
  -- initial spawn
  lantern[curr_lantern].lit = true
-end
-
-function collmap(x,y,f)
- local val = mget(x\8,y\8)
-
- return (fget(val,f))
 end
 
 function restore_room()
@@ -620,13 +614,21 @@ p_dat = {
 	hy = 2,
 	hw = 3.99,
 	hh = 3.99,
+	-- new collision
+	-- points relative to player pos
+	ecbl = {x=0.5,y=4},
+	ecbr = {x=7,y=4},
+	-- 3.5 cos...reasons
+	ecbt = {x=3.5,y=0},
+	ecbb = {x=3.5,y=8},
 	-- physics
-	ax = 1, -- accel
-	max_vx = 2,
+	gax = 1, -- ground accel
+	aax = 0.3, -- air accel
+	max_vx = 1.4,
 	min_vx = 0.01, -- stop threshold
-	g = 0.5, -- gravity
-	max_vy = 5,
-	j_vy = -6, -- jump accel
+	g = 0.3, -- gravity
+	max_vy = 4,
+	j_vy = -4, -- jump accel
 }
 
 function spawn_p(x,y)
@@ -681,13 +683,25 @@ function update_p()
  end
  if (btn(⬅️) and not p.rght) then
  	-- accel left
- 	p.vx -= p.ax
+ 	if (p.air) then
+ 	 p.vx -= p.aax
+ 	else
+ 	 p.vx -= p.gax
+ 	end
  elseif (btn(➡️) and p.rght) then
  	-- accel right
- 	p.vx += p.ax
+ 	if (p.air) then
+ 	 p.vx += p.aax
+ 	else
+ 	 p.vx += p.gax
+ 	end
  end
  if (not btn(⬅️) and not btn(➡️)) then
-  p.vx -= p.vx/3
+  if (p.air) then
+	  p.vx *= 0.95
+  else
+	  p.vx *= 0.6
+	 end
  end
  p.vx = clamp(p.vx, -p.max_vx, p.max_vx)
  if (abs(p.vx) < p.min_vx) then
@@ -696,7 +710,7 @@ function update_p()
 
  local newx = p.x + p.vx
 
- local pushedx = coll_walls(p, newx)
+ local pushedx = coll_x(p)-- coll_walls(p, newx)
  if (pushedx != newx) then
   p.vx = 0
  end
@@ -715,14 +729,17 @@ function update_p()
  local fty = newy + p.h
  local ftxl = newx + p.ftx
  local ftxr = ftxl + p.ftw
+ 
+ local ecbt = {x=newx+p.ecbt.x,y=newy+p.ecbt.y}
+ local ecbb = {x=newx+p.ecbb.x,y=newy+p.ecbb.y}
+ local ecbbold = {x=p.x+p.ecbb.x,y=p.y+p.ecbb.y}
 
  if (p.vy > 0) then
-  if ((collmap(ftxl,fty,0) or
-			   collmap(ftxr,fty,0))
-      and
+  if ((collmapv(ecbb,0))) then
+      --and
       -- need both checks!
-      (not p.air or
-      rounddown(p.y,8) < rounddown(newy,8))) then
+      --(not p.air or
+      --rounddown(ecbbold.y,8) < rounddown(ecbb.y,8))) then
 			newy = rounddown(newy, 8)
 	  p.vy = 0
 	  p.air = false
@@ -745,9 +762,14 @@ function update_p()
 	-- p.vy < 0
  else
   -- ceiling
- 	if (p.air and (collmap(ftxl,newy,2) or
- 	    collmap(ftxr,newy,2))) then
- 	 p.vy = -p.vy/3
+ 	if (p.air and (collmapv(ecbt,2))) then
+ 	 if (not oldair) then
+ 	  p.air = false
+ 	  p.vy = 0
+ 	 else
+ 	 	p.vy = -p.vy/3
+ 	 end
+ 	 newy = p.y + p.vy
  	end
  end
 
@@ -1082,6 +1104,59 @@ function coll_room_border(t)
  return false
 end
 
+-->8
+-- new collision
+
+function collmap(x,y,f)
+ local val = mget(x\8,y\8)
+ return (fget(val,f))
+end
+
+function collmapv(v,f)
+	return collmap(v.x,v.y,f)
+end
+
+function coll_x(t)
+	-- apply vx,vy, return new x
+	local pos = {x=t.x,y=t.y}
+	local vel = {x=t.vx,y=t.vy}
+	local newpos = vadd(pos,vel)
+	local ecbl = vadd(newpos,t.ecbl)
+	local ecbr = vadd(newpos,t.ecbr)
+	local newx = newpos.x
+	if (vel.x < 0) then
+		if (collmapv(ecbl,2)) then
+			newx = roundup(ecbl.x, 8) - t.ecbl.x
+		end
+	elseif (vel.x > 0) then
+		if (collmapv(ecbr,2)) then
+			newx = rounddown(ecbr.x, 8) - t.ecbr.x
+		end
+	else
+		if (collmapv(ecbl,2)) then
+			newx = roundup(ecbl.x, 8) - t.ecbl.x
+		elseif (collmapv(ecbr,2)) then
+			newx = rounddown(ecbr.x, 8) - t.ecbr.x
+		end
+	end
+	return newx
+end
+
+function coll_ceil(t)
+	-- apply vx,vy, return new y
+	local pos = {x=t.x,y=t.y}
+	local vel = {x=t.vx,y=t.vy}
+	local newpos = vadd(pos,vel)
+	local ecbt = vadd(newpos,t.ecbt)
+	local newy = newpos.y
+	if (collmapv(ecbt,3)) then
+		newy = roundup(ecbt.y, 8) - t.ecbt.y
+	end
+end
+
+function coll_floor(t)
+
+end
 __gfx__
 00000000dddddddddddddddddddddddddddddddd0000000000000000000000000000000000000000310100130101011000000000000000000000000000000000
 000000000dddddd00dddddddddddddddddddddd00000000000000000000000000000000000000000310111101001103300000000000000000000000000000000
