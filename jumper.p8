@@ -735,11 +735,15 @@ function update_p()
  local ecbbold = {x=p.x+p.ecbb.x,y=p.y+p.ecbb.y}
 
  if (p.vy > 0) then
-  if ((collmapv(ecbb,0))) then
-      --and
-      -- need both checks!
-      --(not p.air or
-      --rounddown(ecbbold.y,8) < rounddown(ecbb.y,8))) then
+  if (collmapv(ecbb,0)
+      and
+      -- (almost) in the block above platform-only block
+      (ecbbold.y < rounddown(ecbb.y,8)+3 or
+      -- grounded
+      not p.air or
+      -- intersecting a 'full' block
+      collmapv(ecbb,1)
+      )) then
 			newy = rounddown(newy, 8)
 	  p.vy = 0
 	  p.air = false
@@ -803,9 +807,10 @@ function update_p()
  if (not p.air) then
   -- walk anim
   p.s = p.i + p.s_wlk.s
-  if (btnp(➡️) or btnp(⬅️)) then
-   p.fr = 0
-   p.fcnt = 0
+  -- just landed, or changed dir
+  if (oldair or btnp(➡️) or btnp(⬅️)) then
+  	p.fr = 0
+  	p.fcnt = 0
   end
   if (btn(➡️) or btn(⬅️)) then
    loop_anim(p,3,p.s_wlk.f)
