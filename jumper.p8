@@ -216,6 +216,11 @@ thang = {}
 max_z = 0
 
 function init_thang_dat()
+	local iceblock = {
+		init = init_iceblock,
+		update = update_iceblock,
+		burn = burn_iceblock
+	}
 thang_dat = {
 	[82] = { -- lantern
 		lit = false,
@@ -225,6 +230,8 @@ thang_dat = {
 		replace = 82 + 3,
 		z = 1
 	},
+	[86] = iceblock,
+	[87] = iceblock,
 	[96] = { -- bat
 		update = update_bat,
 		burn = burn_bat,
@@ -275,6 +282,25 @@ thang_dat = {
 	 yflip = false,
 	}
 }
+end
+
+function init_iceblock(t)
+	t.replace = t.i
+end
+
+function update_iceblock(t)
+	if (not t.alive) then
+  if (loop_anim(t,2,3)) then
+   del(thang, t)
+  end
+  return
+ end
+end
+
+function burn_iceblock(t)
+	t.s = 88
+	t.alive = false
+	mset(t.x\8,t.y\8,0)
 end
 
 function init_lantern_thang(l)
@@ -948,12 +974,19 @@ function update_fireball(f)
  	if (aabb(
  									 t.x,t.y,t.w,t.h,
  									 f.x,f.y,4,4)) then
- 	 t:burn()
- 	 -- don't stop on lanterns
- 	 if (t.i != 82) then
+
+			local alive = t.alive
+			-- todo - is alive the right check?
+			if (alive) then
+	 	 t:burn()
+	 	end
+			-- don't stop on lanterns
+ 	 -- or already dead stuff
+ 	 if (alive and t.i != 82) then
 	 	 kill_fireball(f)
 	 	 return
  		end
+ 	 
  	end
  end
  if (--collmap(f.x,f.y,0) or
