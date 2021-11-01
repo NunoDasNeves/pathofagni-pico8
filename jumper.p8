@@ -621,6 +621,7 @@ p_dat = {
 	i = 64, -- base of sprite row
 	--  animations - s = offset from spr, f = num frames
 	s_wlk =  {s=0, f=2},
+	s_sh  =  {s=93-64, f=2},
 	s_jmp =  {s=2, f=5},
 	s_die =  {s=7, f=5},
 	s_spwn = {s=12, f=4},
@@ -652,6 +653,8 @@ p_dat = {
 	aax = 0.3, -- air accel
 	max_vx = 1.4,
 	min_vx = 0.01, -- stop threshold
+	g_norm = 0.3,
+	g_sh = 0.05,
 	g = 0.3, -- gravity
 	max_vy = 4,
 	j_vy = -4, -- jump accel
@@ -669,6 +672,7 @@ function spawn_p(x,y)
 	p.fr = 0 -- displayed frame offset
 	p.fcnt = 0 -- counter for advancing frame
 	p.shcount = 0 -- shoot counter
+	p.sh = false
 	p.teeter = false
 	p.alive = true
 	p.spawn = true
@@ -707,22 +711,24 @@ function update_p()
      btn(➡️) and not btn(⬅️)) then
   p.rght = true
  end
- if (btn(⬅️) and not p.rght) then
- 	-- accel left
- 	if (p.air) then
- 	 p.vx -= p.aax
- 	else
- 	 p.vx -= p.gax
- 	end
- elseif (btn(➡️) and p.rght) then
- 	-- accel right
- 	if (p.air) then
- 	 p.vx += p.aax
- 	else
- 	 p.vx += p.gax
- 	end
+	if (not p.sh) then
+	 if (btn(⬅️) and not p.rght) then
+	 	-- accel left
+	 	if (p.air) then
+	 	 p.vx -= p.aax
+	 	else
+	 	 p.vx -= p.gax
+	 	end
+	 elseif (btn(➡️) and p.rght) then
+	 	-- accel right
+	 	if (p.air) then
+	 	 p.vx += p.aax
+	 	else
+	 	 p.vx += p.gax
+	 	end
+	 end
  end
- if (not btn(⬅️) and not btn(➡️)) then
+ if (p.sh or (not btn(⬅️) and not btn(➡️))) then
   if (p.air) then
 	  p.vx *= 0.95
   else
@@ -744,11 +750,15 @@ function update_p()
 
  -- vy - jump and land
  local oldair = p.air
-	if (btnp(🅾️) and not p.air) then
+	if (btnp(🅾️) and not p.air and not p.sh) then
 		 p.vy += p.j_vy
 		 p.air = true
 	end
-	p.vy += p.g
+	if (p.sh and p.vy > 0) then
+		p.vy += p.g_sh
+	else
+		p.vy += p.g_norm
+	end
 	p.vy = clamp(p.vy, -p.max_vy, p.max_vy)
 
  local newy = p.y + p.vy
@@ -820,17 +830,32 @@ function update_p()
  	return
  end
  
- if (p.shcount == 0) then
-  if (btnp(❎)) then
-   p.shcount = 10
-   make_fireball()
-  end
- else
- 	p.shcount -= 1
+ local oldsh = p.sh
+ if (btn(❎)) then
+ 	if (p.shcount == 0) then
+			p.sh = true
+		end
+ else -- release - fire
+ 	if (p.sh) then
+			make_fireball()
+			p.shcount = 10
+ 	end
+ 	p.sh = false
  end
- 
+ if (p.shcount > 0) then
+		p.shcount -= 1
+	end
+
  -- animate
- if (not p.air) then
+ if (p.sh) then
+	 	p.s = p.i + p.s_sh.s
+ 	if (not oldsh) then
+ 		p.fr = 0
+ 		p.fcnt = 0
+ 	end
+ 	loop_anim(p,3,p.s_sh.f)
+ 	
+ elseif (not p.air) then
   -- walk anim
   p.s = p.i + p.s_wlk.s
   -- just landed, or changed dir
@@ -845,7 +870,8 @@ function update_p()
 	 else
 	  p.fr = 0
 	 end
- else
+
+ else --p.air
 	 p.s = p.i + p.s_jmp.s
   if (not oldair) then	 
    p.fr = 0
