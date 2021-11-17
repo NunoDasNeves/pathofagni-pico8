@@ -627,27 +627,19 @@ p_dat = {
 	s_spwn = {s=12, f=4},
 	w = 8,
 	h = 8,
-	
 	--  physics
 	--  coll dimensions
-	ftw = 0.99, -- < min platform width
+	ftw = 2 - 1, -- 1 because we just care about pixel coords
 	ftx = 3,
-	ch = 6.99, -- < min wall height
-	cw = 5.99,
+	ch = 4,
+	cw = 5,
 	cx = 1,
-	cy = 1,
+	cy = 2,
 	-- hurtbox dimensions
 	hx = 2,
 	hy = 2,
 	hw = 3.99,
 	hh = 3.99,
-	-- new collision
-	-- points relative to player pos
-	ecbl = {x=0.5,y=4},
-	ecbr = {x=7,y=4},
-	-- 3.5 cos...reasons
-	ecbt = {x=3.5,y=0},
-	ecbb = {x=3.5,y=8},
 	-- physics
 	gax = 1, -- ground accel
 	aax = 0.3, -- air accel
@@ -730,7 +722,7 @@ function update_p()
  end
  if (p.sh or (not btn(⬅️) and not btn(➡️))) then
   if (p.air) then
-	  p.vx *= 0.95
+	  p.vx *= 0.8
   else
 	  p.vx *= 0.6
 	 end
@@ -741,12 +733,6 @@ function update_p()
  end
 
  local newx = p.x + p.vx
-
- local pushedx = coll_x(p)-- coll_walls(p, newx)
- if (pushedx != newx) then
-  p.vx = 0
- end
- newx = pushedx
 
  -- vy - jump and land
  local oldair = p.air
@@ -761,24 +747,24 @@ function update_p()
 	end
 	p.vy = clamp(p.vy, -p.max_vy, p.max_vy)
 
+	-- where our feeeeet at?
  local newy = p.y + p.vy
  local fty = newy + p.h
  local ftxl = newx + p.ftx
  local ftxr = ftxl + p.ftw
- 
- local ecbt = {x=newx+p.ecbt.x,y=newy+p.ecbt.y}
- local ecbb = {x=newx+p.ecbb.x,y=newy+p.ecbb.y}
- local ecbbold = {x=p.x+p.ecbb.x,y=p.y+p.ecbb.y}
 
+ -- hit the ground
  if (p.vy > 0) then
-  if (collmapv(ecbb,0)
+  if ((collmap(ftxl,fty,0) or
+  				 collmap(ftxr,fty,0))
       and
       -- (almost) in the block above platform-only block
-      (ecbbold.y < rounddown(ecbb.y,8)+3 or
+      (p.y < rounddown(newy,8)+3 or
       -- grounded
       not p.air or
       -- intersecting a 'full' block
-      collmapv(ecbb,1)
+      collmap(ftxl,fty,1) or
+      collmap(ftxr,fty,1)
       )) then
 			newy = rounddown(newy, 8)
 	  p.vy = 0
@@ -802,16 +788,25 @@ function update_p()
 	-- p.vy < 0
  else
   -- ceiling
- 	if (p.air and (collmapv(ecbt,2))) then
+ 	if (p.air and (
+ 		     collmap(ftxl,newy,2) or
+ 		     collmap(ftxr,newy,2))) then
  	 if (not oldair) then
  	  p.air = false
  	  p.vy = 0
  	 else
- 	 	p.vy = -p.vy/3
+ 	 	-- just sloow down on ceiling hit
+ 	 	p.vy = p.vy/3
  	 end
  	 newy = p.y + p.vy
  	end
  end
+ 
+ local pushedx = coll_x(p)-- coll_walls(p, newx)
+ if (pushedx != newx) then
+  p.vx = 0
+ end
+ newx = pushedx
 
  p.x = newx
  p.y = newy
@@ -1185,42 +1180,44 @@ function coll_x(t)
 	local pos = {x=t.x,y=t.y}
 	local vel = {x=t.vx,y=t.vy}
 	local newpos = vadd(pos,vel)
-	local ecbl = vadd(newpos,t.ecbl)
-	local ecbr = vadd(newpos,t.ecbr)
+
 	local newx = newpos.x
+	local newy = newpos.y
+	local cl = newx + t.cx
+ local cr = cl + t.cw
+ local ct = newy + t.cy
+ local cb = ct + t.ch
+ 
+ local c_tl = {x=cl,y=ct}
+ local c_tr = {x=cr,y=ct}
+ local c_bl = {x=cl,y=cb}
+ local c_br = {x=cr,y=cb}
+
+	local l_pen = 0
+	local r_pen = 0
+	if (collmapv(c_bl,2) or 
+		   collmapv(c_tl,2)) then
+		l_pen = roundup(c_bl.x,8) - c_bl.x
+	end
+	if (collmapv(c_br,2) or 
+		   collmapv(c_tr,2)) then
+		r_pen = c_br.x - rounddown(c_br.x,8)
+	end
+	
 	if (vel.x < 0) then
-		if (collmapv(ecbl,2)) then
-			newx = roundup(ecbl.x, 8) - t.ecbl.x
-		end
+		newx += l_pen
 	elseif (vel.x > 0) then
-		if (collmapv(ecbr,2)) then
-			newx = rounddown(ecbr.x, 8) - t.ecbr.x
-		end
+		newx -= r_pen
 	else
-		if (collmapv(ecbl,2)) then
-			newx = roundup(ecbl.x, 8) - t.ecbl.x
-		elseif (collmapv(ecbr,2)) then
-			newx = rounddown(ecbr.x, 8) - t.ecbr.x
+		if (l_pen > 0) then
+			newx += l_pen
+		elseif (r_pen > 0) then
+			newx -= r_pen
 		end
 	end
 	return newx
 end
 
-function coll_ceil(t)
-	-- apply vx,vy, return new y
-	local pos = {x=t.x,y=t.y}
-	local vel = {x=t.vx,y=t.vy}
-	local newpos = vadd(pos,vel)
-	local ecbt = vadd(newpos,t.ecbt)
-	local newy = newpos.y
-	if (collmapv(ecbt,3)) then
-		newy = roundup(ecbt.y, 8) - t.ecbt.y
-	end
-end
-
-function coll_floor(t)
-
-end
 __gfx__
 00000000dddddddddddddddddddddddddddddddd0000000000000000000000000000000000000000310100130101011000000000000000000000000000000000
 000000000dddddd00dddddddddddddddddddddd00000000000000000000000000000000000000000310111101001103300000000000000000000000000000000
