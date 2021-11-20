@@ -669,6 +669,7 @@ function spawn_p(x,y)
 	p.vx = 0
 	p.vy = 0
 	p.air = false
+	p.onice = false
 	p.fr = 0 -- displayed frame offset
 	p.fcnt = 0 -- counter for advancing frame
 	p.shcount = 0 -- shoot counter
@@ -760,15 +761,18 @@ function update_p()
 		newy = phys_fall(p,newx,newy)
 		-- fall off platform only if
 		-- holding direction of movement
-		if (not oldair and p.air) then
+		-- kill 2 bugs with one hack
+		-- here - you slip off ice,
+		-- and fall when it's destroyed
+		if (not p.onice and not oldair and p.air) then
 			if ((btn(⬅️) and p.vx < 0) or
 	      (btn(➡️) and p.vx > 0)) then
 			else
 				p.air = false
 				newx = p.x
 				newy = p.y
-				p.vx = 0
 				p.vy = 0
+				p.vx = 0
 			end
 		end
 	elseif (p.vy < 0) then
@@ -797,7 +801,7 @@ function update_p()
  	respawn_update_p()
  	return
  end
- 
+
  local oldsh = p.sh
  if (btn(❎)) then
  	if (p.shcount == 0) then
@@ -822,7 +826,7 @@ function update_p()
  		p.fcnt = 0
  	end
  	loop_anim(p,3,p.s_sh.f)
- 	
+
  elseif (not p.air) then
   -- walk anim
   p.s = p.i + p.s_wlk.s
@@ -1171,6 +1175,10 @@ function phys_fall(t,newx,newy)
 		newy = rounddown(newy, 8)
   t.vy = 0
   t.air = false
+  local lblock = mget(ftxl\8,fty\8)
+  local rblock = mget(ftxr\8,fty\8)
+  t.onice = lblock == 86 or lbock == 87 or
+            rblock == 86 or rblock == 87
  else
  	t.air = true
  end
