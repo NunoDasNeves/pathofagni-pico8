@@ -250,6 +250,7 @@ thang_dat = {
 	[100] = { -- thrower
 	 update = update_thrower,
 	 burn = burn_thrower,
+	 air=false,
 	 w = 8,
 	 h = 8,
 	 hp = 3,
@@ -417,6 +418,9 @@ function update_thrower(t)
 	 end
  end
 
+	t.vx = 0
+	t.vy = 0
+
  if (t.throwing) then
   if (p.x < t.x) then
   	t.rght = false
@@ -441,19 +445,7 @@ function update_thrower(t)
 	 else
 	  t.vx = -0.75
 	 end
-	 local newx = t.x + t.vx
-	 local pushx = coll_walls(t,newx)
-	 if (pushx != newx) then
-	  t.rght = not t.rght
-	 end
-	 newx = pushx
-	 if (coll_edge(t,newx,t.y+t.h) or
-	 	   coll_room_border(t)) then
-	  t.rght = not t.rght
-	 end
 
-		t.goingrght = t.rght 
-		t.x = newx
 		loop_anim(t,3,2)
 
 	 if (t.shcount <= 0) then
@@ -466,6 +458,21 @@ function update_thrower(t)
 	  t.shcount -= 1
 	 end
  end
+ 
+ local newx = t.x + t.vx
+ local newy = t.y + t.vy
+ local pushx = coll_walls(t,newx)
+ if (pushx != newx) then
+  t.rght = not t.rght
+ end
+ newx = pushx
+ if (coll_edge(t,newx,t.y+t.h) or
+ 	   coll_room_border(t)) then
+  t.rght = not t.rght
+  newx = t.x
+ end
+ t.goingrght = t.rght
+ t.x = newx
 
 	if (p.alive and hit_p(t.x,t.y,t.w,t.h)) then
 		kill_p()
