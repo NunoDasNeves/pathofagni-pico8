@@ -650,7 +650,11 @@ p_dat = {
 	hh = 3.99,
 	-- physics
 	gax = 1, -- ground accel
+	iax = 0.2, -- ice accel
 	aax = 0.3, -- air accel
+	adax = 0.8, -- air decel factor
+	gdax = 0.6, -- ground decel factor
+	idax = 0.9, -- ice decel factor
 	max_vx = 1.4,
 	min_vx = 0.01, -- stop threshold
 	g_norm = 0.3,
@@ -712,28 +716,30 @@ function update_p()
      btn(➡️) and not btn(⬅️)) then
   p.rght = true
  end
+ 
 	if (not p.sh) then
+		local ax = 0
+		if (p.air) then
+ 	 ax = p.aax
+ 	elseif (p.onice) then
+ 	 ax = p.iax
+ 	else
+ 	 ax = p.gax
+ 	end
 	 if (btn(⬅️) and not p.rght) then
 	 	-- accel left
-	 	if (p.air) then
-	 	 p.vx -= p.aax
-	 	else
-	 	 p.vx -= p.gax
-	 	end
+	 	p.vx -= ax
 	 elseif (btn(➡️) and p.rght) then
-	 	-- accel right
-	 	if (p.air) then
-	 	 p.vx += p.aax
-	 	else
-	 	 p.vx += p.gax
-	 	end
+	 	p.vx += ax
 	 end
  end
  if (p.sh or (not btn(⬅️) and not btn(➡️))) then
   if (p.air) then
-	  p.vx *= 0.8
-  else
-	  p.vx *= 0.6
+	  p.vx *= p.adax
+  elseif (p.onice) then
+  	p.vx *= p.idax
+ 	else
+	  p.vx *= p.gdax
 	 end
  end
  p.vx = clamp(p.vx, -p.max_vx, p.max_vx)
