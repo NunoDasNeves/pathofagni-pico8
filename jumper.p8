@@ -631,6 +631,7 @@ p_dat = {
 	--  coll dimensions
 	ftw = 2 - 1, -- 1 because we just care about pixel coords
 	ftx = 3,
+	fty = 8,
 	ch = 4,
 	cw = 5,
 	cx = 1,
@@ -732,8 +733,6 @@ function update_p()
   p.vx = 0
  end
 
- local newx = p.x + p.vx
-
  -- vy - jump and land
  local oldair = p.air
 	if (btnp(🅾️) and not p.air and not p.sh) then
@@ -747,70 +746,37 @@ function update_p()
 	end
 	p.vy = clamp(p.vy, -p.max_vy, p.max_vy)
 
-	-- where our feeeeet at?
+	local newx = p.x + p.vx
  local newy = p.y + p.vy
- local fty = newy + p.h
- local ftxl = newx + p.ftx
- local ftxr = ftxl + p.ftw
 
- -- hit the ground
- if (p.vy > 0) then
-  if ((collmap(ftxl,fty,0) or
-  				 collmap(ftxr,fty,0))
-      and
-      -- (almost) in the block above platform-only block
-      (p.y < rounddown(newy,8)+3 or
-      -- grounded
-      not p.air or
-      -- intersecting a 'full' block
-      collmap(ftxl,fty,1) or
-      collmap(ftxr,fty,1)
-      )) then
-			newy = rounddown(newy, 8)
-	  p.vy = 0
-	  p.air = false
-	 else
-	  -- fall off platform
-	  if (not p.air) then
-	   -- only fall if holding dir
-	   if ((btn(⬅️) and p.vx < 0) or
-	       (btn(➡️) and p.vx > 0)) then
-	   	p.air = true
-	   else
-	    p.vx = 0
-	    newx = p.x
-	   end
-		 end
-	 end
+	if (p.vy > 0) then
+		newy = phys_fall(p,newx,newy)
+		-- fall off platform only if
+		-- holding direction of movement
+		if (not oldair and p.air) then
+			if ((btn(⬅️) and p.vx < 0) or
+	      (btn(➡️) and p.vx > 0)) then
+			else
+				p.air = false
+				newx = p.x
+				newy = p.y
+				p.vx = 0
+				p.vy = 0
+			end
+		end
+	elseif (p.vy < 0) then
+		newy = phys_jump(p,newx,newy,oldair)
+	end
 
-	 p.teeter = coll_edge(p,newx,fty)
-	            and not p.air
-	-- p.vy < 0
- else
-  -- ceiling
- 	if (p.air and (
- 		     collmap(ftxl,newy,2) or
- 		     collmap(ftxr,newy,2))) then
- 	 if (not oldair) then
- 	  p.air = false
- 	  p.vy = 0
- 	 else
- 	 	-- just sloow down on ceiling hit
- 	 	p.vy = p.vy/3
- 	 end
- 	 newy = p.y + p.vy
- 	end
- end
- 
- local pushedx = coll_x(p)-- coll_walls(p, newx)
- if (pushedx != newx) then
-  p.vx = 0
- end
- newx = pushedx
+	newx = phys_walls(p,newx,newy)
 
- p.x = newx
- p.y = newy
- 
+	-- close to edge?
+ p.teeter = not p.air and
+		          coll_edge(p,newx,newy+p.fty)
+
+	p.x = newx
+	p.y = newy
+
  -- hit spikes
  local hl = p.x + p.hx
  local hr = hl + p.hw
@@ -1022,6 +988,15 @@ end
 -->8
 -- collision
 
+function collmap(x,y,f)
+ local val = mget(x\8,y\8)
+ return (fget(val,f))
+end
+
+function collmapv(v,f)
+	return collmap(v.x,v.y,f)
+end
+
 function coll_edge(t,newx,fty)
  -- t = {
  --   ftx -- foot x offset
@@ -1164,25 +1139,65 @@ function coll_room_border(t)
 end
 
 -->8
--- new collision
+-- physics for platformu
 
-function collmap(x,y,f)
- local val = mget(x\8,y\8)
- return (fget(val,f))
+-- t.vy > 0
+function phys_fall(t,newx,newy)
+
+	-- where our feeeeet at?
+ local fty = newy + t.h
+ local ftxl = newx + t.ftx
+ local ftxr = ftxl + t.ftw
+
+ -- hit or stay on the ground
+ if ((collmap(ftxl,fty,0) or
+ 				 collmap(ftxr,fty,0))
+     and
+     -- (almost) in the block above platform-only block
+     (t.y < rounddown(newy,8)+3 or
+     -- grounded
+     not t.air or
+     -- intersecting a 'full' block
+     collmap(ftxl,fty,1) or
+     collmap(ftxr,fty,1)
+     )) then
+		newy = rounddown(newy, 8)
+  t.vy = 0
+  t.air = false
+ else
+ 	t.air = true
+ end
+
+	return newy
 end
 
-function collmapv(v,f)
-	return collmap(v.x,v.y,f)
+-- t.vy < 0
+function phys_jump(t,newx,newy,oldair)
+
+	-- where our feeeeet at?
+ local fty = newy + t.h
+ local ftxl = newx + t.ftx
+ local ftxr = ftxl + t.ftw
+ 
+ -- ceiling
+	if (t.air and (
+		     collmap(ftxl,newy,2) or
+		     collmap(ftxr,newy,2))) then
+	 if (not oldair) then
+	  t.air = false
+	  t.vy = 0
+	 else
+	 	-- just sloow down on ceiling hit
+	 	t.vy = t.vy/3
+	 end
+	 newy = t.y + t.vy
+	end
+
+	return newy
 end
 
-function coll_x(t)
-	-- apply vx,vy, return new x
-	local pos = {x=t.x,y=t.y}
-	local vel = {x=t.vx,y=t.vy}
-	local newpos = vadd(pos,vel)
+function phys_walls(t,newx,newy)
 
-	local newx = newpos.x
-	local newy = newpos.y
 	local cl = newx + t.cx
  local cr = cl + t.cw
  local ct = newy + t.cy
@@ -1204,9 +1219,10 @@ function coll_x(t)
 		r_pen = c_br.x - rounddown(c_br.x,8)
 	end
 	
-	if (vel.x < 0) then
+	local oldnewx = newx
+	if (t.vx < 0) then
 		newx += l_pen
-	elseif (vel.x > 0) then
+	elseif (t.vx > 0) then
 		newx -= r_pen
 	else
 		if (l_pen > 0) then
@@ -1215,6 +1231,11 @@ function coll_x(t)
 			newx -= r_pen
 		end
 	end
+	
+	if (oldnewx != newx) then
+		t.vx = 0
+	end
+
 	return newx
 end
 
