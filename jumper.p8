@@ -19,6 +19,7 @@ room = {
  sz = 16*8,
  old = {}, -- for restore
  fcnt = 0,
+ num_bads = 0, -- for unlock
  max_i = 8*3 - 1
 }
 
@@ -117,6 +118,7 @@ function spawn_room()
  thang = {}
  max_z = 0
  room.old = {}
+ room.num_bads = 0
  for y=rmapy,rmapb do
   for x=rmapx,rmapr do
    local val = mget(x,y)
@@ -125,6 +127,9 @@ function spawn_room()
    	local t = spawn_thang(val,x*8,y*8)
     max_z = max(t.z, max_z)
     mset(x,y,t.replace)
+    if (t.bad) then
+    	room.num_bads += 1
+    end
    end
   end
  end
@@ -201,10 +206,10 @@ function _draw()
 	end
 
 	if (dbg) then
-	 local txtx = room.x + 8
-		print(dbgstr,txtx,room.y,7)
-		print(p.x..' '..p.y,txtx,room.y+8,7)
-		print(mget(p.x\8,p.y\8),txtx,room.y+16,7)
+	 local x = room.x + 8
+		print(dbgstr,x,room.y,7)
+		print(p.x..' '..p.y,x,room.y+8,7)
+		print(mget(p.x\8,p.y\8),x,room.y+16,7)
 	end
 end
 -->8
@@ -235,6 +240,7 @@ thang_dat = {
 	[96] = { -- bat
 		update = update_bat,
 		burn = burn_bat,
+		bad = true,
 		w = 7,
 		h = 6,
 		range = 8*8,
@@ -250,6 +256,7 @@ thang_dat = {
 	[100] = { -- thrower
 	 update = update_thrower,
 	 burn = burn_thrower,
+	 bad = true,
 	 air = false,
 	 g = 0.3,
 	 max_vy = 4,
@@ -403,6 +410,7 @@ function update_thrower(t)
  if (not t.alive) then
   if (loop_anim(t,2,4)) then
    del(thang, t)
+   room.num_bads -= 1
   end
   return
  end
@@ -528,6 +536,7 @@ function update_bat(b)
   b.deadf -= 1
   if (b.deadf == 0) then
    del(thang, b)
+   room.num_bads -= 1
   end
   loop_anim(b,4,2)
   b.x += b.vx
