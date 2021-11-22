@@ -935,7 +935,8 @@ function respawn_update_p()
   if (loop_anim(p,2,p.s_die.f)) then
 	  local l = get_curr_lantern()
    spawn_p(l.x,l.y - p.h)
-   -- todo reset room!
+   restore_room()
+   spawn_room()
   end
 
  elseif (p.spawn) then
