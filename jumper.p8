@@ -17,7 +17,7 @@ room = {
  x = 0,
  y = 0,
  sz = 16*8,
- old = {}, -- for restore
+ old = nil, -- for restore
  fcnt = 0,
  num_bads = 0, -- for unlock
  max_i = 8*3 - 1
@@ -59,9 +59,12 @@ function init_lantern()
 end
 
 function restore_room()
- for t in all(room.old) do
-  mset(t.x,t.y,t.val)
- end
+	if room.old == nil then
+		return
+	end
+	for t in all(room.old) do
+		mset(t.x,t.y,t.val)
+	end
 end
 
 function get_room_i(x,y)
@@ -134,25 +137,47 @@ function spawn_room()
  end
 end
 
+do_fade = true -- fade in
+fade_timer = 8
+
+function spawn_p_at_curr_lantern()
+	local l = get_curr_lantern()
+	spawn_p(l.x,l.y - p_dat.h)
+	restore_room()
+	spawn_room()
+end
+
+function fade_update()
+	if (fade_timer == 12) then
+		spawn_p_at_curr_lantern()	
+	elseif (fade_timer > 23) then
+		fade_timer = 0
+		return false
+	end
+	fade_timer += 1
+	return true
+end
+
 function _update()
- dbgstr = ''
- update_room()
+	dbgstr = room.num_bads
+	update_room()
 	update_p()
 	for t in all(thang) do
-	 t:update()
+		t:update()
 	end
 	for p in all(fireball) do
-	 p:update()
+		p:update()
+	end
+	if do_fade then
+		do_fade = fade_update()
 	end
 end
 
 function _init()
 	camera(0,0)
- init_thang_dat()
- init_lantern()
-	spawn_room()
-	local l = get_curr_lantern()
-	spawn_p(l.x,l.y - p_dat.h)
+	init_thang_dat()
+	init_lantern()
+	spawn_p_at_curr_lantern()	
 end
 
 -->8
@@ -181,6 +206,18 @@ function draw_smol_thang(f)
     	f.yflip)
 end
 
+function draw_fade(s)
+	local rmapx = room.x \ 8
+	local rmapy = room.y \ 8
+	local rmapr=rmapx+15
+	local rmapb=rmapy+15
+	for y=rmapy,rmapb do
+		for x=rmapx,rmapr do
+			spr(s, x * 8, y * 8)
+		end
+	end
+end
+
 function _draw()
 	cls(0)
 
@@ -203,6 +240,20 @@ function _draw()
 
 	for f in all(fireball) do
 	 f:draw()
+	end
+
+	if do_fade then
+		if (fade_timer < 4) then
+			draw_fade(28)
+		elseif (fade_timer < 8) then
+			draw_fade(29)
+		elseif (fade_timer < 16) then
+			draw_fade(30)
+		elseif (fade_timer < 20) then
+			draw_fade(29)
+		elseif (fade_timer < 24) then
+			draw_fade(28)
+		end
 	end
 
 	if (dbg) then
@@ -552,23 +603,34 @@ function burn_bat(b)
 end
 
 function loop_anim(t,speed,frames)
- -- t = {
- --   s -- starting frame
- --   fr -- current frame
- --   fcnt -- frame counter
- -- }
- -- return true if looped
- local ret = false
- if (t.fcnt >= speed) then
-  t.fcnt = 0
-  t.fr += 1
-  if (t.fr >= frames) then
-   ret = true
-   t.fr = 0
-  end
- end
+	-- t = {
+	--   s -- starting frame
+	--   fr -- current frame
+	--   fcnt -- frame counter
+	-- }
+	-- return true if looped
+	local ret = false
+	if (t.fcnt >= speed) then
+		t.fcnt = 0
+		t.fr += 1
+		if (t.fr >= frames) then
+			ret = true
+			t.fr = 0
+		end
+	end
 	t.fcnt += 1
 	return ret
+end
+
+function play_anim(t,speed,frames)
+	-- see loop_anim
+	-- this one doesn't loop
+	if (loop_anim(t,speed,frames)) then
+		t.fr = frames - 1
+		t.fcnt = speed
+		return true;
+	end
+	return false
 end
 
 function update_bat(b)
@@ -754,10 +816,10 @@ function spawn_p(x,y)
 end
 
 function kill_p()
- p.alive = false
- p.s = p.i + p.s_die.s 
- p.fr = 0
- p.fcnt = 0
+	p.alive = false
+	p.s = p.i + p.s_die.s 
+	p.fr = 0
+	p.fcnt = 0
 end
 
 function hit_p(x,y,w,h)
@@ -869,7 +931,6 @@ function update_p()
      collmap(hl,hb,3) or
      collmap(hr,hb,3)) then
  	kill_p()
- 	respawn_update_p()
  	return
  end
 
@@ -938,21 +999,21 @@ function update_p()
 end
 
 function respawn_update_p()
+	if do_fade then
+		return
+	end
 	if (not p.alive) then
-  if (loop_anim(p,2,p.s_die.f)) then
-	  local l = get_curr_lantern()
-   spawn_p(l.x,l.y - p.h)
-   restore_room()
-   spawn_room()
-  end
-
- elseif (p.spawn) then
-  if (loop_anim(p,2,p.s_spwn.f)) then
-   p.fr = 0
-   p.fcnt = 0
-   p.s = p.i + p.s_wlk.s
-   p.spawn = false
-  end
+		if (play_anim(p,2,p.s_die.f)) then
+			fade_timer = 0
+			do_fade = true
+		end
+	elseif (p.spawn) then
+		if (play_anim(p,2,p.s_spwn.f)) then
+			p.fr = 0
+			p.fcnt = 0
+			p.s = p.i + p.s_wlk.s
+			p.spawn = false
+		end
 	end
 end
 -->8
@@ -1335,14 +1396,14 @@ __gfx__
 00000000001111000111111001100110011111100111111001100110011111100000000000000000010101100101001300000000000000000000000001d11d10
 00000000000000000100001111111111110000100100001011111111010000100000000000000000010111103301011000000000000000000000000001d16d10
 00000000000000000100001000000000010000100100001000000000010000100000000000000000110110100301011300000000000000000000000001d16d10
-dddddddddddddddddddddddddddddddddddddddddddddddd11111111dddddddd0000000000000000010100100101011000000000000000000000000001d16d10
-0dddddddddddddddddddddddddddddd00dddddd00dddddd0001000000dddddd00000000000000000330100103101011000000000000000000000000001d16d10
-01111111111111111111111111111110011111100111111000100000011111100000000000000000333100133301011300000000000000000000000001d16d10
-011ddd11111111111111111111ddd110011dd1100110011000000000011dd1100000000000000000013100010101011000000000000000000000000001d16d10
-01ddddd1ddddd1dddd1dd1dd1ddddd1001dddd10010000101111111101dddd100000000000000000010110010101011000000000000000000000000001d66d10
-01111111ddddd1ddddd1d1dd11111110011111100111111000000100011111100000000000000000310110100101011000000000000000000000000001dddd10
-01d1d1d1ddddd1dddddd11dd1d1d1d1001dddd10010000100000010001dddd100000000000000000010111100101011000000000000000000000000001dddd10
-01d1d1d111111111111111111d1d1d1001dddd100100001000000000011111100000000000000000010111100101011000000000000000000000000001111110
+dddddddddddddddddddddddddddddddddddddddddddddddd11111111dddddddd0000000000000000010100100101011010101010111111111111111101d16d10
+0dddddddddddddddddddddddddddddd00dddddd00dddddd0001000000dddddd00000000000000000330100103101011001010101010101011111111101d16d10
+01111111111111111111111111111110011111100111111000100000011111100000000000000000333100133301011310101010111111111111111101d16d10
+011ddd11111111111111111111ddd110011dd1100110011000000000011dd1100000000000000000013100010101011001010101010101011111111101d16d10
+01ddddd1ddddd1dddd1dd1dd1ddddd1001dddd10010000101111111101dddd100000000000000000010110010101011010101010111111111111111101d66d10
+01111111ddddd1ddddd1d1dd11111110011111100111111000000100011111100000000000000000310110100101011001010101010101011111111101dddd10
+01d1d1d1ddddd1dddddd11dd1d1d1d1001dddd10010000100000010001dddd100000000000000000010111100101011010101010111111111111111101dddd10
+01d1d1d111111111111111111d1d1d1001dddd100100001000000000011111100000000000000000010111100101011001010101010101011111111101111110
 01d1d1d1dd1ddddddd1ddddd1d1d1d1001dddd100100001000000000dddddddddddddddd00000000010101100101011001010110dddddddd0000000000000000
 01d1d1d1dd1ddddddd1ddddd1d1d1d1001dddd1001000010111111110dddddddddddddd0000000003101011031010110310101100dddddd00000000000000000
 01d1d1d1dd1ddddddd1ddddd1d1d1d1001dddd100100001011111111011111111111111000000000310101133101011331010113011111100000000000000000
