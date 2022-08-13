@@ -284,7 +284,8 @@ thang_dat = {
 		update = update_lantern,
 		burn = burn_lantern,
 		replace = 82 + 3,
-		z = 1
+		z = 1,
+		stops_projs = false
 	},
 	[14] = { -- door - close then open when enemies are dead
 		update = update_door,
@@ -295,7 +296,8 @@ thang_dat = {
 		replace = 14,
 		s_open = 14,
 		s_top = 15,
-		s_bot = 31
+		s_bot = 31,
+		stops_projs = false
 	},
 	[8] = { -- door - only close, never open
 		update = update_door_only_close,
@@ -306,7 +308,8 @@ thang_dat = {
 		replace = 8,
 		s_open = 8,
 		s_top = 9,
-		s_bot = 25
+		s_bot = 25,
+		stops_projs = false
 	},
 	[86] = iceblock,
 	[87] = iceblock,
@@ -752,22 +755,23 @@ function spawn_thang(i,x,y)
 	t.vy = 0
 	t.s = i
 	t.fr = 0
- t.fcnt = 0
- t.draw = draw_thang
- t.burn = no_thang
- t.replace = 0
- t.w = 8
- t.h = 8
- t.z = 0
- t.rght = true
- t.alive = true
- for k,v in pairs(thang_dat[i]) do
- 	t[k] = v
- end
-	if (t.init != nil) then
-	 t:init()
+	t.fcnt = 0
+	t.draw = draw_thang
+	t.burn = no_thang
+	t.stops_projs = true
+	t.replace = 0
+	t.w = 8
+	t.h = 8
+	t.z = 0
+	t.rght = true
+	t.alive = true
+	for k,v in pairs(thang_dat[i]) do
+		t[k] = v
 	end
- add(thang,t)
+	if (t.init != nil) then
+		t:init()
+	end
+	add(thang,t)
 	return t
 end
 
@@ -1110,39 +1114,36 @@ function kill_fireball(f)
 end
 
 function update_fireball(f)
- if (not f.alive) then
-  f.y -= 0.5
-	 f.fcnt += 1
-	 if (f.fcnt & 1 == 0) then
-	 	f.sfr += 1
-	 end
-	 if (f.fcnt == 8) then
-		 del(fireball, f)
+	if (not f.alive) then
+		f.y -= 0.5
+		f.fcnt += 1
+		if (f.fcnt & 1 == 0) then
+			f.sfr += 1
 		end
-  return
- end
- f.x += f.vx
- f.y += f.vy
- -- hit stuff
- for t in all(thang) do
- 	if (aabb(
- 									 t.x,t.y,t.w,t.h,
- 									 f.x,f.y,4,4)) then
-
-			local alive = t.alive
+		if (f.fcnt == 8) then
+			del(fireball, f)
+		end
+		return
+	end
+	f.x += f.vx
+	f.y += f.vy
+	-- hit stuff
+	for t in all(thang) do
+		if (aabb(
+				t.x,t.y,t.w,t.h,
+				f.x,f.y,4,4)) then
 			-- todo - is alive the right check?
-			if (alive) then
-	 	 t:burn()
-	 	end
+			if (t.burn != nil) then
+				t:burn()
+			end
 			-- don't stop on lanterns
- 	 -- or already dead stuff
- 	 if (alive and t.i != 82) then
-	 	 kill_fireball(f)
-	 	 return
- 		end
- 	 
- 	end
- end
+			-- or already dead stuff
+			if (t.stops_projs) then
+				kill_fireball(f)
+				return
+			end
+		end
+	end
  if (--collmap(f.x,f.y,0) or
      collmap(f.x+2,f.y+2,1) or
      collmap(f.x+2,f.y+2,2)) then
