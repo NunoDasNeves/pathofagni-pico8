@@ -831,7 +831,7 @@ function spawn_p(x,y)
 	p.fr = 0 -- displayed frame offset
 	p.fcnt = 0 -- counter for advancing frame
 	p.shcount = 0 -- shoot counter
-	p.sh = false
+	p.sh = false -- charging fireball
 	p.teeter = false
 	p.alive = true
 	p.spawn = true
@@ -857,55 +857,55 @@ function hit_p(x,y,w,h)
 end
 
 function update_p()
- if (p.spawn or not p.alive) then
-  respawn_update_p()
-  return
- end
+	if (p.spawn or not p.alive) then
+		respawn_update_p()
+		return
+	end
 
- -- change direction
- if (btnp(⬅️) or
-     btn(⬅️) and not btn(➡️)) then
-  p.rght = false
- elseif (btnp(➡️) or
-     btn(➡️) and not btn(⬅️)) then
-  p.rght = true
- end
+	-- change direction
+	if (btnp(⬅️) or
+		btn(⬅️) and not btn(➡️)) then
+		p.rght = false
+	elseif (btnp(➡️) or
+		btn(➡️) and not btn(⬅️)) then
+		p.rght = true
+	end
  
 	if (not p.sh) then
 		local ax = 0
 		if (p.air) then
- 	 ax = p.aax
- 	elseif (p.onice) then
- 	 ax = p.iax
- 	else
- 	 ax = p.gax
- 	end
-	 if (btn(⬅️) and not p.rght) then
-	 	-- accel left
-	 	p.vx -= ax
-	 elseif (btn(➡️) and p.rght) then
-	 	p.vx += ax
-	 end
- end
- if (p.sh or (not btn(⬅️) and not btn(➡️))) then
-  if (p.air) then
-	  p.vx *= p.adax
-  elseif (p.onice) then
-  	p.vx *= p.idax
- 	else
-	  p.vx *= p.gdax
-	 end
- end
- p.vx = clamp(p.vx, -p.max_vx, p.max_vx)
- if (abs(p.vx) < p.min_vx) then
-  p.vx = 0
- end
+			ax = p.aax
+		elseif (p.onice) then
+			ax = p.iax
+		else
+			ax = p.gax
+		end
+		if (btn(⬅️) and not p.rght) then
+			-- accel left
+			p.vx -= ax
+		elseif (btn(➡️) and p.rght) then
+			p.vx += ax
+		end
+	end
+	if (p.sh or (not btn(⬅️) and not btn(➡️))) then
+		if (p.air) then
+			p.vx *= p.adax
+		elseif (p.onice) then
+			p.vx *= p.idax
+		else
+			p.vx *= p.gdax
+		end
+	end
+	p.vx = clamp(p.vx, -p.max_vx, p.max_vx)
+	if (abs(p.vx) < p.min_vx) then
+		p.vx = 0
+	end
 
- -- vy - jump and land
- local oldair = p.air
+	-- vy - jump and land
+	local oldair = p.air
 	if (btnp(🅾️) and not p.air and not p.sh) then
-		 p.vy += p.j_vy
-		 p.air = true
+		p.vy += p.j_vy
+		p.air = true
 	end
 	if (p.sh and p.vy > 0) then
 		p.vy += p.g_sh
@@ -915,7 +915,7 @@ function update_p()
 	p.vy = clamp(p.vy, -p.max_vy, p.max_vy)
 
 	local newx = p.x + p.vx
- local newy = p.y + p.vy
+	local newy = p.y + p.vy
 
 	if (p.vy > 0) then
 		newy = phys_fall(p,newx,newy)
@@ -926,7 +926,7 @@ function update_p()
 		-- and fall when it's destroyed
 		if (not p.onice and not oldair and p.air) then
 			if ((btn(⬅️) and p.vx < 0) or
-	      (btn(➡️) and p.vx > 0)) then
+				(btn(➡️) and p.vx > 0)) then
 			else
 				p.air = false
 				newx = p.x
@@ -942,87 +942,86 @@ function update_p()
 	newx = phys_walls(p,newx,newy)
 
 	-- close to edge?
- p.teeter = not p.air and
-		          coll_edge(p,newx,newy+p.fty)
+	p.teeter = not p.air and coll_edge(p,newx,newy+p.fty)
 
 	p.x = newx
 	p.y = newy
 
- -- hit spikes
- local hl = p.x + p.hx
- local hr = hl + p.hw
- local ht = p.y + p.hy
- local hb = ht + p.hh
- if (collmap(hl,ht,3) or
-     collmap(hr,ht,3) or
-     collmap(hl,hb,3) or
-     collmap(hr,hb,3)) then
- 	kill_p()
- 	return
- end
+	-- hit spikes
+	local hl = p.x + p.hx
+	local hr = hl + p.hw
+	local ht = p.y + p.hy
+	local hb = ht + p.hh
+	if (	collmap(hl,ht,3) or
+			collmap(hr,ht,3) or
+			collmap(hl,hb,3) or
+			collmap(hr,hb,3)) then
+		kill_p()
+		return
+	end
 
- local oldsh = p.sh
- if (btn(❎)) then
- 	if (p.shcount == 0) then
+	local oldsh = p.sh
+	if (btn(❎)) then
+		if (p.shcount == 0) then
 			p.sh = true
 		end
- else -- release - fire
- 	if (p.sh) then
+	else -- release - fire
+		if (p.sh) then
 			make_fireball()
 			p.shcount = 10
- 	end
- 	p.sh = false
- end
- if (p.shcount > 0) then
+		end
+		p.sh = false
+	end
+	if (p.shcount > 0) then
 		p.shcount -= 1
 	end
 
- -- animate
- if (p.sh) then
-	 	p.s = p.i + p.s_sh.s
- 	if (not oldsh) then
- 		p.fr = 0
- 		p.fcnt = 0
- 	end
- 	loop_anim(p,3,p.s_sh.f)
+	-- animate
+	if (p.sh) then
+		p.s = p.i + p.s_sh.s
+		if (not oldsh) then
+			p.fr = 0
+			p.fcnt = 0
+		end
+		loop_anim(p,3,p.s_sh.f)
 
- elseif (not p.air) then
-  -- walk anim
-  p.s = p.i + p.s_wlk.s
-  -- just landed, or changed dir
-  if (oldair or btnp(➡️) or btnp(⬅️)) then
-  	p.fr = 0
-  	p.fcnt = 0
-  end
-  if (btn(➡️) or btn(⬅️)) then
-   loop_anim(p,3,p.s_wlk.f)
-	 elseif (p.teeter) then
-	  p.fr = 1
-	 else
-	  p.fr = 0
-	 end
+	elseif (not p.air) then
+		-- walk anim
+		p.s = p.i + p.s_wlk.s
+		-- just landed, or changed dir
+		if (oldair or btnp(➡️) or btnp(⬅️)) then
+			p.fr = 0
+			p.fcnt = 0
+		end
+		if (btn(➡️) or btn(⬅️)) then
+			loop_anim(p,3,p.s_wlk.f)
+		elseif (p.teeter) then
+			p.fr = 1
+		else
+			p.fr = 0
+		end
 
- else --p.air
-	 p.s = p.i + p.s_jmp.s
-  if (not oldair) then	 
-   p.fr = 0
-   p.fcnt = 0
-   -- fell, not jumped
-   if (not btn(🅾️)) then
-   	p.fr = 5
-   end
-  end
-  -- jump anim
-  if (p.fcnt > 2) then
+	else --p.air
+		p.s = p.i + p.s_jmp.s
+		if (not oldair) then	 
+			p.fr = 0
+			p.fcnt = 0
+			-- fell, not jumped
+			if (not btn(🅾️)) then
+				p.fr = 5
+			end
+		end
+	-- jump anim
+		if (p.fcnt > 2) then
 			p.fr += 1
 			-- loop last 2 frames
 			if (p.fr >= p.s_jmp.f) then
-			 p.fr -= 2
+				p.fr -= 2
 			end
 			p.fcnt = 0
- 	end
- 	p.fcnt += 1
- end
+		end
+		p.fcnt += 1
+	end
 end
 
 function respawn_update_p()
