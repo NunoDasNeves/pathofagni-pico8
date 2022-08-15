@@ -13,14 +13,14 @@ dbgstr = ''
 poke(0x5f5c, 255)
 
 room = {
- i = 0,
- x = 0,
- y = 0,
- sz = 16*8,
- old = nil, -- for restore
- fcnt = 0,
- num_bads = 0, -- for unlock
- max_i = 8*3 - 1
+	i = 0,
+	x = 0,
+	y = 0,
+	sz = 16*8,
+	old = nil, -- for restore
+	fcnt = 0,
+	num_bads = 0, -- for unlock
+	max_i = 8*3 - 1
 }
 
 -- one lantern per room
@@ -30,32 +30,32 @@ lantern = {}
 curr_lantern = room.max_i + 1 - 3
 
 function get_curr_lantern()
- return lantern[curr_lantern]
+	return lantern[curr_lantern]
 end
 
 function init_lantern()
- -- todo this properly
- for i=0,room.max_i do
-  local l = {}
-  local r = get_room_xy(i)
-  local rmapx = r.x \ 8
-	 local rmapy = r.y \ 8
-	 local rmapr=rmapx+15
-	 local rmapb=rmapy+15
-	 for y=rmapy,rmapb do
-  	for x=rmapx,rmapr do
-   	local val = mget(x,y)
-   	if (val == 82) then
-   	 l.x = x*8
-   	 l.y = y*8
-   	 l.lit = false
-   	end
-   end
-  end
-  add(lantern, l)
- end
- -- initial spawn
- lantern[curr_lantern].lit = true
+	-- todo this properly
+	for i=0,room.max_i do
+		local l = {}
+		local r = get_room_xy(i)
+		local rmapx = r.x \ 8
+		local rmapy = r.y \ 8
+		local rmapr=rmapx+15
+		local rmapb=rmapy+15
+		for y=rmapy,rmapb do
+			for x=rmapx,rmapr do
+				local val = mget(x,y)
+				if (val == 82) then
+					l.x = x*8
+					l.y = y*8
+					l.lit = false
+				end
+			end
+		end
+		add(lantern, l)
+	end
+	-- initial spawn
+	lantern[curr_lantern].lit = true
 end
 
 function restore_room()
@@ -68,46 +68,46 @@ function restore_room()
 end
 
 function get_room_i(x,y)
- x \= room.sz
- y \= room.sz
- return x % 8 + y * 8
+	x \= room.sz
+	y \= room.sz
+	return x % 8 + y * 8
 end
 
 function get_room_xy(i)
- return {
-  x = (i % 8) * room.sz,
-  y = (i \ 8) * room.sz
- }
+	return {
+		x = (i % 8) * room.sz,
+		y = (i \ 8) * room.sz
+	}
 end
 
 function in_room(x,y)
- if (x<room.x or x>room.x+room.sz) then
-  return false
- end
- if (y<room.y or y>room.y+room.sz) then
-  return false
- end
- return true
+	if (x<room.x or x>room.x+room.sz) then
+		return false
+	end
+	if (y<room.y or y>room.y+room.sz) then
+		return false
+	end
+	return true
 end
 
 function move_room(x,y)
- room.i = get_room_i(x,y)
- local r = get_room_xy(room.i)
- room.x = r.x
- room.y = r.y
+	room.i = get_room_i(x,y)
+	local r = get_room_xy(room.i)
+	room.x = r.x
+	room.y = r.y
 end
 
 function update_room()
- local oldi = room.i
- local px = p.x + p.w/2
- local py = p.y + p.h/2
- move_room(px,py)
- if (oldi != room.i) then
-  camera(room.x, room.y)
-  fireball = {}
-  restore_room()
-  spawn_room()
- end
+	local oldi = room.i
+	local px = p.x + p.w/2
+	local py = p.y + p.h/2
+	move_room(px,py)
+	if (oldi != room.i) then
+		camera(room.x, room.y)
+		fireball = {}
+		restore_room()
+		spawn_room()
+	end
 end
 
 -- spawn thangs in current room
@@ -184,11 +184,11 @@ end
 -- draw
 
 function draw_thang(t)
- local flp = false
- if (not (t.rght == nil)) then
-  flp = not t.rght
- end
- spr(t.s+t.fr,t.x,t.y,1,1,flp)
+	local flp = false
+	if (not (t.rght == nil)) then
+		flp = not t.rght
+	end
+	spr(t.s+t.fr,t.x,t.y,1,1,flp)
 end
 
 function draw_smol_thang(f)
@@ -330,19 +330,20 @@ thang_dat = {
 		ch = 6,
 	},
 	[100] = { -- thrower
-	 update = update_thrower,
-	 burn = burn_thrower,
-	 bad = true,
-	 air = false,
-	 g = 0.3,
-	 max_vy = 4,
-	 w = 8,
-	 h = 8,
-	 hp = 3,
-	 goingrght = true, -- going to go after throwing
-	 burning = false,
-	 -- coll dimensions
-	 -- todo same as player..
+		update = update_thrower,
+		burn = burn_thrower,
+		bad = true,
+		air = false,
+		g = 0.3,
+		max_vy = 4,
+		w = 8,
+		h = 8,
+		hp = 3,
+		throwing = false,
+		goingrght = true, -- going to go after throwing
+		burning = false,
+		-- coll dimensions
+		-- todo same as player..
 		ftw = 0.99,
 		ftx = 3,
 		ch = 6.99,
@@ -353,19 +354,19 @@ thang_dat = {
 		range = 8*6, -- only throw at player in this range
 	},
 	[107] = { -- icepick
-	 init = init_icepick,
-	 update = update_icepick,
-	 burn = kill_icepick,
-	 draw = draw_smol_thang,
-	 w = 4,
-	 h = 4,
-	 vx = 1.5,
-	 vy = -4,
-	 g = 0.3,
-	 max_vy = 4,
-	 sfr = 0,
-	 xflip = false,
-	 yflip = false,
+		init = init_icepick,
+		update = update_icepick,
+		burn = kill_icepick,
+		draw = draw_smol_thang,
+		w = 4,
+		h = 4,
+		vx = 1.5,
+		vy = -4,
+		g = 0.3,
+		max_vy = 4,
+		sfr = 0,
+		xflip = false,
+		yflip = false,
 	}
 }
 end
@@ -411,11 +412,10 @@ end
 
 function update_iceblock(t)
 	if (not t.alive) then
-  if (loop_anim(t,2,3)) then
-   del(thang, t)
-  end
-  return
- end
+		if (loop_anim(t,2,3)) then
+			del(thang, t)
+		end
+	end
 end
 
 function burn_iceblock(t)
@@ -425,11 +425,11 @@ function burn_iceblock(t)
 end
 
 function init_lantern_thang(l)
- l.lit = lantern[room.i+1].lit
- if (l.lit) then
-  l.s = l.i + 1
-  curr_lantern = room.i+1
- end
+	l.lit = lantern[room.i+1].lit
+	if (l.lit) then
+		l.s = l.i + 1
+		curr_lantern = room.i+1
+	end
 end
 
 function init_icepick(t)
@@ -453,52 +453,52 @@ function kill_icepick(t)
 end
 
 function update_icepick(t)
- if (not t.alive) then
-	 t.y += 0.5
-	 t.fcnt += 1
-	 if (t.fcnt & 1 == 0) then
-	 	t.sfr += 1
-	 end
-	 if (t.fcnt == 8) then
-		 del(thang, t)
+	if (not t.alive) then
+		t.y += 0.5
+		t.fcnt += 1
+		if (t.fcnt & 1 == 0) then
+			t.sfr += 1
 		end
-  return
- end
- -- spin in correct direction
- local xfac = t.xflip and -1 or 1
- -- spin around 'ax'is
- if (t.fcnt > 0 and t.fcnt % 2 == 0) then
-  if (t.fcnt == 2) then
-   t.x += 2 * xfac
-   t.y += 1
-  elseif (t.fcnt == 4) then
-   t.x -= 1 * xfac
-  	t.y += 2
-  elseif (t.fcnt == 6) then
-  	t.x -= 2 * xfac
-  	t.y -= 1
-  elseif (t.fcnt == 8) then
+		if (t.fcnt == 8) then
+			del(thang, t)
+		end
+		return
+	end
+	-- spin in correct direction
+	local xfac = t.xflip and -1 or 1
+	-- spin around 'ax'is
+	if (t.fcnt > 0 and t.fcnt % 2 == 0) then
+		if (t.fcnt == 2) then
+			t.x += 2 * xfac
+			t.y += 1
+		elseif (t.fcnt == 4) then
+			t.x -= 1 * xfac
+			t.y += 2
+		elseif (t.fcnt == 6) then
+			t.x -= 2 * xfac
+			t.y -= 1
+		elseif (t.fcnt == 8) then
 			t.x += 1 * xfac
 			t.y -= 2
 			t.fcnt = 0
-  end
- 	if (t.sfr >= 3) then
- 	 t.sfr = 0
- 	else
-	 	t.sfr += 1
-	 end
- end
- t.fcnt += 1
- t.vy += t.g
- t.vy = clamp(t.vy,-t.max_vy,t.max_vy)
- t.x += t.vx
- t.y += t.vy
+		end
+		if (t.sfr >= 3) then
+			t.sfr = 0
+		else
+			t.sfr += 1
+		end
+	end
+	t.fcnt += 1
+	t.vy += t.g
+	t.vy = clamp(t.vy,-t.max_vy,t.max_vy)
+	t.x += t.vx
+	t.y += t.vy
 
- if (--collmap(f.x,f.y,0) or
-     collmap(t.x+2,t.y,1) or
-     collmap(t.x+2,t.y,2)) then
- 	kill_icepick(t)
- end
+	if (--collmap(f.x,f.y,0) or
+		collmap(t.x+2,t.y,1) or
+		collmap(t.x+2,t.y,2)) then
+		kill_icepick(t)
+	end
 
 	if (p.alive and hit_p(t.x,t.y,t.w,t.h)) then
 		kill_p()
@@ -507,15 +507,15 @@ function update_icepick(t)
 end
 
 function burn_thrower(t)
- if (not t.burning) then
-  t.hp -= 1
-  t.s = t.i + 3
-  t.fr = 0
-  t.fcnt = 0
-  t.burning = true
-  if (t.hp <= 0) then
-	  t.alive = false
-	 end
+	if (not t.burning) then
+		t.hp -= 1
+		t.s = t.i + 3
+		t.fr = 0
+		t.fcnt = 0
+		t.burning = true
+		if (t.hp <= 0) then
+			t.alive = false
+		end
 	end
 end
 
@@ -658,37 +658,37 @@ function play_anim(t,speed,frames)
 end
 
 function update_bat(b)
- if (not b.alive) then
-  b.deadf -= 1
-  if (b.deadf == 0) then
-   del(thang, b)
-   room.num_bads -= 1
-  end
-  loop_anim(b,4,2)
-  b.x += b.vx
-	 b.y += b.vy
-	 return
- end
+	if (not b.alive) then
+		b.deadf -= 1
+		if (b.deadf == 0) then
+			del(thang, b)
+			room.num_bads -= 1
+		end
+		loop_anim(b,4,2)
+		b.x += b.vx
+		b.y += b.vy
+		return
+	end
 
 	-- b.alive
- loop_anim(b,4,2)
+	loop_anim(b,4,2)
 
 	local v = {x=p.x-b.x,y=p.y-b.y}
 	local l = vlen(v)
 	local following = false
 	if (l > b.range) then
-	 if (b.dircount == 0) then
-		 -- pick random direction		
-		 v.x=rnd(2)-1
-		 v.y=rnd(2)-1
-		 b.randdir = {x=v.x,y=v.y}
-	 	b.dircount = 60
-	 else
-	 	v.x = b.randdir.x
-	 	v.y = b.randdir.y
-	 	b.dircount -= 1
-	 end
-	 l = vlen(v)
+		if (b.dircount == 0) then
+			-- pick random direction		
+			v.x=rnd(2)-1
+			v.y=rnd(2)-1
+			b.randdir = {x=v.x,y=v.y}
+			b.dircount = 60
+		else
+			v.x = b.randdir.x
+			v.y = b.randdir.y
+			b.dircount -= 1
+		end
+		l = vlen(v)
 	else
 		following = true
 	end
@@ -698,30 +698,30 @@ function update_bat(b)
 	b.vx = v.x
 	b.vy = v.y
 	if (b.vx > 0) then
-  b.rght = true
- else
-  b.rght = false
+		b.rght = true
+	else
+		b.rght = false
 	end
 
 	-- bounce
 	-- todo un-jank
 	if (b.fr == 0) then
-	 b.vy += 0.5
+		b.vy += 0.5
 	else
-  b.vy -= 0.5
- end
+		b.vy -= 0.5
+	end
  
- --local newpos = move_coll(b)
-	
- --b.x = newpos.x
- --b.y = newpos.y
- if (coll_room_border(b)) then
- 	b.dircount = 0
+	--local newpos = move_coll(b)
+
+	--b.x = newpos.x
+	--b.y = newpos.y
+	if (coll_room_border(b)) then
+		b.dircount = 0
 		b.vx = 0
 		b.vy = 0
- end
- b.x += b.vx
- b.y += b.vy
+	end
+	b.x += b.vx
+	b.y += b.vy
 
 	if (p.alive and
 	    hit_p(b.x,b.y,b.w,b.h)) then
@@ -730,22 +730,22 @@ function update_bat(b)
 end
 
 function burn_lantern(l)
- if (not l.lit) then
-	 l.lit = true
-	 l.s += 1
- 	lantern[room.i+1].lit = true
- 	curr_lantern = room.i+1
- end
+	if (not l.lit) then
+		l.lit = true
+		l.s += 1
+		lantern[room.i+1].lit = true
+		curr_lantern = room.i+1
+	end
 end
 
 function update_lantern(l)
- if (l.lit) then
-  loop_anim(l,5,2)
- end
+	if (l.lit) then
+		loop_anim(l,5,2)
+	end
 end
 
 function spawn_thang(i,x,y)
- local t = {}
+	local t = {}
 	t.i = i
 	t.x = x
 	t.y = y
@@ -817,8 +817,7 @@ p_dat = {
 }
 
 function spawn_p(x,y)
-
- p = {}
+	p = {}
 	p.x = x
 	p.y = y
 	p.rght = true -- facing
@@ -837,7 +836,6 @@ function spawn_p(x,y)
 		p[k] = v
 	end
 	p.s = p.i + p.s_spwn.s
-
 end
 
 function kill_p()
@@ -1045,61 +1043,61 @@ end
 fireball = {}
 
 function make_fireball()
- local f = {}
- f.w = 4
- f.h = 4
- f.x = p.x + (p.w - f.w)/2
- f.y = p.y + (p.h - f.h)/2
- f.s = 80
- f.alive = true
- f.fcnt = 0
- f.speed = 3
- f.fr = 0
- f.draw = draw_smol_thang
- f.update = update_fireball
- local ydir = 0
- local xdir = 0
- if (btn(⬆️)) then
-  ydir = -1
- elseif (btn(⬇️)) then
-  ydir = 1
- end
- if (p.rght) then
-  xdir = 1
- else
-  xdir = -1
- end
- -- straight up or down
- if (not btn(⬅️) and
-     not btn(➡️) and
-     ydir != 0) then
-   xdir = 0
- end
- if (xdir == 0 or ydir == 0) then
-  f.vx = xdir * f.speed
-  f.vy = ydir * f.speed
- else
-  f.vx = xdir * 0.7071 * f.speed
-  f.vy = ydir * 0.7071 * f.speed
- end
+	local f = {}
+	f.w = 4
+	f.h = 4
+	f.x = p.x + (p.w - f.w)/2
+	f.y = p.y + (p.h - f.h)/2
+	f.s = 80
+	f.alive = true
+	f.fcnt = 0
+	f.speed = 3
+	f.fr = 0
+	f.draw = draw_smol_thang
+	f.update = update_fireball
+	local ydir = 0
+	local xdir = 0
+	if (btn(⬆️)) then
+		ydir = -1
+	elseif (btn(⬇️)) then
+		ydir = 1
+	end
+	if (p.rght) then
+		xdir = 1
+	else
+		xdir = -1
+	end
+	-- straight up or down
+	if (	not btn(⬅️) and
+			not btn(➡️) and
+			ydir != 0) then
+		xdir = 0
+	end
+	if (xdir == 0 or ydir == 0) then
+		f.vx = xdir * f.speed
+		f.vy = ydir * f.speed
+	else
+		f.vx = xdir * 0.7071 * f.speed
+		f.vy = ydir * 0.7071 * f.speed
+	end
 
- f.sfr = 0 -- sub-frame
+	f.sfr = 0 -- sub-frame
 	if (ydir == 0) then
-  f.sfr = 1
- elseif (xdir == 0) then
-  f.sfr = 2
- else
-  f.sfr = 3
- end
- f.xflip = false
- f.yflip = false
- if (f.vy < 0) then
-  f.yflip = true
- end
- if (f.vx < 0) then
-  f.xflip = true
- end
- add(fireball, f)
+		f.sfr = 1
+	elseif (xdir == 0) then
+		f.sfr = 2
+	else
+		f.sfr = 3
+	end
+	f.xflip = false
+	f.yflip = false
+	if (f.vy < 0) then
+		f.yflip = true
+	end
+	if (f.vx < 0) then
+		f.xflip = true
+	end
+	add(fireball, f)
 end
 
 function kill_fireball(f)
@@ -1141,21 +1139,21 @@ function update_fireball(f)
 			end
 		end
 	end
- if (--collmap(f.x,f.y,0) or
-     collmap(f.x+2,f.y+2,1) or
-     collmap(f.x+2,f.y+2,2)) then
- 	f.vx = 0
- 	f.vy = 0
- 	kill_fireball(f)
- end
+	if (	--collmap(f.x,f.y,0) or
+			collmap(f.x+2,f.y+2,1) or
+			collmap(f.x+2,f.y+2,2)) then
+		f.vx = 0
+		f.vy = 0
+		kill_fireball(f)
+	end
 end
 
 -->8
 -- collision
 
 function collmap(x,y,f)
- local val = mget(x\8,y\8)
- return (fget(val,f))
+	local val = mget(x\8,y\8)
+	return (fget(val,f))
 end
 
 function collmapv(v,f)
@@ -1163,93 +1161,94 @@ function collmapv(v,f)
 end
 
 function coll_edge(t,newx,fty)
- -- t = {
- --   ftx -- foot x offset
- --   ftw -- foot width
- -- }
- -- fty = foot y
- -- return true if 1 px from edge
- local tftxl = newx + t.ftx
- local tftxr = tftxl + t.ftw
- if (not (collmap(tftxl-1,fty,0) and
-		   collmap(tftxr+1,fty,0))) then
-	 return true
+	-- t = {
+	--   ftx -- foot x offset
+	--   ftw -- foot width
+	-- }
+	-- fty = foot y
+	-- return true if 1 px from edge
+	local tftxl = newx + t.ftx
+	local tftxr = tftxl + t.ftw
+	if (not (collmap(tftxl-1,fty,0) and
+			collmap(tftxr+1,fty,0))) then
+		return true
 	end
- return false
+	return false
 end
 
 function coll_walls(t,newx)
- -- t = {
- --   y  -- coord
- --   cx -- coll x offset
- --   cw -- coll width
- --   cy -- coll y offset
- --   ch -- coll height
- --   vx -- x vel
- -- return newx pushed out of wall
- local cl = newx + t.cx
- local cr = cl + t.cw
- local ct = t.y + t.cy
- local cb = ct + t.ch
- -- only check left or right
- local cx = cr
- if (t.vx < 0) then
-  cx = cl
- end
- if ((t.vx != 0)
-     and
-     (collmap(cx,ct,1) or
- 	    collmap(cx,cb,1))
- 	  ) then
-   -- push out of wall
-   if (cx == cl) then
-   	newx = roundup(cx, 8) - t.cx-- - 1
-   else
-   	newx = rounddown(cx, 8) - t.cw - t.cx + 1
-   end
- end
- return newx
+	-- t = {
+	--   y  -- coord
+	--   cx -- coll x offset
+	--   cw -- coll width
+	--   cy -- coll y offset
+	--   ch -- coll height
+	--   vx -- x vel
+	-- return newx pushed out of wall
+	local cl = newx + t.cx
+	local cr = cl + t.cw
+	local ct = t.y + t.cy
+	local cb = ct + t.ch
+	-- only check left or right
+	local cx = cr
+	if (t.vx < 0) then
+		cx = cl
+	end
+	if (	(t.vx != 0)
+			and
+			(collmap(cx,ct,1) or
+			collmap(cx,cb,1))
+			) then
+		-- push out of wall
+		if (cx == cl) then
+			newx = roundup(cx, 8) - t.cx-- - 1
+		else
+			newx = rounddown(cx, 8) - t.cw - t.cx + 1
+		end
+	end
+	return newx
 end
 
+-- TODO currently NOT USED
 function move_coll(t)
 	-- t = {
-	--	  x  -- coord
- --   y  -- coord
- --   cx -- coll x offset
- --   cw -- coll width
- --   cy -- coll y offset
- --   ch -- coll height
- --   vx -- x vel
- --	  vy -- y vel
- -- }
- -- return {x, y} pushed out of wall
-	
+	--	 x  -- coord
+	--   y  -- coord
+	--   cx -- coll x offset
+	--   cw -- coll width
+	--   cy -- coll y offset
+	--   ch -- coll height
+	--   vx -- x vel
+	--	 vy -- y vel
+	-- }
+	-- return {x, y} pushed out of wall
+
 	local newx = t.x + t.vx
 	local newy = t.y + t.vy
- local cl = newx + t.cx
- local cr = cl + t.cw
- local ct = newy + t.cy
- local cb = ct + t.ch
+	local cl = newx + t.cx
+	local cr = cl + t.cw
+	local ct = newy + t.cy
+	local cb = ct + t.ch
 
- -- only check corner in direction of vx,vy
- local cx = cl
- if (t.vx > 0) then
-  cx = cr
- end
+	-- only check corner in direction of vx,vy
+	local cx = cl
+	if (t.vx > 0) then
+		cx = cr
+	end
 
- local cy = ct
- if (vy > 0) then
-  cy = cb
-  -- platform
-  if (collmap(cx,cy,0)) then
-  	newy = rounddown(cy,8) - t.ch - t.cy - 1
-  end
- elseif (vy < 0) then
+	local cy = ct
+	if (vy > 0) then
+		cy = cb
+		-- platform
+		if (collmap(cx,cy,0)) then
+			newy = rounddown(cy,8) - t.ch - t.cy - 1
+		end
+	elseif (vy < 0) then
 		-- ceiling
 		if (collmap(cx,cy,2)) then
 			newy = roundup(cy,8) - t.cy
 		end
- end
+	end
 
 	-- todo cx
 
@@ -1257,50 +1256,50 @@ function move_coll(t)
 end
 
 function coll_room_border(t)
- -- t = {
- --	  x  -- coord
- --   y  -- coord
- --   cx -- coll x offset
- --   cw -- coll width
- --   cy -- coll y offset
- --   ch -- coll height
- --   vx -- x vel
- --	  vy -- y vel
- -- }
- -- apply vx, vy, and
- -- return true if moving into edge of room
- local newx = t.x + t.vx
- local newy = t.y + t.vy
- local cl = newx + t.cx
- local cr = cl + t.cw
- local ct = newy + t.cy
- local cb = ct + t.ch
- -- only check left or right
- local cx = cr
- if (t.vx < 0) then
-  cx = cl
- end
- if ((t.vx != 0)
-     and
-     (not in_room(cx,ct) or
- 	    not in_room(cx,cb))
- 	  ) then
-   return true
- end
+	-- t = {
+	--	 x  -- coord
+	--   y  -- coord
+	--   cx -- coll x offset
+	--   cw -- coll width
+	--   cy -- coll y offset
+	--   ch -- coll height
+	--   vx -- x vel
+	--	 vy -- y vel
+	-- }
+	-- apply vx, vy, and
+	-- return true if moving into edge of room
+	local newx = t.x + t.vx
+	local newy = t.y + t.vy
+	local cl = newx + t.cx
+	local cr = cl + t.cw
+	local ct = newy + t.cy
+	local cb = ct + t.ch
+	-- only check left or right
+	local cx = cr
+	if (t.vx < 0) then
+		cx = cl
+	end
+	if (	(t.vx != 0)
+			and
+			(not in_room(cx,ct) or
+			not in_room(cx,cb))
+			) then
+		return true
+	end
 
- local cy = cb
- if (t.vy < 0) then
-  cy = ct
- end
- if ((t.vy != 0)
-     and
-     (not in_room(cl,cy) or
- 	    not in_room(cr,cy))
- 	  ) then
-   return true
- end
+	local cy = cb
+	if (t.vy < 0) then
+		cy = ct
+	end
+	if (	(t.vy != 0)
+			and
+			(not in_room(cl,cy) or
+			not in_room(cr,cy))
+			) then
+		return true
+	end
 
- return false
+	return false
 end
 
 -->8
