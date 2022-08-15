@@ -520,99 +520,97 @@ function burn_thrower(t)
 end
 
 function update_thrower(t)
- if (not t.alive) then
-  if (loop_anim(t,2,4)) then
-   del(thang, t)
-   room.num_bads -= 1
-  end
-  return
- end
+	if (not t.alive) then
+		if (loop_anim(t,2,4)) then
+			del(thang, t)
+			room.num_bads -= 1
+		end
+		return
+	end
 
- if (t.burning) then
-  t.throwing = false
-  if (t.fcnt >= 4) then
-   t.burning = false
-   t.fcnt = 0
-   t.fr = 0
-   t.s = t.i
-  else
-	  t.fcnt += 1
-	  return
-	 end
- end
+	if (t.burning) then
+		t.throwing = false
+		if (t.fcnt >= 4) then
+			t.burning = false
+			t.fcnt = 0
+			t.fr = 0
+			t.s = t.i
+		else
+			t.fcnt += 1
+			return
+		end
+	end
 
 	t.vx = 0
 
- if (t.throwing) then
-  if (p.x < t.x) then
-  	t.rght = false
-  else
-   t.rght = true
-  end
-	local xfac = t.rght and 1 or -1
-  t.fr = 2
-	 if (t.fcnt >= 20) then
-	  t.throwing = false
-	  spawn_thang(
-		107,
-		t.x - 3 * xfac,
-		t.y + 4)
-	  t.fcnt = 0
-	  t.fr = 0
-	 else
-	  t.fcnt += 1
-	 end
-
- else
-	 -- remember which way we were going
-	 t.rght = t.goingrght
-	 if (t.rght) then
-	  t.vx = 0.75
-	 else
-	  t.vx = -0.75
-	 end
+	if (t.throwing) then
+		if (p.x < t.x) then
+			t.rght = false
+		else
+			t.rght = true
+		end
+		local xfac = t.rght and 1 or -1
+		t.fr = 2
+		if (t.fcnt >= 20) then
+			t.throwing = false
+			spawn_thang(107,
+						t.x - 3 * xfac,
+						t.y + 4)
+			t.fcnt = 0
+			t.fr = 0
+		else
+			t.fcnt += 1
+		end
+	else
+		-- remember which way we were going
+		t.rght = t.goingrght
+		if (t.rght) then
+			t.vx = 0.75
+		else
+			t.vx = -0.75
+		end
 
 		loop_anim(t,3,2)
 
-	 if (t.shcount <= 0) then
-		 if (dist(p.x,p.y,t.x,t.y) <= t.range) then
-	 	 t.throwing = true
-	 	 t.fcnt = 0
-	 	end
-	 	t.shcount = 30
-	 else
-	  t.shcount -= 1
-	 end
- end
- 
- t.vy += t.g
- t.vy = clamp(t.vy, -t.max_vy, t.max_vy)
-
- local newx = t.x + t.vx
- local newy = t.y + t.vy
- 
- newy = phys_fall(t,newx,newy)
-
- if (t.air) then
- 	t.vx = 0
- 	newx = t.x
- else
-  -- todo use phys_walls here
-	 local pushx = coll_walls(t,newx)
-	 if (pushx != newx) then
-	  t.rght = not t.rght
-	 end
-	 newx = pushx
-	 if (coll_edge(t,newx,t.y+t.h) or
-	 	   coll_room_border(t)) then
-	  t.rght = not t.rght
-	  newx = t.x
-	 end
-	 t.goingrght = t.rght
+		if (t.shcount <= 0) then
+			if (dist(p.x,p.y,t.x,t.y) <= t.range) then
+				t.throwing = true
+				t.fcnt = 0
+			end
+			t.shcount = 30
+		else
+			t.shcount -= 1
+		end
 	end
 
- t.x = newx
- t.y = newy
+	t.vy += t.g
+	t.vy = clamp(t.vy, -t.max_vy, t.max_vy)
+
+	local newx = t.x + t.vx
+	local newy = t.y + t.vy
+
+	newy = phys_fall(t,newx,newy)
+
+	if (t.air) then
+		t.vx = 0
+		newx = t.x
+	else
+		-- todo use phys_walls here
+		local pushx = coll_walls(t,newx)
+		if (pushx != newx) then
+			t.rght = not t.rght
+		end
+		newx = pushx
+		if (	coll_edge(t,newx,t.y+t.h) or
+				coll_room_border(t)) then
+			t.rght = not t.rght
+			newx = t.x
+		end
+		t.goingrght = t.rght
+	end
+
+	t.x = newx
+	t.y = newy
 
 	if (p.alive and hit_p(t.x,t.y,t.w,t.h)) then
 		kill_p()
@@ -620,11 +618,11 @@ function update_thrower(t)
 end
 
 function burn_bat(b)
- if (b.alive) then
-	 b.alive = false
-	 b.s += 2
-	 b.vy = 0.6
-	 b.deadf = 20
+	if (b.alive) then
+		b.alive = false
+		b.s += 2
+		b.vy = 0.6
+		b.deadf = 20
 	end
 end
 
@@ -851,9 +849,9 @@ end
 
 function hit_p(x,y,w,h)
 	return aabb(
- 									 x,y,w,h,
- 									 p.x+p.hx,p.y+p.hy,
- 									 p.hw,p.hh)
+				x,y,w,h,
+				p.x+p.hx,p.y+p.hy,
+				p.hw,p.hh)
 end
 
 function update_p()
@@ -1312,81 +1310,80 @@ end
 function phys_fall(t,newx,newy)
 
 	-- where our feeeeet at?
- local fty = newy + t.h
- local ftxl = newx + t.ftx
- local ftxr = ftxl + t.ftw
+	local fty = newy + t.h
+	local ftxl = newx + t.ftx
+	local ftxr = ftxl + t.ftw
 
- -- hit or stay on the ground
- if ((collmap(ftxl,fty,0) or
- 				 collmap(ftxr,fty,0))
-     and
-     -- (almost) in the block above platform-only block
-     (t.y < rounddown(newy,8)+3 or
-     -- grounded
-     not t.air or
-     -- intersecting a 'full' block
-     collmap(ftxl,fty,1) or
-     collmap(ftxr,fty,1)
-     )) then
+	-- hit or stay on the ground
+	if (	(collmap(ftxl,fty,0) or
+			 collmap(ftxr,fty,0))
+			and
+			-- (almost) in the block above platform-only block
+			(	t.y < rounddown(newy,8)+3 or
+				-- grounded
+				not t.air or
+				-- intersecting a 'full' block
+				collmap(ftxl,fty,1) or
+				collmap(ftxr,fty,1)
+				)
+			) then
 		newy = rounddown(newy, 8)
-  t.vy = 0
-  t.air = false
-  local lblock = mget(ftxl\8,fty\8)
-  local rblock = mget(ftxr\8,fty\8)
-  t.onice = lblock == 86 or lbock == 87 or
-            rblock == 86 or rblock == 87
- else
- 	t.air = true
- end
+		t.vy = 0
+		t.air = false
+		local lblock = mget(ftxl\8,fty\8)
+		local rblock = mget(ftxr\8,fty\8)
+		t.onice = lblock == 86 or lbock == 87 or
+				  rblock == 86 or rblock == 87
+	else
+		t.air = true
+	end
 
 	return newy
 end
 
 -- t.vy < 0
 function phys_jump(t,newx,newy,oldair)
-
 	-- where our feeeeet at?
- local fty = newy + t.h
- local ftxl = newx + t.ftx
- local ftxr = ftxl + t.ftw
- 
- -- ceiling
-	if (t.air and (
-		     collmap(ftxl,newy,2) or
-		     collmap(ftxr,newy,2))) then
-	 if (not oldair) then
-	  t.air = false
-	  t.vy = 0
-	 else
-	 	-- just sloow down on ceiling hit
-	 	t.vy = t.vy/3
-	 end
-	 newy = t.y + t.vy
+	local fty = newy + t.h
+	local ftxl = newx + t.ftx
+	local ftxr = ftxl + t.ftw
+
+	-- ceiling
+	if (	t.air and (
+				collmap(ftxl,newy,2) or
+				collmap(ftxr,newy,2))) then
+		if (not oldair) then
+			t.air = false
+			t.vy = 0
+		else
+			-- just sloow down on ceiling hit
+			t.vy = t.vy/3
+		end
+		newy = t.y + t.vy
 	end
 
 	return newy
 end
 
 function phys_walls(t,newx,newy)
-
 	local cl = newx + t.cx
- local cr = cl + t.cw
- local ct = newy + t.cy
- local cb = ct + t.ch
- 
- local c_tl = {x=cl,y=ct}
- local c_tr = {x=cr,y=ct}
- local c_bl = {x=cl,y=cb}
- local c_br = {x=cr,y=cb}
+	local cr = cl + t.cw
+	local ct = newy + t.cy
+	local cb = ct + t.ch
+
+	local c_tl = {x=cl,y=ct}
+	local c_tr = {x=cr,y=ct}
+	local c_bl = {x=cl,y=cb}
+	local c_br = {x=cr,y=cb}
 
 	local l_pen = 0
 	local r_pen = 0
-	if (collmapv(c_bl,2) or 
-		   collmapv(c_tl,2)) then
+	if (	collmapv(c_bl,2) or 
+			collmapv(c_tl,2)) then
 		l_pen = roundup(c_bl.x,8) - c_bl.x
 	end
-	if (collmapv(c_br,2) or 
-		   collmapv(c_tr,2)) then
+	if (	collmapv(c_br,2) or 
+			collmapv(c_tr,2)) then
 		r_pen = c_br.x - rounddown(c_br.x,8)
 	end
 	
@@ -1402,7 +1399,7 @@ function phys_walls(t,newx,newy)
 			newx -= r_pen
 		end
 	end
-	
+
 	if (oldnewx != newx) then
 		t.vx = 0
 	end
