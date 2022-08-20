@@ -12,6 +12,9 @@
 - The way it works right now, when you respawn, the enemies in the room you spawn in respawn too
     - Maybe...they shouldn't? So if you die, you don't have to fight immediately on respawning
     - Going to a new room will always make enemies respawn though
+- first lantern, second lantern (flag) - so we can have 2 in one room
+- fireball direction buffer - use direction from a few frames ago for fireball
+    - or sort that out somehow - directing it shouldn't be as hard as it is right now
 
 ### Enemies
 - Bat 1x1
@@ -29,6 +32,7 @@
 - Linear projectile thrower 1x1
 - Underside crawler - spider? 1x1
 - Ghost/phantom 1x1
+- Moving spikes or rsomething
 
 #### Boss ideas
 - 2x2 - charging
