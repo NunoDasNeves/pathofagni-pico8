@@ -740,7 +740,7 @@ function update_knight(t)
 
 	if (t.burning) then
 		t.atking = false
-		if (t.fcnt >= 4) then
+		if (t.fcnt >= 10) then
 			t.burning = false
 			t.fcnt = 0
 			t.fr = 0
@@ -755,7 +755,7 @@ function update_knight(t)
 
 	if (t.atking) then
 		t.s = t.i + t.s_atk.s
-		if (play_anim(t, 8, t.s_atk.f)) then
+		if (play_anim(t, 10, t.s_atk.f)) then
 			t.atking = false
 			t.fcnt = 0
 			t.fr = 0
