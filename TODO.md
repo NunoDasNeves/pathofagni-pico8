@@ -1,28 +1,9 @@
-### Platforming
-- Tune acceleration, jump dynamics
-    - variable jump height? shorter jump, slower/less gravity?
-    - instant decel on ground?
-    - slow decel in air (momentum from ground speed)
-    - air control
-#### Maybe
-- Wall jump? Slide down? Climb?
-- Fireball propels you opposite direction?
-
 ### Game flow
-- The way it works right now, when you respawn, the enemies in the room you spawn in respawn too
-    - Maybe...they shouldn't? So if you die, you don't have to fight immediately on respawning
-    - Going to a new room will always make enemies respawn though
-- first lantern, second lantern (flag) - so we can have 2 in one room
-- fireball direction buffer - use direction from a few frames ago for fireball
-    - or sort that out somehow - directing it shouldn't be as hard as it is right now
 
 ### Enemies
 - Bat 1x1
-    - collide with walls, ceiling
-    - spread from each other
-    - only attack within a certain range?
-    - random frame offset on init
-- Platform bug 1x1
+    - spread from each other?
+    - random frame offset on init?
 - Jumping enemy 1x1
 - Arcing projectile thrower 1x1
     - adjust throw trajectory
@@ -33,11 +14,32 @@
 - Underside crawler - spider? 1x1
 - Ghost/phantom 1x1
 - Moving spikes or rsomething
+- bat spawning enemy
 
-#### Boss ideas
-- 2x2 - charging
-- 1x2 fast, charging, jumping
-- 1x1 fast, jumping, proj throwing
-- 3x3 big - stompy, charging type
-- multiple 1x1 - chasing flying
+### Boss ideas
+- knight 1x1
+    - walk around (toward player)
+    - attack when close
+    - phase 2 - jump at you periodically
+    - immune to fireballs unless he's in attack lag
+- archer / rogue 1x1
+    - shoots arrows
+    - jumps around platforms
+    - goes stealth after you hit them, repositions and sneak attacks you
+- mage 1x1 or 1x2
+    - teleports before attacking or after getting hit
+    - casts protection spell which reflects fireballs ?
+    - shoots stuff at you ?
+    - targeted area, or laser - you see indicator and have to move out of the  way ?
+    - spawns bats ?
 
+
+### Playtest notes
+#### 0
+- Need to teach player to shoot the lantern
+- Need to teach player about directional shooting somehow
+- It's too hard!
+#### 1
+- Difficulty spikes too much after initial platforming rooms
+- Directional shooting is too hard (can't rely on it)
+- Shooting through platforms is not obvious
