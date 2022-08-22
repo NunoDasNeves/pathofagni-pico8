@@ -1179,10 +1179,34 @@ function update_p()
 		if (p.shcount == 0) then
 			p.sh = true
 		end
+		local ydir = 0
+		local xdir = 0
+		if (btn(⬆️)) then
+			ydir = -1
+		elseif (btn(⬇️)) then
+			ydir = 1
+		end
+		if (btn(⬅️)) then
+			xdir = -1
+		elseif (btn(➡️)) then
+			xdir = 1
+		-- default x dir, only if a direction hasn't been buffered,
+		-- and only if y dir is 0, to allow straight up and down
+		elseif p.shbuf == nil and ydir == 0 then
+			if p.rght then
+				xdir = 1
+			else
+				xdir = -1
+			end
+		end
+		if xdir != 0 or ydir != 0 then
+			p.shbuf = {x = xdir, y = ydir}
+		end
 	else -- release - fire
 		if (p.sh) then
-			make_fireball()
+			make_fireball(p.shbuf.x, p.shbuf.y)
 			p.shcount = 10
+			p.shbuf = nil
 		end
 		p.sh = false
 	end
@@ -1260,7 +1284,7 @@ end
 -- fireball
 fireball = {}
 
-function make_fireball()
+function make_fireball(xdir, ydir)
 	local f = {}
 	f.w = 4
 	f.h = 4
@@ -1273,24 +1297,6 @@ function make_fireball()
 	f.fr = 0
 	f.draw = draw_smol_thang
 	f.update = update_fireball
-	local ydir = 0
-	local xdir = 0
-	if (btn(⬆️)) then
-		ydir = -1
-	elseif (btn(⬇️)) then
-		ydir = 1
-	end
-	if (p.rght) then
-		xdir = 1
-	else
-		xdir = -1
-	end
-	-- straight up or down
-	if (	not btn(⬅️) and
-			not btn(➡️) and
-			ydir != 0) then
-		xdir = 0
-	end
 	if (xdir == 0 or ydir == 0) then
 		f.vx = xdir * f.speed
 		f.vy = ydir * f.speed
