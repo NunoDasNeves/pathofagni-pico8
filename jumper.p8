@@ -344,9 +344,8 @@ thang_dat = {
 		h = 6,
 		range = 8*8,
 		dircount = 0,
-		xspeed = 0.5,
+		xspeed = 0.4,
 		yspeed = 0.4,
-		randdir = {x=1,y=1},
 		cx = 0,
 		cy = 0,
 		cw = 7,
@@ -885,55 +884,56 @@ function update_bat(b)
 	-- b.alive
 	loop_anim(b,4,2)
 
-	local v = {x=p.x-b.x,y=p.y-b.y}
-	local l = vlen(v)
-	local following = false
-	if (l > b.range) then
-		if (b.dircount == 0) then
-			-- pick random direction		
-			v.x=rnd(2)-1
-			v.y=rnd(2)-1
-			b.randdir = {x=v.x,y=v.y}
-			b.dircount = 60
-		else
-			v.x = b.randdir.x
-			v.y = b.randdir.y
-			b.dircount -= 1
-		end
-		l = vlen(v)
+	-- move the bat
+	local b2p = {x=p.x-b.x,y=p.y-b.y}
+	local dist2p = vlen(b2p)
+
+	-- if collide with something, go in random direction
+	if move_hit_wall(b) or coll_room_border(b) then
+		b.dircount = 0
+		-- force pick a random direction - pretend the player is too far away
+		dist2p = b.range + 1
+		b.vx = 0
+		b.vy = 0
 	else
-		following = true
+		b.x += b.vx
+		b.y += b.vy
 	end
 
-	v.x *= b.xspeed/l
-	v.y *= b.yspeed/l
-	b.vx = v.x
-	b.vy = v.y
+	-- pick the direction for next frame
+	if b.dircount <= 0 then
+		-- out of range - pick random direction
+		if dist2p > b.range then
+			local rndv = {x = rnd(2) - 1, y = rnd(2) - 1}
+			local len = vlen(rndv)
+			b.vx = rndv.x * b.xspeed/len
+			b.vy = rndv.y * b.yspeed/len
+			b.dircount = 60
+		-- in range - go toward player
+		else
+			b.vx = b2p.x * b.xspeed/dist2p
+			b.vy = b2p.y * b.yspeed/dist2p
+			b.dircount = 30
+		end
+	else
+		-- otherwise keep going the same way until dircount expires
+	end
+	b.dircount -= 1
+
+	-- face the right way
 	if (b.vx > 0) then
 		b.rght = true
 	else
 		b.rght = false
 	end
 
-	-- bounce
+	-- bounce up and down while flying
 	-- todo un-jank
 	if (b.fr == 0) then
-		b.vy += 0.5
+		b.vy += 0.2
 	else
-		b.vy -= 0.5
+		b.vy -= 0.2
 	end
- 
-	--local newpos = move_coll(b)
-
-	--b.x = newpos.x
-	--b.y = newpos.y
-	if (coll_room_border(b)) then
-		b.dircount = 0
-		b.vx = 0
-		b.vy = 0
-	end
-	b.x += b.vx
-	b.y += b.vy
 
 	if (p.alive and
 	    hit_p(b.x,b.y,b.w,b.h)) then
@@ -1430,6 +1430,40 @@ function coll_walls(t,newx)
 	return newx
 end
 
+function move_hit_wall(t)
+	-- t = {
+	--	 x  -- coord
+	--   y  -- coord
+	--   cx -- coll x offset
+	--   cw -- coll width
+	--   cy -- coll y offset
+	--   ch -- coll height
+	--   vx -- x vel
+	--	 vy -- y vel
+	-- }
+	-- return true if any corner hit a wall, false otherwise
+
+	local newx = t.x + t.vx
+	local newy = t.y + t.vy
+	local cl = newx + t.cx
+	local cr = cl + t.cw
+	local ct = newy + t.cy
+	local cb = ct + t.ch
+
+	local c_tl = {x=cl,y=ct}
+	local c_tr = {x=cr,y=ct}
+	local c_bl = {x=cl,y=cb}
+	local c_br = {x=cr,y=cb}
+
+	if (	collmapv(c_tl,1) or 
+			collmapv(c_tr,1) or
+			collmapv(c_bl,1) or 
+			collmapv(c_br,1)) then
+		return true
+	end
+	return false
+end
+
 -- TODO currently NOT USED
 function move_coll(t)
 	-- t = {
@@ -1451,29 +1485,38 @@ function move_coll(t)
 	local ct = newy + t.cy
 	local cb = ct + t.ch
 
-	-- only check corner in direction of vx,vy
-	local cx = cl
-	if (t.vx > 0) then
-		cx = cr
-	end
+	local c_tl = {x=cl,y=ct}
+	local c_tr = {x=cr,y=ct}
+	local c_bl = {x=cl,y=cb}
+	local c_br = {x=cr,y=cb}
 
-	local cy = ct
-	if (vy > 0) then
-		cy = cb
-		-- platform
-		if (collmap(cx,cy,0)) then
-			newy = rounddown(cy,8) - t.ch - t.cy - 1
+	local x_pen = 0
+	if (t.vx < 0) then
+		if (	collmapv(c_bl,1) or 
+				collmapv(c_tl,1)) then
+			x_pen = cl - roundup(cl,8) -- < 0
 		end
-	elseif (vy < 0) then
-		-- ceiling
-		if (collmap(cx,cy,1)) then
-			newy = roundup(cy,8) - t.cy
+	elseif t.vx > 0 then
+		if (	collmapv(c_br,1) or 
+				collmapv(c_tr,1)) then
+			x_pen = cr - rounddown(cr,8) -- > 0
 		end
 	end
 
-	-- todo cx
+	local y_pen = 0
+	if (t.vy < 0) then
+		if (	collmapv(c_tl,1) or 
+				collmapv(c_tr,1)) then
+			y_pen = ct - roundup(ct,8) -- < 0
+		end
+	elseif t.vy > 0 then
+		if (	collmapv(c_bl,1) or 
+				collmapv(c_br,1)) then
+			y_pen = cb - rounddown(cb,8) -- > 0
+		end
+	end
 
-	return {x=newx,y=newy}
+	return {x = newx - xpen, y = newy - ypen}
 end
 
 function coll_room_border(t)
@@ -1611,7 +1654,7 @@ function phys_walls(t,newx,newy)
 	end
 	if (	collmapv(c_br,1) or 
 			collmapv(c_tr,1)) then
-		r_pen = c_br.x - rounddown(c_br.x,8)
+		r_pen = cr - rounddown(cr,8)
 	end
 	
 	local oldnewx = newx
