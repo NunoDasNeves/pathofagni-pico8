@@ -27,7 +27,7 @@ room = {
 -- for now
 -- room index+1 -> lit
 lantern = {}
-curr_lantern = 17
+curr_lantern = 9
 
 function get_curr_lantern()
 	return lantern[curr_lantern]
@@ -390,6 +390,28 @@ thang_dat = {
 		xflip = false,
 		yflip = false,
 	},
+	[112] = { -- frog
+		update = update_frog,
+		burn = burn_frog,
+		bad = true,
+		air = true,
+		g = 0.2,
+		max_vy = 4,
+		w = 8,
+		h = 8,
+		hp = 2,
+		goingrght = true,
+		burning = false,
+		croak = false,
+		-- coll dimensions
+		ftw = 0.99,
+		ftx = 3,
+		ch = 4.99,
+		cw = 5.99,
+		cx = 1,
+		cy = 2,
+		jcount = 0, -- jump
+	},
 	[192] = { -- knight
 		update = update_knight,
 		burn = burn_knight,
@@ -633,6 +655,98 @@ function update_thrower(t)
 		else
 			t.shcount -= 1
 		end
+	end
+
+	t.vy += t.g
+	t.vy = clamp(t.vy, -t.max_vy, t.max_vy)
+
+	local newx = t.x + t.vx
+	local newy = t.y + t.vy
+
+	newy = phys_fall(t,newx,newy)
+
+	if (t.air) then
+		t.vx = 0
+		newx = t.x
+	else
+		-- todo use phys_walls here
+		local pushx = coll_walls(t,newx)
+		if (pushx != newx) then
+			t.rght = not t.rght
+		end
+		newx = pushx
+		if (	coll_edge(t,newx,t.y+t.h) or
+				coll_room_border(t)) then
+			t.rght = not t.rght
+			newx = t.x
+		end
+		t.goingrght = t.rght
+	end
+
+	t.x = newx
+	t.y = newy
+
+	if (p.alive and hit_p(t.x,t.y,t.w,t.h)) then
+		kill_p()
+	end
+end
+
+function burn_frog(t)
+	if t.alive and not t.burning then
+		t.hp -= 1
+		if (t.hp <= 0) then
+			t.alive = false
+			t.s = t.i + 3
+			t.fr = 0
+			t.fcnt = 0
+		else
+			t.burning = true
+			t.jcount = 3
+		end
+	end
+end
+
+function update_frog(t)
+	if (not t.alive) then
+		if (loop_anim(t,2,4)) then
+			del(thang, t)
+			room.num_bads -= 1
+		end
+		return
+	end
+
+	if not t.air then
+		t.vx = 0
+		t.rght = p.x > t.x and true or false
+		t.goingrght = t.rght
+		if not t.burning then
+			t.s = t.i + 0
+			if t.croak == false then
+				if play_anim(t, 30, 1) then
+					t.croak = true
+					t.fr = 0
+					t.fcount = 0
+				end
+			else
+				if play_anim(t, 5, 2) then
+					t.croak = false
+					t.fr = 0
+					t.fcount = 0
+				end
+			end
+			if p.sh then
+				-- TODO big jump
+			end
+		else
+			if t.jcount <= 0 then
+				t.burning = false
+			else
+				-- TODO small jump
+				t.jcount -= 1
+			end
+		end
+	else
+		
 	end
 
 	t.vy += t.g
