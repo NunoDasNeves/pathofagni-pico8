@@ -395,8 +395,12 @@ thang_dat = {
 		burn = burn_frog,
 		bad = true,
 		air = true,
-		g = 0.2,
+		g = 0.3,
 		max_vy = 4,
+		jbig_vy = -3.5,
+		jbig_vx = 1.2,
+		jsmol_vy = -2.5,
+		jsmol_vx = 1.5,
 		w = 8,
 		h = 8,
 		hp = 2,
@@ -715,11 +719,12 @@ function update_frog(t)
 		return
 	end
 
+	local oldair = t.air
 	if not t.air then
 		t.vx = 0
 		t.rght = p.x > t.x and true or false
-		t.goingrght = t.rght
-		if not t.burning then
+		local dir = t.rght and 1 or -1
+		if not t.burning then -- not burning - jump when player charges fireball
 			t.s = t.i + 0
 			if t.croak == false then
 				if play_anim(t, 30, 1) then
@@ -735,48 +740,52 @@ function update_frog(t)
 				end
 			end
 			if p.sh then
-				-- TODO big jump
+				t.vy += t.jbig_vy
+				t.vx = t.jbig_vx * dir
+				t.air = true
 			end
-		else
+		else -- burning - jump rapidly at player
 			if t.jcount <= 0 then
 				t.burning = false
 			else
-				-- TODO small jump
 				t.jcount -= 1
+				-- small jump
+				t.vy += t.jsmol_vy
+				t.vx = t.jsmol_vx * dir
+				t.air = true
 			end
 		end
-	else
-		
-	end
+	else -- jumping/falling
+		t.s = t.i + 2
 
-	t.vy += t.g
-	t.vy = clamp(t.vy, -t.max_vy, t.max_vy)
+		t.vy += t.g
+		t.vy = clamp(t.vy, -t.max_vy, t.max_vy)
 
-	local newx = t.x + t.vx
-	local newy = t.y + t.vy
+		local newx = t.x + t.vx
+		local newy = t.y + t.vy
 
-	newy = phys_fall(t,newx,newy)
+		if (t.vy > 0) then
+			t.fr = 1
+			newy = phys_fall(t,newx,newy)
+		elseif (t.vy < 0) then
+			t.fr = 0
+			newy = phys_jump(t,newx,newy,oldair)
+		end
 
-	if (t.air) then
-		t.vx = 0
-		newx = t.x
-	else
-		-- todo use phys_walls here
-		local pushx = coll_walls(t,newx)
-		if (pushx != newx) then
+		local pushx = phys_walls(p,newx,newy)
+		if pushx != newx then
 			t.rght = not t.rght
+			t.vx = -t.vx
 		end
 		newx = pushx
-		if (	coll_edge(t,newx,t.y+t.h) or
-				coll_room_border(t)) then
-			t.rght = not t.rght
-			newx = t.x
-		end
-		t.goingrght = t.rght
-	end
 
-	t.x = newx
-	t.y = newy
+		t.x = newx
+		t.y = newy
+		if not t.air then
+			t.fr = 0
+			t.fcnt = 0
+		end
+	end
 
 	if (p.alive and hit_p(t.x,t.y,t.w,t.h)) then
 		kill_p()
