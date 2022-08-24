@@ -27,7 +27,7 @@ room = {
 -- for now
 -- room index+1 -> lit
 lantern = {}
-curr_lantern = 9
+curr_lantern = 20
 
 function get_curr_lantern()
 	return lantern[curr_lantern]
@@ -420,6 +420,7 @@ thang_dat = {
 		burning = false,
 		croak = false,
 		bounced = false,
+		do_smol = true,
 		-- coll dimensions
 		ftw = 0.99,
 		ftx = 3,
@@ -764,12 +765,14 @@ function update_frog(t)
 			else
 				t.jcount -= 1
 				-- small jump
-				if not t.bounced then
+				if not t.bounced or t.do_smol then
 					t.vy += t.jsmol_vy
+					t.do_smol = false
 				-- big jump if we bounced off a wall
 				else
 					t.vy += t.jbig_vy
 					t.bounced = false
+					t.do_smol = true -- always do a small jump after a big one
 				end
 				t.vx = t.jsmol_vx * dir
 				t.air = true
