@@ -192,6 +192,17 @@ function draw_thang(t)
 	spr(t.s+t.fr,t.x,t.y,1,1,flp)
 end
 
+function draw_frog(t)
+	if t.burning then
+		pal(11, 10, 0)
+		pal(3, 9, 0)
+		draw_thang(t)
+		pal()
+	else
+		draw_thang(t)
+	end
+end
+
 function draw_knight(t)
 	local flp = false
 	if (not (t.rght == nil)) then
@@ -344,7 +355,7 @@ thang_dat = {
 		h = 6,
 		range = 8*8,
 		dircount = 0,
-		xspeed = 0.4,
+		xspeed = 0.5,
 		yspeed = 0.4,
 		cx = 0,
 		cy = 0,
@@ -393,6 +404,7 @@ thang_dat = {
 	[112] = { -- frog
 		update = update_frog,
 		burn = burn_frog,
+		draw = draw_frog,
 		bad = true,
 		air = true,
 		g = 0.3,
@@ -700,7 +712,7 @@ function burn_frog(t)
 		t.hp -= 1
 		if (t.hp <= 0) then
 			t.alive = false
-			t.s = t.i + 3
+			t.s = t.i + 4
 			t.fr = 0
 			t.fcnt = 0
 		else
@@ -712,7 +724,7 @@ end
 
 function update_frog(t)
 	if (not t.alive) then
-		if (loop_anim(t,2,4)) then
+		if (loop_anim(t, 4, 3)) then
 			del(thang, t)
 			room.num_bads -= 1
 		end
@@ -767,15 +779,17 @@ function update_frog(t)
 		if (t.vy > 0) then
 			t.fr = 1
 			newy = phys_fall(t,newx,newy)
-		elseif (t.vy < 0) then
+		else
 			t.fr = 0
 			newy = phys_jump(t,newx,newy,oldair)
 		end
 
-		local pushx = phys_walls(p,newx,newy)
+		-- bounce off wall
+		local oldvx = t.vx
+		local pushx = phys_walls(t,newx,newy)
 		if pushx != newx then
 			t.rght = not t.rght
-			t.vx = -t.vx
+			t.vx = -oldvx
 		end
 		newx = pushx
 
