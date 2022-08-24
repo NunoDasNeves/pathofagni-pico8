@@ -733,12 +733,13 @@ function update_frog(t)
 	end
 
 	local oldair = t.air
+
 	if not t.air then
+		t.s = t.i + 0
 		t.vx = 0
 		t.rght = p.x > t.x and true or false
 		local dir = t.rght and 1 or -1
 		if not t.burning then -- not burning - jump when player charges fireball
-			t.s = t.i + 0
 			if t.croak == false then
 				if play_anim(t, 30, 1) then
 					t.croak = true
@@ -774,39 +775,42 @@ function update_frog(t)
 				t.air = true
 			end
 		end
-	else -- jumping/falling
+	end
+
+	-- physics - always run because falling could happen e.g. due to ice breaking
+	t.vy += t.g
+	t.vy = clamp(t.vy, -t.max_vy, t.max_vy)
+
+	local newx = t.x + t.vx
+	local newy = t.y + t.vy
+
+	if (t.vy > 0) then
+		t.fr = 1
+		newy = phys_fall(t,newx,newy)
+	else
+		t.fr = 0
+		newy = phys_jump(t,newx,newy,oldair)
+	end
+
+	-- bounce off wall
+	local oldvx = t.vx
+	local pushx = phys_walls(t,newx,newy)
+	if pushx != newx then
+		t.rght = not t.rght
+		t.vx = -oldvx
+		t.bounced = true
+	end
+	newx = pushx
+
+	t.x = newx
+	t.y = newy
+
+	-- animation state
+	if t.air then
 		t.s = t.i + 2
-
-		t.vy += t.g
-		t.vy = clamp(t.vy, -t.max_vy, t.max_vy)
-
-		local newx = t.x + t.vx
-		local newy = t.y + t.vy
-
-		if (t.vy > 0) then
-			t.fr = 1
-			newy = phys_fall(t,newx,newy)
-		else
-			t.fr = 0
-			newy = phys_jump(t,newx,newy,oldair)
-		end
-
-		-- bounce off wall
-		local oldvx = t.vx
-		local pushx = phys_walls(t,newx,newy)
-		if pushx != newx then
-			t.rght = not t.rght
-			t.vx = -oldvx
-			t.bounced = true
-		end
-		newx = pushx
-
-		t.x = newx
-		t.y = newy
-		if not t.air then
-			t.fr = 0
-			t.fcnt = 0
-		end
+	else
+		t.fr = 0
+		t.fcnt = 0
 	end
 
 	if (p.alive and hit_p(t.x,t.y,t.w,t.h)) then
@@ -1032,12 +1036,14 @@ function update_bat(b)
 	-- move the bat
 	local b2p = {x=p.x-b.x,y=p.y-b.y}
 	local dist2p = vlen(b2p)
+	local in_range = dist2p < b.range and true or false
+	local go_to_p = in_range
 
 	-- if collide with something, go in random direction
 	if move_hit_wall(b) or coll_room_border(b) then
 		b.dircount = 0
-		-- force pick a random direction - pretend the player is too far away
-		dist2p = b.range + 1
+		-- force pick a random direction
+		go_to_p = false
 		b.vx = 0
 		b.vy = 0
 	else
@@ -1047,18 +1053,22 @@ function update_bat(b)
 
 	-- pick the direction for next frame
 	if b.dircount <= 0 then
-		-- out of range - pick random direction
-		if dist2p > b.range then
+		-- go toward player
+		if go_to_p then
+			b.vx = b2p.x * b.xspeed/dist2p
+			b.vy = b2p.y * b.yspeed/dist2p
+			b.dircount = 30
+		-- pick random direction
+		else
 			local rndv = {x = rnd(2) - 1, y = rnd(2) - 1}
 			local len = vlen(rndv)
 			b.vx = rndv.x * b.xspeed/len
 			b.vy = rndv.y * b.yspeed/len
-			b.dircount = 60
-		-- in range - go toward player
-		else
-			b.vx = b2p.x * b.xspeed/dist2p
-			b.vy = b2p.y * b.yspeed/dist2p
-			b.dircount = 30
+			if in_range then
+				b.dircount = 20
+			else
+				b.dircount = 60
+			end
 		end
 	else
 		-- otherwise keep going the same way until dircount expires
@@ -1070,14 +1080,6 @@ function update_bat(b)
 		b.rght = true
 	else
 		b.rght = false
-	end
-
-	-- bounce up and down while flying
-	-- todo un-jank
-	if (b.fr == 0) then
-		b.vy += 0.2
-	else
-		b.vy -= 0.2
 	end
 
 	if (p.alive and
