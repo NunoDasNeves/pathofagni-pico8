@@ -414,7 +414,6 @@ thang_dat = {
 		w = 8,
 		h = 8,
 		hp = 2,
-		goingrght = true,
 		burning = false,
 		croak = false,
 		bounced = false,
@@ -436,7 +435,6 @@ thang_dat = {
 		w = 8,
 		h = 8,
 		hp = 5,
-		goingrght = true, -- going to go after attacking?
 		burning = false,
 		atking = false,
 		-- draw sword/sword hitbox present
@@ -888,8 +886,12 @@ function p_on_same_plat(t)
 end
 
 function update_knight(t)
+
+	-- default to sword not being out - saves putting it everywhere
+	t.swrd_draw = false
+	t.swrd_hit = false
+
 	if (not t.alive) then
-		t.swrd_draw = false
 		if (play_anim(t, 10, t.s_die.f)) then
 			-- get shorter so fireballs don't hit air
 			t.h = 3
@@ -900,8 +902,6 @@ function update_knight(t)
 
 	if (t.burning) then
 		t.atking = false
-		t.swrd_draw = false
-		t.swrd_hit = false
 		if (t.fcnt >= 10) then
 			t.burning = false
 			t.fcnt = 0
@@ -915,33 +915,27 @@ function update_knight(t)
 
 	t.vx = 0
 
-	if (t.atking) then
+	if t.atking then
 		t.s = t.i + t.s_atk.s
 		if play_anim(t, 10, t.s_atk.f) then
 			t.atking = false
 			t.fcnt = 0
 			t.fr = 0
 		else
-			if t.fr == 0 then
-				t.swrd_draw = false
-				t.swrd_hit = false
-			else
+			if t.fr > 0 then
 				t.swrd_draw = true
 				t.swrd_fr = t.fr - 1
 				if t.fr == 1 then
 					t.swrd_hit = true
-				else
-					t.swrd_hit = false
 				end
 			end
 		end
 	end
 
+	-- grounded state - walk toward player if on same platform
 	-- if atking ended, immediately walk this frame
-	if not t.atking then
+	if not t.air and not t.atking then
 		local dir = p_on_same_plat(t)
-		t.swrd_draw = false
-		t.swrd_hit = false
 
 		if t.phase == 0 then
 			t.s = t.i + t.s_idle.s
@@ -954,10 +948,8 @@ function update_knight(t)
 			t.s = t.i + t.s_wlk.s
 			-- follow player if they're on same platform
 			if dir != 0 then
-				t.goingrght = dir == 1 and true or false
+				t.rght = dir == 1 and true or false
 			end
-			-- remember which way we were going (after turning around from edge)
-			t.rght = t.goingrght
 			if (t.rght) then
 				t.vx = 0.75
 			else
@@ -979,34 +971,56 @@ function update_knight(t)
 		end
 	end
 
+	local oldair = t.air
+
 	t.vy += t.g
 	t.vy = clamp(t.vy, -t.max_vy, t.max_vy)
 
 	local newx = t.x + t.vx
 	local newy = t.y + t.vy
 
-	newy = phys_fall(t,newx,newy)
-
-	if (t.air) then
-		t.vx = 0
-		newx = t.x
+	if t.vy > 0 then
+		newy = phys_fall(t,newx,newy)
 	else
-		-- todo use phys_walls here
-		local pushx = coll_walls(t,newx)
-		if (pushx != newx) then
+		newy = phys_jump(t,newx,newy,oldair)
+	end
+
+	local oldvx = t.vx
+	local pushx = phys_walls(t,newx,newy)
+	local hit_screen_edge = coll_room_border(t)
+	local turned = false
+	if pushx != newx or hit_screen_edge then
+		turned = true
+		-- bounce off wall in air
+		if t.air then
+			t.rght = not t.rght
+			t.vx = -oldvx
+		-- otherwise just turn around
+		else
 			t.rght = not t.rght
 		end
-		newx = pushx
-		if (	coll_edge(t,newx,t.y+t.h) or
-				coll_room_border(t)) then
+	end
+	newx = pushx
+
+	-- turn around if walking off edge of platform
+	if not turned and not t.air then
+		if coll_edge(t,newx,t.y+t.h) then
+			turned = true
 			t.rght = not t.rght
+			-- just don't move
 			newx = t.x
 		end
-		t.goingrght = t.rght
 	end
 
 	t.x = newx
 	t.y = newy
+
+	-- animate falling
+	if t.vy > 0 then
+		t.s = t.i + t.s_fall.s
+		t.fr = 0
+		t.atking = false
+	end
 
 	if (p.alive) then
 		local swordpos = t.rght and 8 or -5
