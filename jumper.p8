@@ -939,32 +939,42 @@ function update_knight(t)
 
 	-- if atking ended, immediately walk this frame
 	if not t.atking then
+		local dir = p_on_same_plat(t)
 		t.swrd_draw = false
 		t.swrd_hit = false
-		t.s = t.i + t.s_wlk.s
-		-- follow player if they're on same platform
-		local dir = p_on_same_plat(t)
-		if dir != 0 then
-			t.goingrght = dir == 1 and true or false
-		end
-		-- remember which way we were going (after turning around from edge)
-		t.rght = t.goingrght
-		if (t.rght) then
-			t.vx = 0.75
-		else
-			t.vx = -0.75
+
+		if t.phase == 0 then
+			t.s = t.i + t.s_idle.s
+			if dir != 0 then
+				t.phase = 1
+			end
 		end
 
-		loop_anim(t,3,t.s_wlk.f)
-
-		if (dist(p.x,p.y,t.x,t.y) <= t.atkrange) then
-			t.atking = true
-			t.fcnt = 0
-			t.fr = 0
-			if (p.x < t.x) then
-				t.rght = false
+		if t.phase > 0 then
+			t.s = t.i + t.s_wlk.s
+			-- follow player if they're on same platform
+			if dir != 0 then
+				t.goingrght = dir == 1 and true or false
+			end
+			-- remember which way we were going (after turning around from edge)
+			t.rght = t.goingrght
+			if (t.rght) then
+				t.vx = 0.75
 			else
-				t.rght = true
+				t.vx = -0.75
+			end
+
+			loop_anim(t,3,t.s_wlk.f)
+
+			if (dist(p.x,p.y,t.x,t.y) <= t.atkrange) then
+				t.atking = true
+				t.fcnt = 0
+				t.fr = 0
+				if (p.x < t.x) then
+					t.rght = false
+				else
+					t.rght = true
+				end
 			end
 		end
 	end
@@ -1947,7 +1957,7 @@ bbbb0980008000000210712002a0712002170120000000001ccccccc1ccccc1c10c7c1cc00c70000
 83000000000000000000000065060073836161616161616161616161610000733206616161616161610000000000000333000000000000000000000000000002
 42000000000000000000000000000042830000650000006565000000000000833200000000002030423040000000000232005100005200000000000000000002
 83000000000000000000000000756573836161616161616161610000616161733200006161616161610000000000008065000000000000000000000000250002
-42000000000000000000000c00000042830000810000000000000000000000733300070000005261426152000000070232625262625262626251626262256202
+420000000000000c0000000000000042830000810000000000000000000000733300070000005261426152000000070232625262625262626251626262256202
 83000000070000000000000000007573831061610000610600616100616110733200000061000000000000000000000075650000000000000000000072218202
 420000c03030303030303030d000004283000000000000000000000025000080e0616161c0d05261426152c0d061610232615261615261616152616141303003
 836161616161616161616161616161738361616161616161616161616161617332000000000000000000c0303030300131756500000000000000007173138302
