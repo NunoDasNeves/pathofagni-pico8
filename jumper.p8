@@ -413,6 +413,7 @@ thang_dat = {
 		jbig_vx = 1.2,
 		jsmol_vy = -2.5,
 		jsmol_vx = 1.5,
+		jtiny_vy = -1.0,
 		w = 8,
 		h = 8,
 		hp = 2,
@@ -793,6 +794,14 @@ function update_frog(t)
 	else
 		t.fr = 0
 		newy = phys_jump(t,newx,newy,oldair)
+		-- tile directly above preventing jump - jump tiny instead
+		if t.vy == 0 and t.air == false then
+			-- gotta redo everything here - keep vx the same
+			t.air = true
+			t.vy = t.jtiny_vy + t.g
+			newy = t.y + t.vy
+			newy = phys_jump(t,newx,newy,oldair)
+		end
 	end
 
 	-- bounce off wall
@@ -1209,6 +1218,7 @@ function kill_p()
 	p.s = p.i + p.s_die.s 
 	p.fr = 0
 	p.fcnt = 0
+	p.sh = false
 end
 
 function hit_p(x,y,w,h)
@@ -1763,21 +1773,23 @@ end
 
 -- t.vy < 0
 function phys_jump(t,newx,newy,oldair)
-	-- where our feeeeet at?
-	local fty = newy + t.h
-	local ftxl = newx + t.ftx
-	local ftxr = ftxl + t.ftw
+	-- where our head at? offset from cy a little so this always happens before phys_walls
+	-- this avoids wall bonking on a flat ceiling
+	-- use foot x - this avoids ceiling bonking when next to a wall
+	local hdy = newy + t.cy - 0.1
+	local hdxl = newx + t.ftx
+	local hdxr = hdxl + t.ftw
 
 	-- ceiling
 	if (	t.air and (
-				collmap(ftxl,newy,1) or
-				collmap(ftxr,newy,1))) then
-		if (not oldair) then
+				collmap(hdxl,hdy,1) or
+				collmap(hdxr,hdy,1))) then
+		if not oldair then
 			t.air = false
 			t.vy = 0
 		else
 			-- just sloow down on ceiling hit
-			t.vy = t.vy/3
+			t.vy = t.vy/10
 		end
 		newy = t.y + t.vy
 	end
