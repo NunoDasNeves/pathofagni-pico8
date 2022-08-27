@@ -904,6 +904,7 @@ function update_knight(t)
 				-- get shorter so fireballs don't hit air
 				t.h = 3
 				t.cy = 4.99
+				room.num_bads = 0
 			end
 			-- don't want to keep doing physics when dead
 			-- this would break if he was on an ice block and you broke it
@@ -922,7 +923,6 @@ function update_knight(t)
 			t.fr = 0
 			if t.hp <= 0 then
 				t.alive = false
-				room.num_bads -= 1
 			end
 		else
 			t.fcnt += 1
