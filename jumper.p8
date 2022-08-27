@@ -220,6 +220,14 @@ function draw_knight(t)
 			t.x + (8 * xfac),
 			t.y,
 			1,1,flp)
+		if dbg and t.swrd_hit then
+			local swrd_start_x = t.rght and 8 or -t.swrd_x_off
+			local x0 = t.x + swrd_start_x
+			local y0 = t.y + t.swrd_y
+			local x1 = x0 + t.swrd_w
+			local y1 = y0 + t.swrd_h
+			rectfill(x0,y0,x1,y1,8)
+		end
 	end
 end
 
@@ -433,13 +441,18 @@ thang_dat = {
 		bad = true,
 		w = 8,
 		h = 8,
-		hp = 1,
+		max_hp = 2,
+		hp = 2,
 		burning = false,
 		atking = false,
 		-- draw sword/sword hitbox present
 		swrd_fr = 0,
 		swrd_hit = false,
 		swrd_draw = false,
+		swrd_x_off = 5, -- when attacking left, move sword back this much (same as width...)
+		swrd_y = 1,
+		swrd_w = 5,
+		swrd_h = 4,
 		phase = 0, -- stand, walk, jump
 		atktimer = 20,
 		-- coll dimensions, physics
@@ -915,6 +928,11 @@ function update_knight(t)
 		end
 	end
 
+	-- advance to phase 2
+	if t.hp <= t.max_hp / 2 then
+		t.phase = 2
+	end
+
 	-- only conserve vx when airborne, otherwise reset...
 	if not t.air then
 		t.vx = 0
@@ -941,9 +959,10 @@ function update_knight(t)
 				end
 				t.swrd_draw = true
 				t.swrd_fr = t.fr - 1
-				if t.fr == 1 then
+				-- all frames hit for now, not just first frame
+				--if t.fr == 1 then
 					t.swrd_hit = true
-				end
+				--end
 			end
 		end
 	end
@@ -959,7 +978,7 @@ function update_knight(t)
 		if t.phase == 0 then
 			t.s = t.i + t.s_idle.s
 			if dir != 0 then
-				t.phase = 2
+				t.phase = 1
 			end
 		end
 
@@ -1039,7 +1058,6 @@ function update_knight(t)
 	-- note can still fall off if moving fast enough
 	if not turned and not t.air then
 		if coll_edge(t,newx,t.y+t.h) then
-			dbgstr = dbgstr..'turned\n'
 			turned = true
 			t.rght = not t.rght
 			-- just don't move
@@ -1055,11 +1073,17 @@ function update_knight(t)
 	end
 
 	if (p.alive) then
-		local swordpos = t.rght and 8 or -5
+		local swrd_start_x = t.rght and 8 or -t.swrd_x_off
 		if hit_p(t.x,t.y,t.w,t.h) then
 			kill_p()
-		elseif (t.swrd_hit and hit_p(t.x + swordpos, t.y + 1, 5, 4)) then
-			kill_p()
+		end
+		if t.swrd_hit then
+			--dbgstr = 'checking swrd_hit\n'..dbgstr
+			if hit_p(t.x + swrd_start_x, t.y + t.swrd_y, t.swrd_w, t.swrd_h) then
+				kill_p()
+			end
+		else
+			--dbgstr = 'NOT swrd_hit\n'..dbgstr
 		end
 	end
 end
