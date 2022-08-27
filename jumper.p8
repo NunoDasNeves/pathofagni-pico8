@@ -159,7 +159,7 @@ function fade_update()
 end
 
 function _update()
-	dbgstr = ''
+	--dbgstr = ''
 	--dbgstr = room.num_bads
 	update_room()
 	update_p()
@@ -290,7 +290,6 @@ function _draw()
 
 	if (dbg) then
 		local x = room.x + 8
-		--dbgstr = dbgstr..tostr(p.x\8)..''..tostr(p.y\8)..'\n'
 		print(dbgstr,x,room.y,7)
 	end
 end
@@ -434,7 +433,7 @@ thang_dat = {
 		bad = true,
 		w = 8,
 		h = 8,
-		hp = 5,
+		hp = 1,
 		burning = false,
 		atking = false,
 		-- draw sword/sword hitbox present
@@ -442,10 +441,13 @@ thang_dat = {
 		swrd_hit = false,
 		swrd_draw = false,
 		phase = 0, -- stand, walk, jump
+		atktimer = 20,
 		-- coll dimensions, physics
 		air = true,
 		g = 0.2,
 		max_vy = 4,
+		jump_vy = -3,
+		jump_vx = 1,
 		ftw = 0.99,
 		ftx = 3,
 		ch = 6.99,
@@ -459,7 +461,7 @@ thang_dat = {
 		s_jmp  = {s=6, f=3},
 		s_fall = {s=9, f=1},
 		s_burn = {s=10, f=1},
-		s_die  = {s=10, f=4},
+		s_die  = {s=11, f=3},
 		s_swrd = {s=14, f=2},
 	}
 }
@@ -830,20 +832,14 @@ function update_frog(t)
 end
 
 function burn_knight(t)
-	if (not t.alive) then
+	if t.hp <= 0 then
 		return
 	end
-	if (t.atking and t.fr > 0 and not t.burning) then
+	if t.atking and t.fr > 0 and not t.burning then
 		t.hp -= 1
-		t.s = t.i + t.s_burn.s
 		t.fr = 0
 		t.fcnt = 0
 		t.burning = true
-		if (t.hp <= 0) then
-			t.s = t.i + t.s_die.s
-			t.alive = false
-			room.num_bads -= 1
-		end
 	end
 end
 
@@ -868,9 +864,6 @@ function p_on_same_plat(t)
 	local boty = tfloor.my
 	local dir = p.x < t.x and -1 or 1
 
-	dbgstr = dbgstr..'mx '..tostr(mx)..' topy '..tostr(topy)..' boty '..tostr(boty)..'\n'
-	dbgstr = dbgstr..'pmx '..tostr(pmx)..'\n'
-
 	while mx != pmx do
 		local bot = mget(mx, boty)
 		if not fget(bot, 0) then
@@ -891,38 +884,61 @@ function update_knight(t)
 	t.swrd_draw = false
 	t.swrd_hit = false
 
-	if (not t.alive) then
-		if (play_anim(t, 10, t.s_die.f)) then
-			-- get shorter so fireballs don't hit air
-			t.h = 3
-			t.cy = 4.99
+	if not t.alive then
+		t.s = t.i + t.s_die.s
+		if not t.air then
+			if (play_anim(t, 10, t.s_die.f)) then
+				-- get shorter so fireballs don't hit air
+				t.h = 3
+				t.cy = 4.99
+			end
+			-- don't want to keep doing physics when dead
+			-- this would break if he was on an ice block and you broke it
+			return
 		end
-		return
 	end
 
-	if (t.burning) then
+	if t.burning then
+		t.s = t.i + t.s_burn.s
 		t.atking = false
-		if (t.fcnt >= 10) then
+		if t.fcnt >= 10 then
 			t.burning = false
 			t.fcnt = 0
 			t.fr = 0
-			t.s = t.i
+			if t.hp <= 0 then
+				t.alive = false
+				room.num_bads -= 1
+			end
 		else
 			t.fcnt += 1
 			return
 		end
 	end
 
-	t.vx = 0
+	-- only conserve vx when airborne, otherwise reset...
+	if not t.air then
+		t.vx = 0
+	end
 
-	if t.atking then
-		t.s = t.i + t.s_atk.s
-		if play_anim(t, 10, t.s_atk.f) then
+	if t.alive and t.atking then
+		local anim = t.s_atk
+		if t.phase == 2 then
+			anim = t.s_jmp
+		end
+		t.s = t.i + anim.s
+		if play_anim(t, 10, anim.f) then
 			t.atking = false
 			t.fcnt = 0
 			t.fr = 0
 		else
 			if t.fr > 0 then
+				local dir = t.rght and 1 or -1
+				-- jump!
+				if t.phase == 2 and not t.air and t.fr == 1 and t.fcnt == 1 then
+					t.vy = t.jump_vy
+					t.vx = t.jump_vx * dir
+					t.air = true
+				end
 				t.swrd_draw = true
 				t.swrd_fr = t.fr - 1
 				if t.fr == 1 then
@@ -932,15 +948,18 @@ function update_knight(t)
 		end
 	end
 
-	-- grounded state - walk toward player if on same platform
+	-- grounded state
+	--  phase 0 - idle
+	--  phase 1 - walk toward player if on same platform, attack
+	--  phase 2 - walk until timer expires, then jump toward player
 	-- if atking ended, immediately walk this frame
-	if not t.air and not t.atking then
+	if t.alive and not t.air and not t.atking then
 		local dir = p_on_same_plat(t)
 
 		if t.phase == 0 then
 			t.s = t.i + t.s_idle.s
 			if dir != 0 then
-				t.phase = 1
+				t.phase = 2
 			end
 		end
 
@@ -950,7 +969,7 @@ function update_knight(t)
 			if dir != 0 then
 				t.rght = dir == 1 and true or false
 			end
-			if (t.rght) then
+			if t.rght then
 				t.vx = 0.75
 			else
 				t.vx = -0.75
@@ -958,11 +977,22 @@ function update_knight(t)
 
 			loop_anim(t,3,t.s_wlk.f)
 
-			if (dist(p.x,p.y,t.x,t.y) <= t.atkrange) then
+			local do_attack = false
+			if t.phase == 1 then
+				do_attack = dist(p.x,p.y,t.x,t.y) <= t.atkrange
+			end
+			if t.phase == 2 then
+				t.atktimer -= 1
+				if t.atktimer <= 0 then
+					do_attack = true
+					t.atktimer = 20
+				end
+			end
+			if do_attack then
 				t.atking = true
 				t.fcnt = 0
 				t.fr = 0
-				if (p.x < t.x) then
+				if p.x < t.x then
 					t.rght = false
 				else
 					t.rght = true
@@ -1002,18 +1032,20 @@ function update_knight(t)
 	end
 	newx = pushx
 
+	t.x = newx
+	t.y = newy
+
 	-- turn around if walking off edge of platform
+	-- note can still fall off if moving fast enough
 	if not turned and not t.air then
 		if coll_edge(t,newx,t.y+t.h) then
+			dbgstr = dbgstr..'turned\n'
 			turned = true
 			t.rght = not t.rght
 			-- just don't move
 			newx = t.x
 		end
 	end
-
-	t.x = newx
-	t.y = newy
 
 	-- animate falling
 	if t.vy > 0 then
