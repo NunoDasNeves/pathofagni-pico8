@@ -928,8 +928,8 @@ function update_knight(t)
 		end
 	end
 
-	-- advance to phase 2
-	if t.hp <= t.max_hp / 2 then
+	-- advance to phase 2 from phase 1 only
+	if t.phase == 1 and t.hp <= t.max_hp / 2 then
 		t.phase = 2
 	end
 
@@ -977,7 +977,10 @@ function update_knight(t)
 
 		if t.phase == 0 then
 			t.s = t.i + t.s_idle.s
-			if dir != 0 then
+			t.fr = 0
+			t.fcnt = 0
+			-- don't advance phase if p is dead
+			if p.alive and dir != 0 then
 				t.phase = 1
 			end
 		end
@@ -1057,11 +1060,8 @@ function update_knight(t)
 	-- turn around if walking off edge of platform
 	-- note can still fall off if moving fast enough
 	if not turned and not t.air then
-		if coll_edge(t,newx,t.y+t.h) then
+		if coll_edge_turn_around(t,newx,t.y+t.h) then
 			turned = true
-			t.rght = not t.rght
-			-- just don't move
-			newx = t.x
 		end
 	end
 
@@ -1076,11 +1076,13 @@ function update_knight(t)
 		local swrd_start_x = t.rght and 8 or -t.swrd_x_off
 		if hit_p(t.x,t.y,t.w,t.h) then
 			kill_p()
+			t.phase = 0
 		end
 		if t.swrd_hit then
 			--dbgstr = 'checking swrd_hit\n'..dbgstr
 			if hit_p(t.x + swrd_start_x, t.y + t.swrd_y, t.swrd_w, t.swrd_h) then
 				kill_p()
+				t.phase = 0
 			end
 		else
 			--dbgstr = 'NOT swrd_hit\n'..dbgstr
@@ -1640,6 +1642,32 @@ end
 
 function collmapv(v,f)
 	return collmap(v.x,v.y,f)
+end
+
+
+function coll_edge_turn_around(t,newx,fty)
+	-- t = {
+	--   ftx	-- foot x offset
+	--   ftw	-- foot width
+	--   rght	-- facing right
+	-- }
+	-- fty = foot y
+	-- turn around if foot is close to edge, and facing off edge
+	-- and return true if we turned it around
+	local tftxl = newx + t.ftx
+	local tftxr = tftxl + t.ftw
+	if t.rght then
+		if not collmap(tftxr+1,fty,0) then
+			t.rght = false
+			return true
+		end
+	else
+		if not collmap(tftxl-1,fty,0) then
+			t.rght = true
+			return true
+		end
+	end
+	return false
 end
 
 function coll_edge(t,newx,fty)
