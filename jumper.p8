@@ -441,8 +441,7 @@ thang_dat = {
 		bad = true,
 		w = 8,
 		h = 8,
-		max_hp = 2,
-		hp = 2,
+		hp = 5,
 		burning = false,
 		atking = false,
 		-- draw sword/sword hitbox present
@@ -454,7 +453,8 @@ thang_dat = {
 		swrd_w = 5,
 		swrd_h = 4,
 		phase = 0, -- stand, walk, jump
-		atktimer = 20,
+		atktimer = 0, -- how long since last attack
+		jmptime = 0, -- how long to wait before jumping
 		-- coll dimensions, physics
 		air = true,
 		g = 0.2,
@@ -911,10 +911,12 @@ function update_knight(t)
 		end
 	end
 
+	local oldatking = t.atking
+
 	if t.burning then
 		t.s = t.i + t.s_burn.s
-		t.atking = false
 		if t.fcnt >= 10 then
+			t.atking = false
 			t.burning = false
 			t.fcnt = 0
 			t.fr = 0
@@ -924,13 +926,8 @@ function update_knight(t)
 			end
 		else
 			t.fcnt += 1
-			return
+			return -- 'freeze' when hit in the air
 		end
-	end
-
-	-- advance to phase 2 from phase 1 only
-	if t.phase == 1 and t.hp <= t.max_hp / 2 then
-		t.phase = 2
 	end
 
 	-- only conserve vx when airborne, otherwise reset...
@@ -1000,17 +997,17 @@ function update_knight(t)
 			loop_anim(t,3,t.s_wlk.f)
 
 			local do_attack = false
+			t.atktimer += 1 -- time since last attack
 			if t.phase == 1 then
 				do_attack = dist(p.x,p.y,t.x,t.y) <= t.atkrange
 			end
 			if t.phase == 2 then
-				t.atktimer -= 1
-				if t.atktimer <= 0 then
+				if t.atktimer >= t.jmptime then
 					do_attack = true
-					t.atktimer = 20
 				end
 			end
 			if do_attack then
+				t.atktimer = 0
 				t.atking = true
 				t.fcnt = 0
 				t.fr = 0
@@ -1072,7 +1069,26 @@ function update_knight(t)
 		t.atking = false
 	end
 
-	if (p.alive) then
+	-- change phase if attack ended for any reason
+	-- switch phase after attacking
+	if oldatking and not t.atking then
+		--dbgstr = 'switching\n'..dbgstr
+		if t.phase == 1 then
+			t.phase = 2
+			t.jmptime = 20 + rnd({0,15,30})
+		else
+			t.phase = 1
+		end
+	end
+	-- change phase if haven't attacked in a while
+	if t.phase == 1 and t.atktimer > 60 then
+		t.phase = 2
+		t.jmptime = 10 + rnd({0,15,30})
+	end
+		
+
+	-- don't kill p if we're dead! (e.g. falling)
+	if t.alive and p.alive then
 		local swrd_start_x = t.rght and 8 or -t.swrd_x_off
 		if hit_p(t.x,t.y,t.w,t.h) then
 			kill_p()
@@ -1464,7 +1480,7 @@ function update_p()
 			end
 		end
 	else -- release - fire
-		if (p.sh) then
+		if p.sh then
 			make_fireball(p.shbuf.x, p.shbuf.y)
 			p.shcount = 10
 			p.shbuf = nil
