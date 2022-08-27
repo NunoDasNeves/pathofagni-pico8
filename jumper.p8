@@ -1333,32 +1333,34 @@ function update_p()
 	end
 
 	local oldsh = p.sh
-	if (btn(❎)) then
-		if (p.shcount == 0) then
+	if btn(❎) then
+		if p.shcount == 0 then
 			p.sh = true
 		end
-		local ydir = 0
-		local xdir = 0
-		if (btn(⬆️)) then
-			ydir = -1
-		elseif (btn(⬇️)) then
-			ydir = 1
-		end
-		if (btn(⬅️)) then
-			xdir = -1
-		elseif (btn(➡️)) then
-			xdir = 1
-		-- default x dir, only if a direction hasn't been buffered,
-		-- and only if y dir is 0, to allow straight up and down
-		elseif p.shbuf == nil and ydir == 0 then
-			if p.rght then
-				xdir = 1
-			else
-				xdir = -1
+		if p.sh then
+			local ydir = 0
+			local xdir = 0
+			if (btn(⬆️)) then
+				ydir = -1
+			elseif (btn(⬇️)) then
+				ydir = 1
 			end
-		end
-		if xdir != 0 or ydir != 0 then
-			p.shbuf = {x = xdir, y = ydir}
+			if (btn(⬅️)) then
+				xdir = -1
+			elseif (btn(➡️)) then
+				xdir = 1
+			-- default x dir, only if a direction hasn't been buffered,
+			-- and only if y dir is 0, to allow straight up and down
+			elseif p.shbuf == nil and ydir == 0 then
+				if p.rght then
+					xdir = 1
+				else
+					xdir = -1
+				end
+			end
+			if xdir != 0 or ydir != 0 then
+				p.shbuf = {x = xdir, y = ydir}
+			end
 		end
 	else -- release - fire
 		if (p.sh) then
