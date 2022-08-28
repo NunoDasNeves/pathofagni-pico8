@@ -1642,7 +1642,10 @@ function update_fireball(f)
 			end
 		end
 	end
-	if (collmap(f.x+2,f.y+2,1)) then
+	-- check two points to make it harder to abuse shooting straight up/down past blocks
+	if (
+			collmap(f.x+3,  f.y+2, 1) or
+			collmap(f.x+1,  f.y+2, 1)) then
 		f.vx = 0
 		f.vy = 0
 		kill_fireball(f)
