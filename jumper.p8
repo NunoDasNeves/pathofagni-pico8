@@ -806,21 +806,24 @@ function update_frog(t)
 
 	-- not burning and not in the air
 	if not t.air then
-		t.s = t.i + t.s_idle.s
+		t.s = t.i + 0
 		t.vx = 0
 		t.rght = p.x > t.x and true or false
 		local dir = t.rght and 1 or -1
 		-- not angry - jump when player charges fireball
 		if not t.angry then
-			if t.croak == false then
-				if play_anim(t, 30, 1) then
-					t.croak = true
+			if t.croak then
+				dbgstr = 'croak\n'..dbgstr
+				-- play full idle anim (croak)
+				if play_anim(t, 5, t.s_idle.f) then
+					t.croak = false
 					t.fr = 0
 					t.fcount = 0
 				end
 			else
-				if play_anim(t, 5, t.s_idle.f) then
-					t.croak = false
+				-- just play first frame for a bit
+				if play_anim(t, 30, 1) then
+					t.croak = true
 					t.fr = 0
 					t.fcount = 0
 				end
@@ -859,10 +862,8 @@ function update_frog(t)
 	local newy = t.y + t.vy
 
 	if (t.vy > 0) then
-		t.fr = 1
 		newy = phys_fall(t,newx,newy)
 	else
-		t.fr = 0
 		newy = phys_jump(t,newx,newy,oldair)
 		-- tile directly above preventing jump - jump tiny instead
 		if t.vy == 0 and t.air == false then
@@ -887,14 +888,21 @@ function update_frog(t)
 	t.x = newx
 	t.y = newy
 
-	-- animation state
-	if not t.burning then
-		if t.air then
-			t.s = t.i + 2
+	-- air animation
+	if t.air then
+		t.s = t.i + t.s_jmp.s
+		if t.vy > 0 then
+			t.fr = 1 -- descend
 		else
-			t.fr = 0
-			t.fcnt = 0
+			t.fr = 0 -- ascend
 		end
+	end
+
+	-- on landing, reset animation state
+	if not t.air and oldair then
+		t.s = t.i + t.s_idle.s
+		t.fr = 0
+		t.fcnt = 0
 	end
 
 	if coll_spikes(t) then
@@ -1137,7 +1145,6 @@ function update_knight(t)
 	-- change phase if attack ended for any reason
 	-- switch phase after attacking
 	if oldatking and not t.atking then
-		--dbgstr = 'switching\n'..dbgstr
 		if t.phase == 1 then
 			t.phase = 2
 			t.jmptime = 20 + rnd({0,15,30})
