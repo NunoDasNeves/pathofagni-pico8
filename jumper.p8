@@ -610,7 +610,9 @@ function update_icepick(t)
 	t.x += t.vx
 	t.y += t.vy
 
-	if (collmap(t.x+2,t.y,1)) then
+	if (
+			collmap(t.x+3, t.y+2, 1) or
+			collmap(t.x+1, t.y+2, 1)) then
 		kill_icepick(t)
 	end
 
