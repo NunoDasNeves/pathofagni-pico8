@@ -400,6 +400,10 @@ thang_dat = {
 		hh = 6.99,
 		shcount = 0, -- throw stuff at player
 		range = 8*6, -- only throw at player in this range
+		s_wlk = {s=0, f=2},
+		s_sh = {s=2, f=1},
+		s_burn = {s=3, f=1},
+		s_die = {s=3, f=4},
 	},
 	[107] = { -- icepick
 		init = init_icepick,
@@ -456,7 +460,7 @@ thang_dat = {
 		s_idle = {s=0, f=2},
 		s_jmp = {s=2, f=2},
 		s_burn = {s=4, f=1},
-		s_die = {s=5, f=3},
+		s_die = {s=4, f=4},
 	},
 	[192] = { -- knight
 		update = update_knight,
@@ -646,7 +650,6 @@ end
 function burn_thrower(t)
 	if (not t.burning) then
 		t.hp -= 1
-		t.s = t.i + 3
 		t.fr = 0
 		t.fcnt = 0
 		t.burning = true
@@ -657,62 +660,66 @@ function burn_thrower(t)
 end
 
 function update_thrower(t)
-	if (not t.alive) then
-		if (loop_anim(t,2,4)) then
+	if not t.alive then
+		t.s = t.i + t.s_die.s
+		if play_anim(t, 6, t.s_die.f) then
 			del(thang, t)
 			room.num_bads -= 1
 		end
 		return
 	end
 
-	if (t.burning) then
+	if t.burning then
 		t.throwing = false
-		if (t.fcnt >= 4) then
+		t.s = t.i + t.s_burn.s
+		if play_anim(t, 6, t.s_burn.f) then
 			t.burning = false
 			t.fcnt = 0
 			t.fr = 0
 			t.s = t.i
 		else
-			t.fcnt += 1
 			return
 		end
 	end
 
 	t.vx = 0
 
-	if (t.throwing) then
-		if (p.x < t.x) then
+	if t.throwing then
+		if p.x < t.x then
 			t.rght = false
 		else
 			t.rght = true
 		end
 		local xfac = t.rght and 1 or -1
-		t.fr = 2
-		if (t.fcnt >= 20) then
+
+		t.s = t.i + t.s_sh.s
+		if play_anim(t, 20, t.s_sh.f) then
 			t.throwing = false
 			spawn_thang(107,
 						t.x - 3 * xfac,
 						t.y + 4)
 			t.fcnt = 0
 			t.fr = 0
-		else
-			t.fcnt += 1
 		end
+
+	-- else we walking
 	else
 		-- remember which way we were going
 		t.rght = t.goingrght
-		if (t.rght) then
+		if t.rght then
 			t.vx = 0.75
 		else
 			t.vx = -0.75
 		end
 
-		loop_anim(t,3,2)
+		t.s = t.i + t.s_wlk.s
+		loop_anim(t,4,t.s_wlk.f)
 
 		if (t.shcount <= 0) then
 			if (dist(p.x,p.y,t.x,t.y) <= t.range) then
 				t.throwing = true
 				t.fcnt = 0
+				t.fr = 0
 			end
 			t.shcount = 30
 		else
@@ -753,6 +760,7 @@ function update_thrower(t)
 		t.alive = false
 		t.fcnt = 0
 		t.fr = 0
+		t.s = t.i + t.s_die.s
 		return
 	end
 	if p.alive and hit_p(t.x,t.y,t.w,t.h) then
@@ -774,9 +782,9 @@ function burn_frog(t)
 end
 
 function update_frog(t)
-	if (not t.alive) then
+	if not t.alive then
 		t.s = t.i + t.s_die.s
-		if (loop_anim(t, 4, t.s_die.f)) then
+		if play_anim(t, 6, t.s_die.f) then
 			del(thang, t)
 			room.num_bads -= 1
 		end
@@ -787,7 +795,7 @@ function update_frog(t)
 
 	if t.burning then
 		t.s = t.i + t.s_burn.s
-		if play_anim(t, 10, t.s_burn.f) then
+		if play_anim(t, 8, t.s_burn.f) then
 			t.burning = false
 			t.angry = true
 			t.jcount = 3
@@ -893,6 +901,7 @@ function update_frog(t)
 		t.alive = false
 		t.fr = 0
 		t.fcnt = 0
+		t.s = t.i + t.s_die.s
 	end
 
 	if p.alive and hit_p(t.x,t.y,t.w,t.h) then
