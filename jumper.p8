@@ -367,6 +367,10 @@ thang_dat = {
 		cy = 0,
 		cw = 7,
 		ch = 6,
+		hx = 0,
+		hy = 0,
+		hw = 7,
+		hh = 6,
 	},
 	[100] = { -- thrower
 		update = update_thrower,
@@ -389,6 +393,11 @@ thang_dat = {
 		cw = 5.99,
 		cx = 1,
 		cy = 1,
+		-- hurt box - bigger than player, same as collision box
+		hx = 1,
+		hy = 1,
+		hw = 5.99,
+		hh = 6.99,
 		shcount = 0, -- throw stuff at player
 		range = 8*6, -- only throw at player in this range
 	},
@@ -406,6 +415,10 @@ thang_dat = {
 		sfr = 0,
 		xflip = false,
 		yflip = false,
+		hx = 0,
+		hy = 0,
+		hw = 4,
+		hh = 4,
 	},
 	[112] = { -- frog
 		update = update_frog,
@@ -435,6 +448,10 @@ thang_dat = {
 		cw = 5.99,
 		cx = 1,
 		cy = 2,
+		hx = 1,
+		hy = 2,
+		hw = 4.99,
+		hh = 5.99,
 		jcount = 0, -- jump
 		s_idle = {s=0, f=2},
 		s_jmp = {s=2, f=2},
@@ -474,6 +491,10 @@ thang_dat = {
 		cw = 5.99,
 		cx = 1,
 		cy = 1,
+		hx = 1,
+		hy = 1,
+		hw = 5.99,
+		hh = 6.99,
 		atkrange = 11, -- only attack player in this range
 		s_idle = {s=0, f=0},
 		s_wlk  = {s=1, f=2},
@@ -728,7 +749,13 @@ function update_thrower(t)
 	t.x = newx
 	t.y = newy
 
-	if (p.alive and hit_p(t.x,t.y,t.w,t.h)) then
+	if coll_spikes(t) then
+		t.alive = false
+		t.fcnt = 0
+		t.fr = 0
+		return
+	end
+	if p.alive and hit_p(t.x,t.y,t.w,t.h) then
 		kill_p()
 	end
 end
@@ -862,7 +889,13 @@ function update_frog(t)
 		end
 	end
 
-	if (p.alive and hit_p(t.x,t.y,t.w,t.h)) then
+	if coll_spikes(t) then
+		t.alive = false
+		t.fr = 0
+		t.fcnt = 0
+	end
+
+	if p.alive and hit_p(t.x,t.y,t.w,t.h) then
 		kill_p()
 	end
 end
@@ -1262,6 +1295,8 @@ function spawn_thang(i,x,y)
 	t.y = y
 	t.cx = 0
 	t.cy = 0
+	t.hx = 0
+	t.hy = 0
 	t.vx = 0
 	t.vy = 0
 	t.s = i
@@ -1275,6 +1310,8 @@ function spawn_thang(i,x,y)
 	t.h = 8
 	t.cw = 8
 	t.ch = 8
+	t.hw = 8
+	t.hh = 8
 	t.z = 0
 	t.rght = true
 	t.alive = true
@@ -1459,15 +1496,7 @@ function update_p()
 	p.x = newx
 	p.y = newy
 
-	-- hit spikes
-	local hl = p.x + p.hx
-	local hr = hl + p.hw
-	local ht = p.y + p.hy
-	local hb = ht + p.hh
-	if (	collmap(hl,ht,3) or
-			collmap(hr,ht,3) or
-			collmap(hl,hb,3) or
-			collmap(hr,hb,3)) then
+	if coll_spikes(p) then
 		kill_p()
 		return
 	end
@@ -1648,9 +1677,9 @@ function update_fireball(f)
 	f.y += f.vy
 	-- hit stuff
 	for t in all(thang) do
-		-- use collision box if t has one
+		-- use hurt box if t has one
 		if (aabb(
-				t.x + t.cx, t.y + t.cy, t.cw, t.ch,
+				t.x + t.hx, t.y + t.hy, t.hw, t.hh,
 				f.x,f.y,4,4)) then
 			-- todo - is alive the right check?
 			if (t.burn != nil) then
@@ -1664,6 +1693,7 @@ function update_fireball(f)
 			end
 		end
 	end
+	-- hit blocks
 	-- check two points to make it harder to abuse shooting straight up/down past blocks
 	if (
 			collmap(f.x+3,  f.y+2, 1) or
@@ -1723,6 +1753,20 @@ function coll_edge(t,newx,fty)
 	local tftxr = tftxl + t.ftw
 	if (not (collmap(tftxl-1,fty,0) and
 			collmap(tftxr+1,fty,0))) then
+		return true
+	end
+	return false
+end
+
+function coll_spikes(t)
+	local hl = t.x + t.hx
+	local hr = hl + t.hw
+	local ht = t.y + t.hy
+	local hb = ht + t.hh
+	if (	collmap(hl,ht,3) or
+			collmap(hr,ht,3) or
+			collmap(hl,hb,3) or
+			collmap(hr,hb,3)) then
 		return true
 	end
 	return false
