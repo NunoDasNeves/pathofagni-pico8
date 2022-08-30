@@ -1,6 +1,36 @@
 ### Game flow
 
+### Sounds!
+- walk
+- walk on ice?
+- jump
+- fall?
+- land
+- land on ice?
+- charge fireball
+- shoot fireball?
+- fireball explode
+- light lantern
+- die
+- respawn
+- bat flap
+- enemy die
+- enemy hit
+- frog croak
+- 16
+- frog jump
+- ice break
+- enemy throw icepick
+- icepick break
+- knight walk
+- knight swing
+- knight jump
+- knight land
+- 
+
 ### Enemies
+- Make frogs + others die to spikes!
+- bring back frog croak
 - Bat 1x1
     - spread from each other?
     - random frame offset on init?
@@ -35,11 +65,8 @@
 
 
 ### Playtest notes
-#### 0
-- Need to teach player to shoot the lantern
-- Need to teach player about directional shooting somehow
-- It's too hard!
-#### 1
-- Difficulty spikes too much after initial platforming rooms
-- Directional shooting is too hard (can't rely on it)
-- Shooting through platforms is not obvious
+#### demo 2
+##### p1
+- frogs are too hard lol (room with 3 frogs)
+#### demo 3
+- 
