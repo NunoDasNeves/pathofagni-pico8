@@ -734,6 +734,8 @@ function update_thrower(t)
 		end
 	end
 
+	local oldair = t.air
+
 	t.vy += t.g
 	t.vy = clamp(t.vy, -t.max_vy, t.max_vy)
 
@@ -742,21 +744,25 @@ function update_thrower(t)
 
 	newy = phys_fall(t,newx,newy)
 
-	if (t.air) then
+	local turned = false
+	if t.air then
 		t.vx = 0
 		newx = t.x
 	else
-		-- todo use phys_walls here
-		local pushx = coll_walls(t,newx)
-		if (pushx != newx) then
+		local pushx = phys_walls(t,newx,newy)
+		if pushx != newx then
+			turned = true
 			t.rght = not t.rght
-		end
-		newx = pushx
-		if (	coll_edge(t,newx,t.y+t.h) or
-				coll_room_border(t)) then
+			newx = pushx
+		elseif coll_room_border(t) then
+			turned = true
 			t.rght = not t.rght
+		elseif coll_edge_turn_around(t,newx,t.y+t.h) then
+			turned = true
 			newx = t.x
 		end
+	end
+	if turned then
 		t.goingrght = t.rght
 	end
 
