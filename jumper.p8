@@ -160,8 +160,6 @@ function fade_update()
 end
 
 function _update()
-	--dbgstr = ''
-	--dbgstr = room.num_bads
 	update_room()
 	update_p()
 	for t in all(thang) do
@@ -462,7 +460,7 @@ thang_dat = {
 		s_idle = {s=0, f=2},
 		s_jmp = {s=2, f=2},
 		s_burn = {s=4, f=1},
-		s_die = {s=4, f=4},
+		s_die = {s=104 - 112, f=3},
 	},
 	[192] = { -- knight
 		update = update_knight,
@@ -789,11 +787,7 @@ function burn_frog(t)
 		t.hp -= 1
 		t.fcnt = 0
 		t.fr = 0
-		if (t.hp <= 0) then
-			t.alive = false
-		else
-			t.burning = true
-		end
+		t.burning = true
 	end
 end
 
@@ -801,7 +795,8 @@ function update_frog(t)
 	if not t.alive then
 		t.stops_projs = false
 		t.s = t.i + t.s_die.s
-		if play_anim(t, 6, t.s_die.f) then
+		dbgstr = tostr(t.s)..' '..tostr(t.fr)..'\n'..dbgstr
+		if play_anim(t, 4, t.s_die.f) then
 			del(thang, t)
 			room.num_bads -= 1
 		end
@@ -813,9 +808,16 @@ function update_frog(t)
 	if t.burning then
 		t.s = t.i + t.s_burn.s
 		if play_anim(t, 8, t.s_burn.f) then
-			t.burning = false
-			t.angry = true
-			t.jcount = 3
+			if t.hp <= 0 then
+				t.alive = false
+				t.fr = 0
+				t.fcnt = 0
+				return
+			else
+				t.burning = false
+				t.angry = true
+				t.jcount = 3
+			end
 		else
 			return
 		end
@@ -830,7 +832,6 @@ function update_frog(t)
 		-- not angry - jump when player charges fireball
 		if not t.angry then
 			if t.croak then
-				dbgstr = 'croak\n'..dbgstr
 				-- play full idle anim (croak)
 				if play_anim(t, 5, t.s_idle.f) then
 					sound(sfx_dat.frog_croak)
@@ -1194,13 +1195,10 @@ function update_knight(t)
 			t.phase = 0
 		end
 		if t.swrd_hit then
-			--dbgstr = 'checking swrd_hit\n'..dbgstr
 			if hit_p(t.x + swrd_start_x, t.y + t.swrd_y, t.swrd_w, t.swrd_h) then
 				kill_p()
 				t.phase = 0
 			end
-		else
-			--dbgstr = 'NOT swrd_hit\n'..dbgstr
 		end
 	end
 end
