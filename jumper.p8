@@ -2088,39 +2088,6 @@ function coll_spikes(t)
 	return false
 end
 
-function coll_walls(t,newx)
-	-- t = {
-	--   y  -- coord
-	--   cx -- coll x offset
-	--   cw -- coll width
-	--   cy -- coll y offset
-	--   ch -- coll height
-	--   vx -- x vel
-	-- return newx pushed out of wall
-	local cl = newx + t.cx
-	local cr = cl + t.cw
-	local ct = t.y + t.cy
-	local cb = ct + t.ch
-	-- only check left or right
-	local cx = cr
-	if (t.vx < 0) then
-		cx = cl
-	end
-	if (	(t.vx != 0)
-			and
-			(collmap(cx,ct,1) or
-			collmap(cx,cb,1))
-			) then
-		-- push out of wall
-		if (cx == cl) then
-			newx = roundup(cx, 8) - t.cx-- - 1
-		else
-			newx = rounddown(cx, 8) - t.cw - t.cx + 1
-		end
-	end
-	return newx
-end
-
 function move_hit_wall(t)
 	-- t = {
 	--	 x  -- coord
@@ -2153,61 +2120,6 @@ function move_hit_wall(t)
 		return true
 	end
 	return false
-end
-
--- TODO currently NOT USED
-function move_coll(t)
-	-- t = {
-	--	 x  -- coord
-	--   y  -- coord
-	--   cx -- coll x offset
-	--   cw -- coll width
-	--   cy -- coll y offset
-	--   ch -- coll height
-	--   vx -- x vel
-	--	 vy -- y vel
-	-- }
-	-- return {x, y} pushed out of wall
-
-	local newx = t.x + t.vx
-	local newy = t.y + t.vy
-	local cl = newx + t.cx
-	local cr = cl + t.cw
-	local ct = newy + t.cy
-	local cb = ct + t.ch
-
-	local c_tl = {x=cl,y=ct}
-	local c_tr = {x=cr,y=ct}
-	local c_bl = {x=cl,y=cb}
-	local c_br = {x=cr,y=cb}
-
-	local x_pen = 0
-	if (t.vx < 0) then
-		if (	collmapv(c_bl,1) or 
-				collmapv(c_tl,1)) then
-			x_pen = cl - roundup(cl,8) -- < 0
-		end
-	elseif t.vx > 0 then
-		if (	collmapv(c_br,1) or 
-				collmapv(c_tr,1)) then
-			x_pen = cr - rounddown(cr,8) -- > 0
-		end
-	end
-
-	local y_pen = 0
-	if (t.vy < 0) then
-		if (	collmapv(c_tl,1) or 
-				collmapv(c_tr,1)) then
-			y_pen = ct - roundup(ct,8) -- < 0
-		end
-	elseif t.vy > 0 then
-		if (	collmapv(c_bl,1) or 
-				collmapv(c_br,1)) then
-			y_pen = cb - rounddown(cb,8) -- > 0
-		end
-	end
-
-	return {x = newx - xpen, y = newy - ypen}
 end
 
 function coll_room_border(t)
