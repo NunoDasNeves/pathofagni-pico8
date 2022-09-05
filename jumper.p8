@@ -282,15 +282,8 @@ function draw_smol_thang(f)
 end
 
 function draw_fade(s)
-	local rmapx = room.x \ 8
-	local rmapy = room.y \ 8
-	local rmapr=rmapx+15
-	local rmapb=rmapy+15
-	for y=rmapy,rmapb do
-		for x=rmapx,rmapr do
-			spr(s, x * 8, y * 8)
-		end
-	end
+	fillp(s)
+	rectfill(room.x,room.y,room.x+16*8 - 1,room.y+16*8 - 1,1)
 end
 
 function _draw()
@@ -319,16 +312,17 @@ function _draw()
 
 	if do_fade then
 		if (fade_timer < 4) then
-			draw_fade(28)
+			draw_fade(0b0101101001011010.1)
 		elseif (fade_timer < 8) then
-			draw_fade(29)
+			draw_fade(0b0000101000001010.1)
 		elseif (fade_timer < 16) then
-			draw_fade(30)
+			draw_fade(0b0000000000000000)
 		elseif (fade_timer < 20) then
-			draw_fade(29)
+			draw_fade(0b0000101000001010.1)
 		elseif (fade_timer < 24) then
-			draw_fade(28)
+			draw_fade(0b0101101001011010.1)
 		end
+		fillp(0b0000000000000000)
 	end
 
 	if (dbg) then
