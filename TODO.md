@@ -1,49 +1,19 @@
-### Game flow
+### Misc
+- Refactor code to reduce lines...e.g. share physics code, burn code, die code between enemies
+- Shooter should spawn a thang (with its own update function) (moving/falling shooter doesn't work properly)
+- Moving from room to room - going backwards is weird
+    - Don't restore room if it's complete (all bads are gone)
 
 ### Sounds!
-- walk
-- walk on ice?
-- jump
-- fall?
-- land
-- land on ice?
-- charge fireball
-- shoot fireball?
-- fireball explode
-- light lantern
-- die
-- respawn
-- bat flap
-- enemy die
-- enemy hit
-- frog croak
-- 16
-- frog jump
-- ice break
-- enemy throw icepick
-- icepick break
-- knight walk
-- knight swing
-- knight jump
-- knight land
+- fireball explode?
+- light lantern?
+- enemy die?
 - 
 
 ### Enemies
-- Make frogs + others die to spikes!
-- bring back frog croak
-- Bat 1x1
-    - spread from each other?
-    - random frame offset on init?
-- Jumping enemy 1x1
-- Arcing projectile thrower 1x1
-    - adjust throw trajectory
-    - run from player?
-    - hurt player on touch?
-    - maybe different sprite design
-- Linear projectile thrower 1x1
 - Underside crawler - spider? 1x1
 - Ghost/phantom 1x1
-- Moving spikes or rsomething
+- Moving spikes or something
 - bat spawning enemy
 
 ### Boss ideas
@@ -65,8 +35,3 @@
 
 
 ### Playtest notes
-#### demo 2
-##### p1
-- frogs are too hard lol (room with 3 frogs)
-#### demo 3
-- 
