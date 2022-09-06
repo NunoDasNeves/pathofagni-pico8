@@ -415,7 +415,7 @@ thang_dat = {
 	},
 	[100] = { -- thrower
 		update = update_thrower,
-		burn = burn_thrower,
+		burn = burn_bad,
 		bad = true,
 		air = true,
 		g = 0.3,
@@ -552,7 +552,7 @@ thang_dat = {
 	},
 	[117] = { -- shooter
 		update = update_shooter,
-		burn = burn_shooter,
+		burn = burn_bad,
 		draw = draw_shooter,
 		bad = true,
 		air = true,
@@ -725,19 +725,6 @@ function update_icepick(t)
 	end
 end
 
-function burn_thrower(t)
-	if (not t.burning) then
-		sound(sfx_dat.hit)
-		t.hp -= 1
-		t.fr = 0
-		t.fcnt = 0
-		t.burning = true
-		if (t.hp <= 0) then
-			t.alive = false
-		end
-	end
-end
-
 function update_thrower(t)
 	if not t.alive then
 		t.stops_projs = false
@@ -753,10 +740,17 @@ function update_thrower(t)
 		t.throwing = false
 		t.s = t.i + t.s_burn.s
 		if play_anim(t, 6, t.s_burn.f) then
-			t.burning = false
-			t.fcnt = 0
-			t.fr = 0
-			t.s = t.i
+			if t.hp <= 0 then
+				t.alive = false
+				t.fr = 0
+				t.fcnt = 0
+				return
+			else
+				t.burning = false
+				t.fcnt = 0
+				t.fr = 0
+				t.s = t.i
+			end
 		else
 			return
 		end
@@ -830,8 +824,9 @@ function update_thrower(t)
 		elseif coll_room_border(t) then
 			turned = true
 			t.rght = not t.rght
-		elseif coll_edge_turn_around(t,newx,t.y+t.h) then
+		elseif coll_edge_turn_around(t,newx,t.y+t.h) != 0 then
 			turned = true
+			t.rght = not t.rght
 			newx = t.x
 		end
 	end
@@ -852,19 +847,6 @@ function update_thrower(t)
 	end
 	if p.alive and hit_p(t.x,t.y,t.w,t.h) then
 		kill_p()
-	end
-end
-
-function burn_shooter(t)
-	if (not t.burning) then
-		sound(sfx_dat.hit)
-		t.hp -= 1
-		t.fr = 0
-		t.fcnt = 0
-		t.burning = true
-		if (t.hp <= 0) then
-			t.alive = false
-		end
 	end
 end
 
@@ -931,10 +913,17 @@ function update_shooter(t)
 		t.throwing = false
 		t.s = t.i + t.s_burn.s
 		if play_anim(t, 6, t.s_burn.f) then
-			t.burning = false
-			t.fcnt = 0
-			t.fr = 0
-			t.s = t.i
+			if t.hp <= 0 then
+				t.alive = false
+				t.fr = 0
+				t.fcnt = 0
+				return
+			else
+				t.burning = false
+				t.fcnt = 0
+				t.fr = 0
+				t.s = t.i
+			end
 		else
 			return
 		end
@@ -1020,7 +1009,7 @@ function update_shooter(t)
 	if t.air then
 		t.vx = 0
 		newx = t.x
-	else
+	elseif not t.shooting then
 		local pushx = phys_walls(t,newx,newy)
 		if pushx != newx then
 			turned = true
@@ -1029,8 +1018,9 @@ function update_shooter(t)
 		elseif coll_room_border(t) then
 			turned = true
 			t.rght = not t.rght
-		elseif coll_edge_turn_around(t,newx,t.y+t.h) then
+		elseif coll_edge_turn_around(t,newx,t.y+t.h) != 0 then
 			turned = true
+			t.rght = not t.rght
 			newx = t.x
 		end
 	end
@@ -1054,13 +1044,19 @@ function update_shooter(t)
 	end
 end
 
-function burn_frog(t)
-	if t.alive and not t.burning and not t.angry then
+function burn_bad(t)
+	if t.alive and not t.burning then
 		sound(sfx_dat.hit)
 		t.hp -= 1
 		t.fcnt = 0
 		t.fr = 0
 		t.burning = true
+	end
+end
+
+function burn_frog(t)
+	if not t.angry then
+		burn_bad(t)
 	end
 end
 
@@ -1200,6 +1196,7 @@ function update_frog(t)
 
 	if coll_spikes(t) then
 		sound(sfx_dat.hit)
+		t.angry = false
 		t.alive = false
 		t.fr = 0
 		t.fcnt = 0
@@ -1212,15 +1209,8 @@ function update_frog(t)
 end
 
 function burn_knight(t)
-	if t.hp <= 0 then
-		return
-	end
-	if t.atking and t.fr > 0 and not t.burning then
-		sound(sfx_dat.hit)
-		t.hp -= 1
-		t.fr = 0
-		t.fcnt = 0
-		t.burning = true
+	if t.atking and t.fr > 0 then
+		burn_bad(t)
 	end
 end
 
@@ -1428,11 +1418,10 @@ function update_knight(t)
 	t.x = newx
 	t.y = newy
 
-	-- turn around if walking off edge of platform
-	-- note can still fall off if moving fast enough
-	if not turned and not t.air then
-		if coll_edge_turn_around(t,newx,t.y+t.h) then
+	if not t.atking and not turned and not t.air then
+		if coll_edge_turn_around(t,newx,t.y+t.h) != 0 then
 			turned = true
+			t.rght = not t.rght
 		end
 	end
 
@@ -1477,7 +1466,7 @@ function update_knight(t)
 end
 
 function burn_bat(b)
-	if (b.alive) then
+	if b.alive then
 		sound(sfx_dat.hit)
 		b.alive = false
 		b.s += 2
@@ -2111,22 +2100,20 @@ function coll_edge_turn_around(t,newx,fty)
 	--   rght	-- facing right
 	-- }
 	-- fty = foot y
-	-- turn around if foot is close to edge, and facing off edge
-	-- and return true if we turned it around
+	-- check if foot is close to edge, and facing off edge
+	-- return 1 for right, -1 for left, 0 for not
 	local tftxl = newx + t.ftx
 	local tftxr = tftxl + t.ftw
 	if t.rght then
 		if not collmap(tftxr+1,fty,0) then
-			t.rght = false
-			return true
+			return 1
 		end
 	else
 		if not collmap(tftxl-1,fty,0) then
-			t.rght = true
-			return true
+			return -1
 		end
 	end
-	return false
+	return 0
 end
 
 function coll_edge(t,newx,fty)
