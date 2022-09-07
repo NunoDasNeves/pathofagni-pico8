@@ -202,28 +202,15 @@ function draw_thang(t)
 	spr(t.s+t.fr,t.x,t.y,1,1,flp)
 end
 
+function draw_shot(t)
+	-- tracer
+	line(t.x, t.y, t.endx, t.endy, t.trace_color)
+	--arrow
+	line(t.arrowx, t.arrowy, t.endx, t.endy, t.arrow_color)
+end
+
 function draw_shooter(t)
 	draw_thang(t)
-	if t.shot then
-		-- shot
-		local left = t.rght and t.x + 8 or t.x + 4 - t.shleft
-		local right = t.rght and t.x + 4 + t.shright or t.x - 1
-		rectfill(
-				left,
-				t.y + 3,
-				right,
-				t.y + 3,
-				t.shcolor)
-		--arrow
-		local shleft = t.rght and t.x + 4 + t.shright - 5 or t.x + 4 - t.shleft
-		local shright = shleft + 5
-		rectfill(
-				shleft,
-				t.y + 3,
-				shright,
-				t.y + 3,
-				t.shcolor2)
-	end
 	if dbg then
 		if not t.shooting and t.shleft != nil then
 			rectfill(
@@ -593,6 +580,11 @@ thang_dat = {
 		s_burn = {s=5, f=1},
 		s_die = {s=104 - 117, f=3},
 	},
+	[123] = { -- shot
+		update = update_shot,
+		draw = draw_shot,
+		stops_projs = false,
+	}
 }
 end
 
@@ -900,10 +892,34 @@ function do_bad_burning(t)
 	return true
 end
 
-function update_shooter(t)
-	-- always set shot to false to save doing it other places...
-	t.shot = false
+function update_shot(t)
+	if t.fcnt > 10 then
+		del(thang, t)
+		return
+	end
+	if t.fcnt < 3 then
+		t.trace_color = 7
+		t.arrow_color = 7
+		local left = min(t.x, t.endx)
+		local top = min(t.y, t.endy)
+		local width = abs(t.endx - t.x)
+		local height = abs(t.endy - t.y)
+		if p.alive and hit_p(left, top, width, height) then
+			kill_p()
+		end
+	elseif t.fcnt < 5 then
+		t.trace_color = 12
+	else
+		t.trace_color = 1
+		t.arrow_color = 12
+	end
+	if t.fcnt > 6 then
+		t.arrow_color = 1
+	end
+	t.fcnt += 1
+end
 
+function update_shooter(t)
 	if do_bad_die(t) then
 		return
 	end
@@ -920,31 +936,18 @@ function update_shooter(t)
 			t.shooting = false
 			t.fcnt = 0
 			t.fr = 0
-		elseif t.fr == 2 then
-			if t.fcnt < 3 then
-				if t.fcnt == 1 then
-					sound(sfx_dat.shooter_shot)
-				end
-				t.shcolor = 7
-				t.shcolor2 = 7
-				local left = t.rght and t.x + 4 or t.x + 4 - t.shleft
-				local width = t.rght and t.shright or t.shleft
-				if p.alive and hit_p(left, t.y + 2, width, 2.9) then
-					kill_p()
-				end
-			elseif t.fcnt < 5 then
-				t.shcolor = 12
-				t.shcolor2 = 7
-			else
-				t.shcolor = 1
-				t.shcolor2 = 12
-			end
-			if t.fcnt > 6 then
-				t.shcolor2 = 1
-			end
-			t.shot = true
+		elseif t.fr == 2 and t.fcnt == 1 then
+			sound(sfx_dat.shooter_shot)
+			local orig = {
+				x = t.rght and t.x + 8 or t.x - 1,
+				y = t.y + 3
+			}
+			local shot = spawn_thang(123, orig.x, orig.y)
+			shot.endx = t.x + 4 + (t.rght and t.shright or -t.shleft)
+			shot.endy = orig.y
+			shot.arrowx = t.rght and shot.endx - 5 or shot.endx + 5
+			shot.arrowy = orig.y
 		end
-
 	-- else we walking
 	else
 		t.s = t.i + t.s_wlk.s
@@ -981,7 +984,7 @@ function update_shooter(t)
 
 	local phys_result = phys_bad(t)
 
-	if not t.air then
+	if not t.air and not t.shooting then
 		if phys_result.hit_wall or coll_edge_turn_around(t,t.x,t.y + t.h) != 0 then
 			t.rght = not t.rght
 			t.goingrght = t.rght
@@ -2337,7 +2340,7 @@ bbbb0980008000000210712002a0712002170120000000001ccccccc1ccccc1c10c7c1cc00c70000
 0000000000000000000000b0bb00000000000e00000666000006660000066c0000066600000666c00eee080000000000dddddddddddddddd00670001d0060000
 000000000000000000000b8b03b000000000e7e0006116c000611600006116c000611cc00061160ce77e00800000000001d111d001d11d10000066d1d1600000
 00000b0000000b000004bbb300b0000000eeee200061160c006116c00061160c0061160c0061160ce77e008000000000061116000611116000000dd1dd166760
-0000b8b00000b8b0004443b000b400b00000ee000666660c066666c0066566656656666566566665eeeeee9000000000060600706006060667666d11d1100000
+0000b8b00000b8b0004443b000b400b00000ee000666660c066666c0066566656656666566566665eeeeee90000ccccc060600706006060667666d11d1100000
 00bbbb3000bbbb3000b400b000444b8b0008820066666665066666500066660c0066660c0066660c0eee008000000000700606067006060000000dd1d1166000
 04443b0004443b300bb300000004bbb300e880005066660c056666c0006666c000666cc00066660c9eeee080000000006006070000600700007606d1dd100676
 04443b0004443b00b3000000000003b0ee0020000066650c006660c000666c0000666500006665c009999800000000000007006000700600660070d1d1600000
