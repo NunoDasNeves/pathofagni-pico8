@@ -818,7 +818,7 @@ function update_thrower(t)
 		end
 	end
 
-	local phys_result = phys_bad(t)
+	local phys_result = phys_thang(t)
 
 	if not t.air then
 		if phys_result.hit_wall or coll_edge_turn_around(t,t.x,t.y + t.h) != 0 then
@@ -917,6 +917,7 @@ end
 
 function check_bad_coll_spikes(t)
 	if coll_spikes(t) then
+		sound(sfx_dat.hit)
 		t.alive = false
 		t.fcnt = 0
 		t.fr = 0
@@ -1039,7 +1040,7 @@ function update_shooter(t)
 		end
 	end
 
-	local phys_result = phys_bad(t)
+	local phys_result = phys_thang(t)
 
 	if not t.air and not t.shooting then
 		if phys_result.hit_wall or coll_edge_turn_around(t,t.x,t.y + t.h) != 0 then
@@ -1120,7 +1121,7 @@ function update_archer(t)
 		end
 	end
 
-	local phys_result = phys_bad(t)
+	local phys_result = phys_thang(t)
 
 	if not t.air and not t.shooting then
 		if phys_result.hit_wall or coll_edge_turn_around(t,t.x,t.y + t.h) != 0 then
@@ -1219,7 +1220,7 @@ function update_frog(t)
 	local oldvx = t.vx
 	local oldx = t.x
 	local oldy = t.y
-	local phys_result = phys_bad(t)
+	local phys_result = phys_thang(t)
 	-- if hit ceiling, redo physics with tiny jump
 	if phys_result.ceil_cancel then
 		t.vx = oldvx
@@ -1227,7 +1228,7 @@ function update_frog(t)
 		t.x = oldx
 		t.y = oldy
 		t.air = true
-		phys_result = phys_bad(t)
+		phys_result = phys_thang(t)
 	end
 
 	-- bounce off wall
@@ -1423,7 +1424,7 @@ function update_knight(t)
 	end
 
 	local oldvx = t.vx
-	local phys_result = phys_bad(t)
+	local phys_result = phys_thang(t)
 
 	if t.air then
 		if phys_result.hit_wall then
@@ -1690,6 +1691,8 @@ p_dat = {
 	min_vx = 0.01, -- stop threshold
 	g_norm = 0.3,
 	g_sh = 0.05,
+	max_vy_norm = 4,
+	max_vy_sh = 1,
 	g = 0.3, -- gravity
 	max_vy = 4,
 	j_vy = -4, -- jump accel
@@ -1792,11 +1795,11 @@ function update_p()
 	end
 
 	-- change direction
-	if btnp(⬅️ or
-		btn(⬅️) and not btn(➡️)) then
+	if btnp(⬅️) or
+		btn(⬅️) and not btn(➡️) then
 		p.rght = false
-	elseif btnp(➡️ or
-		btn(➡️) and not btn(⬅️)) then
+	elseif btnp(➡️) or
+		btn(➡️) and not btn(⬅️) then
 		p.rght = true
 	end
  
@@ -1838,10 +1841,13 @@ function update_p()
 		p.air = true
 	end
 	if p.sh and p.vy > 0 then
-		p.vy += p.g_sh
+		p.max_vy = p.max_vy_sh
+		p.g = p.g_sh
 	else
-		p.vy += p.g_norm
+		p.max_vy = p.max_vy_norm
+		p.g = p.g_norm
 	end
+	p.vy += p.g
 	p.vy = clamp(p.vy, -p.max_vy, p.max_vy)
 
 	local newx = p.x + p.vx
@@ -1866,9 +1872,6 @@ function update_p()
 				p.vx = 0
 			end
 		end
-		if oldair and not p.air then
-			sound(sfx_dat.p_land)
-		end
 	elseif p.vy < 0 then
 		newy = phys_jump(p,newx,newy,oldair)
 	end
@@ -1880,6 +1883,10 @@ function update_p()
 
 	p.x = newx
 	p.y = newy
+
+	if oldair and not p.air then
+		sound(sfx_dat.p_land)
+	end
 
 	if coll_spikes(p) then
 		kill_p()
@@ -2252,8 +2259,8 @@ end
 -->8
 -- physics for platformu
 
-function phys_bad(t)
-	-- physics for baddies who obey gravity
+function phys_thang(t)
+	-- physics for thangs who obey gravity
 	-- apply gravity, do physics, stop them colliding with walls
 	-- ground if airborne and hit the ground
 	-- make airborne if not grounded or jumping
