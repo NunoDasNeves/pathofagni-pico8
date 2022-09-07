@@ -818,7 +818,7 @@ function update_thrower(t)
 		end
 	end
 
-	local phys_result = phys_thang(t)
+	local phys_result = phys_thang(t, t.air)
 
 	if not t.air then
 		if phys_result.hit_wall or coll_edge_turn_around(t,t.x,t.y + t.h) != 0 then
@@ -1040,7 +1040,7 @@ function update_shooter(t)
 		end
 	end
 
-	local phys_result = phys_thang(t)
+	local phys_result = phys_thang(t, t.air)
 
 	if not t.air and not t.shooting then
 		if phys_result.hit_wall or coll_edge_turn_around(t,t.x,t.y + t.h) != 0 then
@@ -1121,7 +1121,7 @@ function update_archer(t)
 		end
 	end
 
-	local phys_result = phys_thang(t)
+	local phys_result = phys_thang(t, t.air)
 
 	if not t.air and not t.shooting then
 		if phys_result.hit_wall or coll_edge_turn_around(t,t.x,t.y + t.h) != 0 then
@@ -1164,6 +1164,7 @@ function update_frog(t)
 		t.jcount = 3
 	end
 
+	local oldair = t.air
 	-- not burning and not in the air
 	if not t.air then
 		t.s = t.i + 0
@@ -1220,7 +1221,7 @@ function update_frog(t)
 	local oldvx = t.vx
 	local oldx = t.x
 	local oldy = t.y
-	local phys_result = phys_thang(t)
+	local phys_result = phys_thang(t, oldair)
 	-- if hit ceiling, redo physics with tiny jump
 	if phys_result.ceil_cancel then
 		t.vx = oldvx
@@ -1228,7 +1229,7 @@ function update_frog(t)
 		t.x = oldx
 		t.y = oldy
 		t.air = true
-		phys_result = phys_thang(t)
+		phys_result = phys_thang(t, oldair)
 	end
 
 	-- bounce off wall
@@ -1334,6 +1335,8 @@ function update_knight(t)
 		t.vx = 0
 	end
 
+	local oldair = t.air
+
 	if t.alive and t.atking then
 		local anim = t.s_atk
 		if t.phase == 2 then
@@ -1424,7 +1427,7 @@ function update_knight(t)
 	end
 
 	local oldvx = t.vx
-	local phys_result = phys_thang(t)
+	local phys_result = phys_thang(t, oldair)
 
 	if t.air then
 		if phys_result.hit_wall then
@@ -1847,6 +1850,11 @@ function update_p()
 		p.max_vy = p.max_vy_norm
 		p.g = p.g_norm
 	end
+
+	local oldx = p.x
+	local oldy = p.y
+	local oldvy = p.vy + p.g
+
 	p.vy += p.g
 	p.vy = clamp(p.vy, -p.max_vy, p.max_vy)
 
@@ -1855,6 +1863,16 @@ function update_p()
 
 	if p.vy > 0 then
 		newy = phys_fall(p,newx,newy)
+	elseif p.vy < 0 then
+		newy = phys_jump(p,newx,newy,oldair)
+	end
+
+	newx = phys_walls(p,newx,newy)
+
+	p.x = newx
+	p.y = newy
+
+	if oldvy > 0 then
 		-- fall off platform only if
 		-- holding direction of movement
 		-- kill 2 bugs with one hack
@@ -1866,23 +1884,16 @@ function update_p()
 				-- none
 			else
 				p.air = false
-				newx = p.x
-				newy = p.y
+				p.x = oldx
+				p.y = oldy
 				p.vy = 0
 				p.vx = 0
 			end
 		end
-	elseif p.vy < 0 then
-		newy = phys_jump(p,newx,newy,oldair)
 	end
 
-	newx = phys_walls(p,newx,newy)
-
 	-- close to edge?
-	p.teeter = not p.air and coll_edge(p,newx,newy+p.fty)
-
-	p.x = newx
-	p.y = newy
+	p.teeter = not p.air and coll_edge(p,p.x,p.y+p.fty)
 
 	if oldair and not p.air then
 		sound(sfx_dat.p_land)
@@ -2259,7 +2270,8 @@ end
 -->8
 -- physics for platformu
 
-function phys_thang(t)
+function phys_thang(t, oldair)
+	-- oldair = true if grounded, or just jumped this frame (air = true and vy < 0)
 	-- physics for thangs who obey gravity
 	-- apply gravity, do physics, stop them colliding with walls
 	-- ground if airborne and hit the ground
@@ -2269,7 +2281,6 @@ function phys_thang(t)
 	--          ceil_cancel, -- if jump was cancelled by a ceiling
 	--			landed,		 -- if t.air went from true to false (false on ceil_cancel)
     -- } 
-	local oldair = t.air
 	local ret = { hit_wall = false, ceil_cancel = false, landed = false }
 
 	t.vy += t.g
