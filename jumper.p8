@@ -104,12 +104,15 @@ function update_room()
 	local py = p.y + p.h/2
 	move_room(px,py)
 	if (oldi != room.i) then
-		local oldxy = get_room_xy(oldi)
-		local roomxy = get_room_xy(room.i)
-		if oldxy.x > roomxy.x then
-			p.x -= 12
-		elseif oldxy.x < roomxy.x then
-			p.x += 12
+		-- give player a little kick through the door
+		if p.alive and not p.spawn then
+			local oldxy = get_room_xy(oldi)
+			local roomxy = get_room_xy(room.i)
+			if oldxy.x > roomxy.x then
+				p.x -= 12
+			elseif oldxy.x < roomxy.x then
+				p.x += 12
+			end
 		end
 		camera(room.x, room.y)
 		fireball = {}
@@ -451,7 +454,7 @@ thang_dat = {
 		s_wlk = {s=0, f=2},
 		s_sh = {s=2, f=1},
 		s_burn = {s=3, f=1},
-		s_die = {s=3, f=4},
+		s_die = {s=4, f=3},
 	},
 	[107] = { -- icepick
 		init = init_icepick,
@@ -764,16 +767,18 @@ function update_thrower(t)
 
 	-- else we walking
 	else
+		t.s = t.i + t.s_wlk.s
 		-- remember which way we were going
 		t.rght = t.goingrght
-		if t.rght then
-			t.vx = 0.75
-		else
-			t.vx = -0.75
-		end
 
-		t.s = t.i + t.s_wlk.s
-		loop_anim(t,4,t.s_wlk.f)
+		if not t.air then
+			if t.rght then
+				t.vx = 0.75
+			else
+				t.vx = -0.75
+			end
+			loop_anim(t,4,t.s_wlk.f)
+		end
 
 		if (t.shcount <= 0) then
 			if (dist(p.x,p.y,t.x,t.y) <= t.range) then
@@ -787,41 +792,14 @@ function update_thrower(t)
 		end
 	end
 
-	local oldair = t.air
+	local phys_result = phys_bad(t)
 
-	t.vy += t.g
-	t.vy = clamp(t.vy, -t.max_vy, t.max_vy)
-
-	local newx = t.x + t.vx
-	local newy = t.y + t.vy
-
-	newy = phys_fall(t,newx,newy)
-
-	local turned = false
-	if t.air then
-		t.vx = 0
-		newx = t.x
-	else
-		local pushx = phys_walls(t,newx,newy)
-		if pushx != newx then
-			turned = true
+	if not t.air then
+		if phys_result.hit_wall or coll_edge_turn_around(t,t.x,t.y + t.h) != 0 then
 			t.rght = not t.rght
-			newx = pushx
-		elseif coll_room_border(t) then
-			turned = true
-			t.rght = not t.rght
-		elseif coll_edge_turn_around(t,newx,t.y+t.h) != 0 then
-			turned = true
-			t.rght = not t.rght
-			newx = t.x
+			t.goingrght = t.rght
 		end
 	end
-	if turned then
-		t.goingrght = t.rght
-	end
-
-	t.x = newx
-	t.y = newy
 
 	if coll_spikes(t) then
 		sound(sfx_dat.hit)
@@ -969,16 +947,17 @@ function update_shooter(t)
 
 	-- else we walking
 	else
+		t.s = t.i + t.s_wlk.s
 		-- remember which way we were going
 		t.rght = t.goingrght
-		if t.rght then
-			t.vx = 0.75
-		else
-			t.vx = -0.75
+		if not t.air then
+			if t.rght then
+				t.vx = 0.75
+			else
+				t.vx = -0.75
+			end
+			loop_anim(t,4,t.s_wlk.f)
 		end
-
-		t.s = t.i + t.s_wlk.s
-		loop_anim(t,4,t.s_wlk.f)
 
 		if (t.shcount <= 0) then
 			t.shleft = dist_until_wall(t.x + 4, t.y + 4, -1)
@@ -1000,41 +979,14 @@ function update_shooter(t)
 		end
 	end
 
-	local oldair = t.air
+	local phys_result = phys_bad(t)
 
-	t.vy += t.g
-	t.vy = clamp(t.vy, -t.max_vy, t.max_vy)
-
-	local newx = t.x + t.vx
-	local newy = t.y + t.vy
-
-	newy = phys_fall(t,newx,newy)
-
-	local turned = false
-	if t.air then
-		t.vx = 0
-		newx = t.x
-	elseif not t.shooting then
-		local pushx = phys_walls(t,newx,newy)
-		if pushx != newx then
-			turned = true
+	if not t.air then
+		if phys_result.hit_wall or coll_edge_turn_around(t,t.x,t.y + t.h) != 0 then
 			t.rght = not t.rght
-			newx = pushx
-		elseif coll_room_border(t) then
-			turned = true
-			t.rght = not t.rght
-		elseif coll_edge_turn_around(t,newx,t.y+t.h) != 0 then
-			turned = true
-			t.rght = not t.rght
-			newx = t.x
+			t.goingrght = t.rght
 		end
 	end
-	if turned then
-		t.goingrght = t.rght
-	end
-
-	t.x = newx
-	t.y = newy
 
 	if coll_spikes(t) then
 		sound(sfx_dat.hit)
@@ -1069,8 +1021,6 @@ function update_frog(t)
 	if do_bad_die(t) then
 		return
 	end
-
-	local oldair = t.air
 
 	local oldburning = t.burning
 	if do_bad_burning(t) then
@@ -1133,38 +1083,26 @@ function update_frog(t)
 	end
 
 	-- physics - always run because falling could happen e.g. due to ice breaking
-	t.vy += t.g
-	t.vy = clamp(t.vy, -t.max_vy, t.max_vy)
-
-	local newx = t.x + t.vx
-	local newy = t.y + t.vy
-
-	if (t.vy > 0) then
-		newy = phys_fall(t,newx,newy)
-	else
-		newy = phys_jump(t,newx,newy,oldair)
-		-- tile directly above preventing jump - jump tiny instead
-		if t.vy == 0 and t.air == false then
-			-- gotta redo everything here - keep vx the same
-			t.air = true
-			t.vy = t.jtiny_vy + t.g
-			newy = t.y + t.vy
-			newy = phys_jump(t,newx,newy,oldair)
-		end
+	local oldvx = t.vx
+	local oldx = t.x
+	local oldy = t.y
+	local phys_result = phys_bad(t)
+	-- if hit ceiling, redo physics with tiny jump
+	if phys_result.ceil_cancel then
+		t.vx = oldvx
+		t.vy = t.jtiny_vy + t.g
+		t.x = oldx
+		t.y = oldy
+		t.air = true
+		phys_result = phys_bad(t)
 	end
 
 	-- bounce off wall
-	local oldvx = t.vx
-	local pushx = phys_walls(t,newx,newy)
-	if pushx != newx then
+	if phys_result.hit_wall then
 		t.rght = not t.rght
 		t.vx = -oldvx
 		t.bounced = true
 	end
-	newx = pushx
-
-	t.x = newx
-	t.y = newy
 
 	-- air animation
 	if t.air then
@@ -1177,7 +1115,7 @@ function update_frog(t)
 	end
 
 	-- on landing, reset animation state
-	if not t.air and oldair then
+	if not t.air and phys_result.landed then
 		t.s = t.i + t.s_idle.s
 		t.fr = 0
 		t.fcnt = rnd({0,10,20,30})
@@ -1367,43 +1305,16 @@ function update_knight(t)
 		end
 	end
 
-	local oldair = t.air
-
-	t.vy += t.g
-	t.vy = clamp(t.vy, -t.max_vy, t.max_vy)
-
-	local newx = t.x + t.vx
-	local newy = t.y + t.vy
-
-	if t.vy > 0 then
-		newy = phys_fall(t,newx,newy)
-	else
-		newy = phys_jump(t,newx,newy,oldair)
-	end
-
 	local oldvx = t.vx
-	local pushx = phys_walls(t,newx,newy)
-	local hit_screen_edge = coll_room_border(t)
-	local turned = false
-	if pushx != newx or hit_screen_edge then
-		turned = true
-		-- bounce off wall in air
-		if t.air then
+	local phys_result = phys_bad(t)
+
+	if t.air then
+		if phys_result.hit_wall then
 			t.rght = not t.rght
 			t.vx = -oldvx
-		-- otherwise just turn around
-		else
-			t.rght = not t.rght
 		end
-	end
-	newx = pushx
-
-	t.x = newx
-	t.y = newy
-
-	if not t.atking and not turned and not t.air then
-		if coll_edge_turn_around(t,newx,t.y+t.h) != 0 then
-			turned = true
+	elseif not t.atking then
+		if phys_result.hit_wall or coll_edge_turn_around(t,t.x,t.y+t.h) != 0 then
 			t.rght = not t.rght
 		end
 	end
@@ -1431,7 +1342,6 @@ function update_knight(t)
 		t.jmptime = 10 + rnd({0,15,30})
 	end
 		
-
 	-- don't kill p if we're dead! (e.g. falling)
 	if t.alive and p.alive then
 		local swrd_start_x = t.rght and 8 or -t.swrd_x_off
@@ -1951,11 +1861,13 @@ function update_p()
 end
 
 function respawn_update_p()
+	-- do nothing while fading out/in
 	if do_fade then
 		return
 	end
 	if (not p.alive) then
 		if (play_anim(p,2,p.s_die.f)) then
+			-- fade out after death anim
 			fade_timer = 0
 			do_fade = true
 		end
@@ -2212,6 +2124,48 @@ end
 
 -->8
 -- physics for platformu
+
+function phys_bad(t)
+	-- physics for baddies who obey gravity
+	-- apply gravity, do physics, stop them colliding with walls
+	-- ground if airborne and hit the ground
+	-- make airborne if not grounded or jumping
+	-- return {
+	--			hit_wall, 	 -- if we hit a wall
+	--          ceil_cancel, -- if jump was cancelled by a ceiling
+	--			landed,		 -- if t.air went from true to false (false on ceil_cancel)
+    -- } 
+	local oldair = t.air
+	local ret = { hit_wall = false, ceil_cancel = false, landed = false }
+
+	t.vy += t.g
+	t.vy = clamp(t.vy, -t.max_vy, t.max_vy)
+
+	local newx = t.x + t.vx
+	local newy = t.y + t.vy
+
+	if t.vy > 0 then
+		newy = phys_fall(t,newx,newy)
+	else
+		newy = phys_jump(t,newx,newy,oldair)
+		if t.vy == 0 and t.air == false then
+			ret.ceil_cancel = true
+		end
+	end
+
+	local pushx = phys_walls(t,newx,newy)
+	ret.hit_wall = pushx != newx
+	newx = pushx
+
+	if oldair and not t.air then
+		ret.landed = true
+	end
+
+	t.x = newx
+	t.y = newy
+
+	return ret
+end
 
 -- t.vy > 0
 function phys_fall(t,newx,newy)
