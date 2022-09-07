@@ -793,14 +793,10 @@ function update_thrower(t)
 		end
 	end
 
-	if coll_spikes(t) then
-		sound(sfx_dat.hit)
-		t.alive = false
-		t.fcnt = 0
-		t.fr = 0
-		t.s = t.i + t.s_die.s
+	if check_bad_coll_spikes(t) then
 		return
 	end
+	
 	if p.alive and hit_p(t.x,t.y,t.w,t.h) then
 		kill_p()
 	end
@@ -866,6 +862,17 @@ function do_bad_die(t)
 	return false
 end
 
+function check_bad_coll_spikes(t)
+	if coll_spikes(t) then
+		t.alive = false
+		t.fcnt = 0
+		t.fr = 0
+		t.s = t.i + t.s_die.s
+		return true
+	end
+	return false
+end
+
 function do_bad_burning(t)
 	-- if burning, play burn animation
 	-- return true if still burning (or now dead), else false
@@ -875,16 +882,13 @@ function do_bad_burning(t)
 	end
 	t.s = t.i + t.s_burn.s
 	if play_anim(t, 6, t.s_burn.f) then
+		t.fr = 0
+		t.fcnt = 0
+		t.burning = false
 		if t.hp <= 0 then
-			t.burning = false
 			t.alive = false
-			t.fr = 0
-			t.fcnt = 0
 			return true
 		else
-			t.burning = false
-			t.fcnt = 0
-			t.fr = 0
 			t.s = t.i
 			return false
 		end
@@ -991,12 +995,7 @@ function update_shooter(t)
 		end
 	end
 
-	if coll_spikes(t) then
-		sound(sfx_dat.hit)
-		t.alive = false
-		t.fcnt = 0
-		t.fr = 0
-		t.s = t.i + t.s_die.s
+	if check_bad_coll_spikes(t) then
 		return
 	end
 	if p.alive and hit_p(t.x,t.y,t.w,t.h) then
@@ -1124,12 +1123,8 @@ function update_frog(t)
 		t.fcnt = rnd({0,10,20,30})
 	end
 
-	if coll_spikes(t) then
-		sound(sfx_dat.hit)
-		t.alive = false
-		t.fr = 0
-		t.fcnt = 0
-		t.s = t.i + t.s_die.s
+	if check_bad_coll_spikes(t) then
+		return
 	end
 
 	if p.alive and hit_p(t.x,t.y,t.w,t.h) then
@@ -1431,7 +1426,7 @@ function update_bat(b)
 	local go_to_p = in_range
 
 	-- if collide with something, go in random direction
-	if move_hit_wall(b) or coll_room_border(b) then
+	if move_hit_wall(b) then
 		b.dircount = 0
 		-- force pick a random direction
 		go_to_p = false
@@ -1495,32 +1490,39 @@ function update_lantern(l)
 end
 
 function spawn_thang(i,x,y)
-	local t = {}
-	t.i = i
-	t.x = x
-	t.y = y
-	t.cx = 0
-	t.cy = 0
-	t.hx = 0
-	t.hy = 0
-	t.vx = 0
-	t.vy = 0
-	t.s = i
-	t.fr = 0
-	t.fcnt = 0
-	t.draw = draw_thang
-	t.burn = no_thang
-	t.stops_projs = true
-	t.replace = 0
-	t.w = 8
-	t.h = 8
-	t.cw = 8
-	t.ch = 8
-	t.hw = 8
-	t.hh = 8
-	t.z = 0
-	t.rght = true
-	t.alive = true
+	local t = {
+		i = i,
+		x = x,
+		y = y,
+		vx = 0,
+		vy = 0,
+		alive = true,
+		-- collision
+		cx = 0,
+		cy = 0,
+		cw = 8,
+		ch = 8,
+		-- hurtbox
+		hx = 0,
+		hy = 0,
+		hw = 8,
+		hh = 8,
+		-- animation/drawing
+		rght = true,
+		z = 0,
+		w = 8,
+		h = 8,
+		s = i,
+		fr = 0,
+		fcnt = 0,
+		-- functions
+		draw = draw_thang,
+		burn = no_thang,
+		-- misc
+		stops_projs = true,
+		-- replace on map when spawn
+		replace = 0,
+	}
 	for k,v in pairs(thang_dat[i]) do
 		t[k] = v
 	end
