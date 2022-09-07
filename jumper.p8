@@ -317,7 +317,7 @@ function _draw()
 	    not p.rght)
 
 	for f in all(fireball) do
-	 f:draw()
+		f:draw()
 	end
 
 	if do_fade then
@@ -1891,18 +1891,19 @@ end
 fireball = {}
 
 function make_fireball(xdir, ydir)
-	local f = {}
-	f.w = 4
-	f.h = 4
-	f.x = p.x + (p.w - f.w)/2
-	f.y = p.y + (p.h - f.h)/2
-	f.s = 80
-	f.alive = true
-	f.fcnt = 0
-	f.speed = 3
-	f.fr = 0
-	f.draw = draw_smol_thang
-	f.update = update_fireball
+	local f = {
+		w = 4,
+		h = 4,
+		x = p.x + (p.w - 4)/2,
+		y = p.y + (p.h - 4)/2,
+		s = 80,
+		alive = true,
+		fcnt = 0,
+		speed = 3,
+		fr = 0,
+		draw = draw_smol_thang,
+		update = update_fireball,
+	}
 	if (xdir == 0 or ydir == 0) then
 		f.vx = xdir * f.speed
 		f.vy = ydir * f.speed
