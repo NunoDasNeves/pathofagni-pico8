@@ -1628,21 +1628,22 @@ function sound(snd)
 end
 
 function spawn_p(x,y)
-	p = {}
-	p.x = x
-	p.y = y
-	p.rght = true -- facing
-	p.vx = 0
-	p.vy = 0
-	p.air = true -- must start in air!
-	p.onice = false
-	p.fr = 0 -- displayed frame offset
-	p.fcnt = 0 -- counter for advancing frame
-	p.shcount = 0 -- shoot counter
-	p.sh = false -- charging fireball
-	p.teeter = false
-	p.alive = true
-	p.spawn = true
+	p = {
+		x = x,
+		y = y,
+		rght = true,
+		vx = 0,
+		vy = 0,
+		air = true, -- must start in air!
+		onice = false,
+		fr = 0, -- displayed frame offset
+		fcnt = 0, -- counter for advancing frame
+		shcount = 0, -- shoot counter (cooldown)
+		sh = false, -- charging fireball
+		teeter = false,
+		alive = true,
+		spawn = true,
+	}
 	for k,v in pairs(p_dat) do
 		p[k] = v
 	end
