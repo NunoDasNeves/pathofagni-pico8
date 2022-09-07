@@ -37,7 +37,3 @@ end
 function vlen(v)
     return sqrt(v.x*v.x + v.y*v.y)
 end
-
-function vadd(v0,v1)
-    return {x=v0.x+v1.x,y=v0.y+v1.y}
-end
