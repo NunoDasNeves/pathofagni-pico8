@@ -881,6 +881,25 @@ function dist_until_wall(x,y,dir,vert)
 	end
 end
 
+function do_boss_die(t)
+	if not t.alive then
+		t.stops_projs = false
+		t.s = t.i + t.s_die.s
+		if not t.air then
+			if play_anim(t, 10, t.s_die.f) then
+				-- get shorter so fireballs don't hit air
+				t.h = 3
+				t.cy = 4.99
+				room.num_bads = 0
+			end
+			-- don't want to keep doing physics when dead
+			-- this would break if he was on an ice block and you broke it
+			return true
+		end
+	end
+	return false
+end
+
 function do_bad_die(t)
 	-- if dead, play death animation, delete t when done
 	-- return true if dead
@@ -1039,7 +1058,8 @@ function update_shooter(t)
 end
 
 function update_archer(t)
-	if do_bad_die(t) then
+
+	if do_boss_die(t) then
 		return
 	end
 
@@ -1051,7 +1071,7 @@ function update_archer(t)
 
 	if t.shooting then
 		t.s = t.i + t.s_sh.s
-		if play_anim(t, 8, t.s_sh.f) then
+		if play_anim(t, 6, t.s_sh.f) then
 			t.shooting = false
 			t.fcnt = 0
 			t.fr = 0
@@ -1081,10 +1101,9 @@ function update_archer(t)
 			loop_anim(t,4,t.s_wlk.f)
 		end
 
-		if (t.shcount <= 0) then
+		if t.shcount <= 0 then
 			t.shleft = dist_until_wall(t.x + 4, t.y + 4, -1)
 			t.shright = dist_until_wall(t.x + 4, t.y + 4, 1)
-			--dbgstr = tostr(left)..' '..tostr(right)..'\n'..dbgstr
 			if hit_p(t.x + 4 - t.shleft, t.y, t.shleft + t.shright, 8) then
 				if p.x < t.x then
 					t.rght = false
@@ -1291,20 +1310,8 @@ function update_knight(t)
 	t.swrd_draw = false
 	t.swrd_hit = false
 
-	if not t.alive then
-		t.stops_projs = false
-		t.s = t.i + t.s_die.s
-		if not t.air then
-			if (play_anim(t, 10, t.s_die.f)) then
-				-- get shorter so fireballs don't hit air
-				t.h = 3
-				t.cy = 4.99
-				room.num_bads = 0
-			end
-			-- don't want to keep doing physics when dead
-			-- this would break if he was on an ice block and you broke it
-			return
-		end
+	if do_boss_die(t) then
+		return
 	end
 
 	local oldatking = t.atking
