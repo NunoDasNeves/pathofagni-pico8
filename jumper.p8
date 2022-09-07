@@ -46,7 +46,7 @@ function init_lantern()
 		for y=rmapy,rmapb do
 			for x=rmapx,rmapr do
 				local val = mget(x,y)
-				if (val == 82) then
+				if val == 82 then
 					l.x = x*8
 					l.y = y*8
 					l.lit = false
@@ -82,10 +82,10 @@ function get_room_xy(i)
 end
 
 function in_room(x,y)
-	if (x<room.x or x>room.x+room.sz) then
+	if x<room.x or x>room.x+room.sz then
 		return false
 	end
-	if (y<room.y or y>room.y+room.sz) then
+	if y<room.y or y>room.y+room.sz then
 		return false
 	end
 	return true
@@ -103,7 +103,7 @@ function update_room()
 	local px = p.x + p.w/2
 	local py = p.y + p.h/2
 	move_room(px,py)
-	if (oldi != room.i) then
+	if oldi != room.i then
 		-- give player a little kick through the door
 		if p.alive and not p.spawn then
 			local oldxy = get_room_xy(oldi)
@@ -136,11 +136,11 @@ function spawn_room()
 		for x=rmapx,rmapr do
 			local val = mget(x,y)
 			add(room.old, {x=x,y=y,val=val})
-			if (fget(val,4)) then
+			if fget(val,4) then
 				local t = spawn_thang(val,x*8,y*8)
 				max_z = max(t.z, max_z)
 				mset(x,y,t.replace)
-				if (t.bad) then
+				if t.bad then
 					room.num_bads += 1
 				end
 			end
@@ -159,9 +159,9 @@ function spawn_p_at_curr_lantern()
 end
 
 function fade_update()
-	if (fade_timer == 12) then
+	if fade_timer == 12 then
 		spawn_p_at_curr_lantern()	
-	elseif (fade_timer > 23) then
+	elseif fade_timer > 23 then
 		fade_timer = 0
 		return false
 	end
@@ -196,7 +196,7 @@ end
 
 function draw_thang(t)
 	local flp = false
-	if (not (t.rght == nil)) then
+	if not (t.rght == nil) then
 		flp = not t.rght
 	end
 	spr(t.s+t.fr,t.x,t.y,1,1,flp)
@@ -237,7 +237,7 @@ end
 
 function draw_knight(t)
 	local flp = false
-	if (not (t.rght == nil)) then
+	if not (t.rght == nil) then
 		flp = not t.rght
 	end
 	-- draw knight
@@ -304,7 +304,7 @@ function _draw()
  -- draw one layer at a time!
 	for z=max_z,0,-1 do
 		for t in all(thang) do
-	  if (t.z == z) then
+	  if t.z == z then
 			 t:draw()
 			end
 		end
@@ -321,21 +321,21 @@ function _draw()
 	end
 
 	if do_fade then
-		if (fade_timer < 4) then
+		if fade_timer < 4 then
 			draw_fade(0b0101101001011010.1)
-		elseif (fade_timer < 8) then
+		elseif fade_timer < 8 then
 			draw_fade(0b0000101000001010.1)
-		elseif (fade_timer < 16) then
+		elseif fade_timer < 16 then
 			draw_fade(0)
-		elseif (fade_timer < 20) then
+		elseif fade_timer < 20 then
 			draw_fade(0b0000101000001010.1)
-		elseif (fade_timer < 24) then
+		elseif fade_timer < 24 then
 			draw_fade(0b0101101001011010.1)
 		end
 		fillp(0)
 	end
 
-	if (dbg) then
+	if dbg then
 		local x = room.x + 8
 		print(dbgstr,x,room.y,7)
 	end
@@ -1493,10 +1493,10 @@ function loop_anim(t,speed,frames)
 	-- }
 	-- return true if looped
 	local ret = false
-	if (t.fcnt >= speed) then
+	if t.fcnt >= speed then
 		t.fcnt = 0
 		t.fr += 1
-		if (t.fr >= frames) then
+		if t.fr >= frames then
 			ret = true
 			t.fr = 0
 		end
@@ -1508,7 +1508,7 @@ end
 function play_anim(t,speed,frames)
 	-- see loop_anim
 	-- this one doesn't loop
-	if (loop_anim(t,speed,frames)) then
+	if loop_anim(t,speed,frames) then
 		t.fr = frames - 1
 		t.fcnt = speed
 		return true;
@@ -1521,9 +1521,9 @@ function init_bat(b)
 end
 
 function update_bat(b)
-	if (not b.alive) then
+	if not b.alive then
 		b.deadf -= 1
-		if (b.deadf == 0) then
+		if b.deadf == 0 then
 			del(thang, b)
 			room.num_bads -= 1
 		end
@@ -1581,20 +1581,20 @@ function update_bat(b)
 	b.dircount -= 1
 
 	-- face the right way
-	if (b.vx > 0) then
+	if b.vx > 0 then
 		b.rght = true
 	else
 		b.rght = false
 	end
 
-	if (p.alive and
-	    hit_p(b.x,b.y,b.w,b.h)) then
+	if p.alive and
+	    hit_p(b.x,b.y,b.w,b.h) then
 		kill_p()
 	end
 end
 
 function burn_lantern(l)
-	if (not l.lit) then
+	if not l.lit then
 		l.lit = true
 		l.s += 1
 		lantern[room.i+1].lit = true
@@ -1603,7 +1603,7 @@ function burn_lantern(l)
 end
 
 function update_lantern(l)
-	if (l.lit) then
+	if l.lit then
 		loop_anim(l,5,2)
 	end
 end
@@ -1645,7 +1645,7 @@ function spawn_thang(i,x,y)
 	for k,v in pairs(thang_dat[i]) do
 		t[k] = v
 	end
-	if (t.init != nil) then
+	if t.init != nil then
 		t:init()
 	end
 	add(thang,t)
@@ -1786,38 +1786,38 @@ function hit_p(x,y,w,h)
 end
 
 function update_p()
-	if (p.spawn or not p.alive) then
+	if p.spawn or not p.alive then
 		respawn_update_p()
 		return
 	end
 
 	-- change direction
-	if (btnp(⬅️) or
+	if btnp(⬅️ or
 		btn(⬅️) and not btn(➡️)) then
 		p.rght = false
-	elseif (btnp(➡️) or
+	elseif btnp(➡️ or
 		btn(➡️) and not btn(⬅️)) then
 		p.rght = true
 	end
  
-	if (not p.sh) then
+	if not p.sh then
 		local ax = 0
-		if (p.air) then
+		if p.air then
 			ax = p.aax
-		elseif (p.onice) then
+		elseif p.onice then
 			ax = p.iax
 		else
 			ax = p.gax
 		end
-		if (btn(⬅️) and not p.rght) then
+		if btn(⬅️) and not p.rght then
 			-- accel left
 			p.vx -= ax
-		elseif (btn(➡️) and p.rght) then
+		elseif btn(➡️) and p.rght then
 			p.vx += ax
 		end
 	end
-	if (p.sh or (not btn(⬅️) and not btn(➡️))) then
-		if (p.air) then
+	if p.sh or (not btn(⬅️) and not btn(➡️)) then
+		if p.air then
 			p.vx *= p.adax
 		elseif (p.onice) then
 			p.vx *= p.idax
@@ -1826,18 +1826,18 @@ function update_p()
 		end
 	end
 	p.vx = clamp(p.vx, -p.max_vx, p.max_vx)
-	if (abs(p.vx) < p.min_vx) then
+	if abs(p.vx) < p.min_vx then
 		p.vx = 0
 	end
 
 	-- vy - jump and land
 	local oldair = p.air
-	if (btnp(🅾️) and not p.air and not p.sh) then
+	if btnp(🅾️) and not p.air and not p.sh then
 		sound(sfx_dat.p_jump)
 		p.vy += p.j_vy
 		p.air = true
 	end
-	if (p.sh and p.vy > 0) then
+	if p.sh and p.vy > 0 then
 		p.vy += p.g_sh
 	else
 		p.vy += p.g_norm
@@ -1847,16 +1847,17 @@ function update_p()
 	local newx = p.x + p.vx
 	local newy = p.y + p.vy
 
-	if (p.vy > 0) then
+	if p.vy > 0 then
 		newy = phys_fall(p,newx,newy)
 		-- fall off platform only if
 		-- holding direction of movement
 		-- kill 2 bugs with one hack
 		-- here - you slip off ice,
 		-- and fall when it's destroyed
-		if (not p.onice and not oldair and p.air) then
-			if ((btn(⬅️) and p.vx < 0) or
-				(btn(➡️) and p.vx > 0)) then
+		if not p.onice and not oldair and p.air then
+			if 		(btn(⬅️) and p.vx < 0) or
+					(btn(➡️) and p.vx > 0) then
+				-- none
 			else
 				p.air = false
 				newx = p.x
@@ -1868,7 +1869,7 @@ function update_p()
 		if oldair and not p.air then
 			sound(sfx_dat.p_land)
 		end
-	elseif (p.vy < 0) then
+	elseif p.vy < 0 then
 		newy = phys_jump(p,newx,newy,oldair)
 	end
 
@@ -1893,14 +1894,14 @@ function update_p()
 		if p.sh then
 			local ydir = 0
 			local xdir = 0
-			if (btn(⬆️)) then
+			if btn(⬆️) then
 				ydir = -1
-			elseif (btn(⬇️)) then
+			elseif btn(⬇️) then
 				ydir = 1
 			end
-			if (btn(⬅️)) then
+			if btn(⬅️) then
 				xdir = -1
-			elseif (btn(➡️)) then
+			elseif btn(➡️) then
 				xdir = 1
 			-- default x dir, only if a direction hasn't been buffered,
 			-- and only if y dir is 0, to allow straight up and down
@@ -1923,14 +1924,14 @@ function update_p()
 		end
 		p.sh = false
 	end
-	if (p.shcount > 0) then
+	if p.shcount > 0 then
 		p.shcount -= 1
 	end
 
 	-- animate
-	if (p.sh) then
+	if p.sh then
 		p.s = p.i + p.s_sh.s
-		if (not oldsh) then
+		if not oldsh then
 			sound(sfx_dat.p_shoot)
 			p.fr = 0
 			p.fcnt = 0
@@ -1939,11 +1940,11 @@ function update_p()
 			sound(sfx_dat.p_shoot)
 		end
 
-	elseif (not p.air) then
+	elseif not p.air then
 		-- walk anim
 		p.s = p.i + p.s_wlk.s
 		-- just landed, or changed dir
-		if (oldair or btnp(➡️) or btnp(⬅️)) then
+		if oldair or btnp(➡️) or btnp(⬅️) then
 			p.fr = 0
 			p.fcnt = 0
 		end
@@ -1956,7 +1957,7 @@ function update_p()
 			if loop_anim(p,3,p.s_wlk.f) then
 			--	sfx(5,0,0,8)
 			end
-		elseif (p.teeter) then
+		elseif p.teeter then
 			p.fr = 1
 		else
 			p.fr = 0
@@ -1964,19 +1965,19 @@ function update_p()
 
 	else --p.air
 		p.s = p.i + p.s_jmp.s
-		if (not oldair) then	 
+		if not oldair then	 
 			p.fr = 0
 			p.fcnt = 0
 			-- fell, not jumped
-			if (not btn(🅾️)) then
+			if not btn(🅾️) then
 				p.fr = 5
 			end
 		end
 	-- jump anim
-		if (p.fcnt > 2) then
+		if p.fcnt > 2 then
 			p.fr += 1
 			-- loop last 2 frames
-			if (p.fr >= p.s_jmp.f) then
+			if p.fr >= p.s_jmp.f then
 				p.fr -= 2
 			end
 			p.fcnt = 0
@@ -1990,14 +1991,14 @@ function respawn_update_p()
 	if do_fade then
 		return
 	end
-	if (not p.alive) then
-		if (play_anim(p,2,p.s_die.f)) then
+	if not p.alive then
+		if play_anim(p,2,p.s_die.f) then
 			-- fade out after death anim
 			fade_timer = 0
 			do_fade = true
 		end
-	elseif (p.spawn) then
-		if (play_anim(p,2,p.s_spwn.f)) then
+	elseif p.spawn then
+		if play_anim(p,2,p.s_spwn.f) then
 			p.fr = 0
 			p.fcnt = 0
 			p.s = p.i + p.s_wlk.s
@@ -2032,19 +2033,19 @@ function make_fireball(xdir, ydir)
 	end
 
 	f.sfr = 0 -- sub-frame
-	if (ydir == 0) then
+	if ydir == 0 then
 		f.sfr = 1
-	elseif (xdir == 0) then
+	elseif xdir == 0 then
 		f.sfr = 2
 	else
 		f.sfr = 3
 	end
 	f.xflip = false
 	f.yflip = false
-	if (f.vy < 0) then
+	if f.vy < 0 then
 		f.yflip = true
 	end
-	if (f.vx < 0) then
+	if f.vx < 0 then
 		f.xflip = true
 	end
 	add(fireball, f)
@@ -2059,13 +2060,13 @@ function kill_fireball(f)
 end
 
 function update_fireball(f)
-	if (not f.alive) then
+	if not f.alive then
 		f.y -= 0.5
 		f.fcnt += 1
-		if (f.fcnt & 1 == 0) then
+		if f.fcnt & 1 == 0 then
 			f.sfr += 1
 		end
-		if (f.fcnt == 8) then
+		if f.fcnt == 8 then
 			del(fireball, f)
 		end
 		return
@@ -2075,16 +2076,16 @@ function update_fireball(f)
 	-- hit stuff
 	for t in all(thang) do
 		-- use hurt box if t has one
-		if (aabb(
+		if aabb(
 				t.x + t.hx, t.y + t.hy, t.hw, t.hh,
-				f.x,f.y,4,4)) then
+				f.x,f.y,4,4) then
 			-- todo - is alive the right check?
-			if (t.burn != nil) then
+			if t.burn != nil then
 				t:burn()
 			end
 			-- don't stop on lanterns
 			-- or already dead stuff
-			if (t.stops_projs) then
+			if t.stops_projs then
 				kill_fireball(f)
 				return
 			end
@@ -2092,9 +2093,9 @@ function update_fireball(f)
 	end
 	-- hit blocks
 	-- check two points to make it harder to abuse shooting straight up/down past blocks
-	if (
+	if 
 			collmap(f.x+3,  f.y+2, 1) or
-			collmap(f.x+1,  f.y+2, 1)) then
+			collmap(f.x+1,  f.y+2, 1) then
 		f.vx = 0
 		f.vy = 0
 		kill_fireball(f)
@@ -2146,8 +2147,8 @@ function coll_edge(t,newx,fty)
 	-- return true if 1 px from edge
 	local tftxl = newx + t.ftx
 	local tftxr = tftxl + t.ftw
-	if (not (collmap(tftxl-1,fty,0) and
-			collmap(tftxr+1,fty,0))) then
+	if not (collmap(tftxl-1,fty,0) and
+			collmap(tftxr+1,fty,0)) then
 		return true
 	end
 	return false
@@ -2158,10 +2159,10 @@ function coll_spikes(t)
 	local hr = hl + t.hw
 	local ht = t.y + t.hy
 	local hb = ht + t.hh
-	if (	collmap(hl,ht,3) or
+	if 	collmap(hl,ht,3) or
 			collmap(hr,ht,3) or
 			collmap(hl,hb,3) or
-			collmap(hr,hb,3)) then
+			collmap(hr,hb,3) then
 		return true
 	end
 	return false
@@ -2192,10 +2193,10 @@ function move_hit_wall(t)
 	local c_bl = {x=cl,y=cb}
 	local c_br = {x=cr,y=cb}
 
-	if (	collmapv(c_tl,1) or 
+	if 	collmapv(c_tl,1) or 
 			collmapv(c_tr,1) or
 			collmapv(c_bl,1) or 
-			collmapv(c_br,1)) then
+			collmapv(c_br,1) then
 		return true
 	end
 	return false
@@ -2222,26 +2223,26 @@ function coll_room_border(t)
 	local cb = ct + t.ch
 	-- only check left or right
 	local cx = cr
-	if (t.vx < 0) then
+	if t.vx < 0 then
 		cx = cl
 	end
-	if (	(t.vx != 0)
+	if 	(t.vx != 0)
 			and
 			(not in_room(cx,ct) or
 			not in_room(cx,cb))
-			) then
+			 then
 		return true
 	end
 
 	local cy = cb
-	if (t.vy < 0) then
+	if t.vy < 0 then
 		cy = ct
 	end
-	if (	(t.vy != 0)
+	if 	(t.vy != 0)
 			and
 			(not in_room(cl,cy) or
 			not in_room(cr,cy))
-			) then
+			 then
 		return true
 	end
 
@@ -2305,7 +2306,7 @@ function phys_fall(t,newx,newy)
 	local stand_right = collmap(ftxr,fty,0)
 
 	-- hit or stay on the ground
-	if (	(stand_left or
+	if 	(stand_left or
 			 stand_right)
 			and
 			-- (almost) in the block above platform-only block
@@ -2316,7 +2317,7 @@ function phys_fall(t,newx,newy)
 				collmap(ftxl,fty,1) or
 				collmap(ftxr,fty,1)
 				)
-			) then
+			 then
 		newy = rounddown(newy, 8)
 		t.vy = 0
 		t.air = false
@@ -2345,9 +2346,9 @@ function phys_jump(t,newx,newy,oldair)
 	local hdxr = hdxl + t.ftw
 
 	-- ceiling
-	if (	t.air and (
+	if 	t.air and (
 				collmap(hdxl,hdy,1) or
-				collmap(hdxr,hdy,1))) then
+				collmap(hdxr,hdy,1)) then
 		if not oldair then
 			t.air = false
 			t.vy = 0
@@ -2374,29 +2375,29 @@ function phys_walls(t,newx,newy)
 
 	local l_pen = 0
 	local r_pen = 0
-	if (	collmapv(c_bl,1) or 
-			collmapv(c_tl,1)) then
+	if 	collmapv(c_bl,1) or 
+			collmapv(c_tl,1) then
 		l_pen = roundup(cl,8) - cl
 	end
-	if (	collmapv(c_br,1) or 
-			collmapv(c_tr,1)) then
+	if 	collmapv(c_br,1) or 
+			collmapv(c_tr,1) then
 		r_pen = cr - rounddown(cr,8)
 	end
 	
 	local oldnewx = newx
-	if (t.vx < 0) then
+	if t.vx < 0 then
 		newx += l_pen
-	elseif (t.vx > 0) then
+	elseif t.vx > 0 then
 		newx -= r_pen
 	else
-		if (l_pen > 0) then
+		if l_pen > 0 then
 			newx += l_pen
-		elseif (r_pen > 0) then
+		elseif r_pen > 0 then
 			newx -= r_pen
 		end
 	end
 
-	if (oldnewx != newx) then
+	if oldnewx != newx then
 		t.vx = 0
 	end
 
