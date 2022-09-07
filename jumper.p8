@@ -584,7 +584,41 @@ thang_dat = {
 		update = update_shot,
 		draw = draw_shot,
 		stops_projs = false,
-	}
+	},
+	[208] = { -- archer
+		update = update_archer,
+		burn = burn_bad,
+		draw = draw_shooter,
+		bad = true,
+		air = true,
+		g = 0.3,
+		max_vy = 4,
+		w = 8,
+		h = 8,
+		hp = 5,
+		shooting = false,
+		goingrght = true, -- going to go after throwing
+		burning = false,
+		-- coll dimensions
+		-- todo same as player..
+		ftw = 0.99,
+		ftx = 3,
+		ch = 6.99,
+		cw = 5.99,
+		cx = 1,
+		cy = 1,
+		-- hurt box - bigger than player, same as collision box
+		hx = 1,
+		hy = 1,
+		hw = 5.99,
+		hh = 6.99,
+		shcount = 0, -- shoot stuff at player
+		s_idle = {s=1, f=2},
+		s_wlk = {s=1, f=2},
+		s_sh = {s=3, f=3},
+		s_burn = {s=12, f=1},
+		s_die = {s=13, f=3},
+	},
 }
 end
 
@@ -998,6 +1032,84 @@ function update_shooter(t)
 	if check_bad_coll_spikes(t) then
 		return
 	end
+
+	if p.alive and hit_p(t.x,t.y,t.w,t.h) then
+		kill_p()
+	end
+end
+
+function update_archer(t)
+	if do_bad_die(t) then
+		return
+	end
+
+	if do_bad_burning(t) then
+		return
+	end
+
+	t.vx = 0
+
+	if t.shooting then
+		t.s = t.i + t.s_sh.s
+		if play_anim(t, 8, t.s_sh.f) then
+			t.shooting = false
+			t.fcnt = 0
+			t.fr = 0
+		elseif t.fr == 2 and t.fcnt == 1 then
+			sound(sfx_dat.shooter_shot)
+			local orig = {
+				x = t.rght and t.x + 8 or t.x - 1,
+				y = t.y + 3
+			}
+			local shot = spawn_thang(123, orig.x, orig.y)
+			shot.endx = t.x + 4 + (t.rght and t.shright or -t.shleft)
+			shot.endy = orig.y
+			shot.arrowx = t.rght and shot.endx - 5 or shot.endx + 5
+			shot.arrowy = orig.y
+		end
+	-- else we walking
+	else
+		t.s = t.i + t.s_wlk.s
+		-- remember which way we were going
+		t.rght = t.goingrght
+		if not t.air then
+			if t.rght then
+				t.vx = 1.2
+			else
+				t.vx = -1.2
+			end
+			loop_anim(t,4,t.s_wlk.f)
+		end
+
+		if (t.shcount <= 0) then
+			t.shleft = dist_until_wall(t.x + 4, t.y + 4, -1)
+			t.shright = dist_until_wall(t.x + 4, t.y + 4, 1)
+			--dbgstr = tostr(left)..' '..tostr(right)..'\n'..dbgstr
+			if hit_p(t.x + 4 - t.shleft, t.y, t.shleft + t.shright, 8) then
+				if p.x < t.x then
+					t.rght = false
+				else
+					t.rght = true
+				end
+				t.shcount = 5
+				t.shooting = true
+				t.fcnt = 0
+				t.fr = 0
+			end
+		else
+			t.shcount -= 1
+		end
+	end
+
+	local phys_result = phys_bad(t)
+
+	if not t.air and not t.shooting then
+		if phys_result.hit_wall or coll_edge_turn_around(t,t.x,t.y + t.h) != 0 then
+			t.rght = not t.rght
+			t.goingrght = t.rght
+		end
+	end
+
 	if p.alive and hit_p(t.x,t.y,t.w,t.h) then
 		kill_p()
 	end
