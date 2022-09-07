@@ -1838,8 +1838,9 @@ function update_p()
 
 	-- vy - jump and land
 	local oldair = p.air
+	local jumped = false
 	if btnp(🅾️) and not p.air and not p.sh then
-		sound(sfx_dat.p_jump)
+		jumped = true
 		p.vy += p.j_vy
 		p.air = true
 	end
@@ -1855,48 +1856,35 @@ function update_p()
 	local oldy = p.y
 	local oldvy = p.vy + p.g
 
-	p.vy += p.g
-	p.vy = clamp(p.vy, -p.max_vy, p.max_vy)
+	local phys_result = phys_thang(p, oldair)
 
-	local newx = p.x + p.vx
-	local newy = p.y + p.vy
-
-	if p.vy > 0 then
-		newy = phys_fall(p,newx,newy)
-	elseif p.vy < 0 then
-		newy = phys_jump(p,newx,newy,oldair)
-	end
-
-	newx = phys_walls(p,newx,newy)
-
-	p.x = newx
-	p.y = newy
-
-	if oldvy > 0 then
+	if phys_result.fell and not p.onice then
 		-- fall off platform only if
 		-- holding direction of movement
 		-- kill 2 bugs with one hack
 		-- here - you slip off ice,
 		-- and fall when it's destroyed
-		if not p.onice and not oldair and p.air then
-			if 		(btn(⬅️) and p.vx < 0) or
-					(btn(➡️) and p.vx > 0) then
-				-- none
-			else
-				p.air = false
-				p.x = oldx
-				p.y = oldy
-				p.vy = 0
-				p.vx = 0
-			end
+		if 		(btn(⬅️) and p.vx < 0) or
+				(btn(➡️) and p.vx > 0) then
+			-- none
+		else
+			p.air = false
+			p.x = oldx
+			p.y = oldy
+			p.vy = 0
+			p.vx = 0
 		end
 	end
 
 	-- close to edge?
 	p.teeter = not p.air and coll_edge(p,p.x,p.y+p.fty)
 
-	if oldair and not p.air then
+	if phys_result.landed then
 		sound(sfx_dat.p_land)
+	end
+
+	if jumped and not phys_result.ceil_cancel then
+		sound(sfx_dat.p_jump)
 	end
 
 	if coll_spikes(p) then
@@ -2281,7 +2269,7 @@ function phys_thang(t, oldair)
 	--          ceil_cancel, -- if jump was cancelled by a ceiling
 	--			landed,		 -- if t.air went from true to false (false on ceil_cancel)
     -- } 
-	local ret = { hit_wall = false, ceil_cancel = false, landed = false }
+	local ret = { hit_wall = false, ceil_cancel = false, landed = false, fell = false }
 
 	t.vy += t.g
 	t.vy = clamp(t.vy, -t.max_vy, t.max_vy)
@@ -2291,9 +2279,12 @@ function phys_thang(t, oldair)
 
 	if t.vy > 0 then
 		newy = phys_fall(t,newx,newy)
+		if not oldair and t.air then
+			ret.fell = true
+		end
 	else
 		newy = phys_jump(t,newx,newy,oldair)
-		if t.vy == 0 and t.air == false then
+		if t.vy == 0 and not t.air then
 			ret.ceil_cancel = true
 		end
 	end
