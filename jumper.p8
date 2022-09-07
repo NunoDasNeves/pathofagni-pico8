@@ -234,7 +234,7 @@ function draw_shooter(t)
 end
 
 function draw_frog(t)
-	if t.angry then
+	if t.alive and t.angry then
 		pal(11, 8, 0) -- main
 		pal(3, 2, 0)  -- shadow
 		pal(8, 10, 0) -- eyes
@@ -336,13 +336,13 @@ function _draw()
 		elseif (fade_timer < 8) then
 			draw_fade(0b0000101000001010.1)
 		elseif (fade_timer < 16) then
-			draw_fade(0b0000000000000000)
+			draw_fade(0)
 		elseif (fade_timer < 20) then
 			draw_fade(0b0000101000001010.1)
 		elseif (fade_timer < 24) then
 			draw_fade(0b0101101001011010.1)
 		end
-		fillp(0b0000000000000000)
+		fillp(0)
 	end
 
 	if (dbg) then
@@ -743,24 +743,9 @@ function update_thrower(t)
 		return
 	end
 
-	if t.burning then
+	if do_bad_burning(t) then
 		t.throwing = false
-		t.s = t.i + t.s_burn.s
-		if play_anim(t, 6, t.s_burn.f) then
-			if t.hp <= 0 then
-				t.alive = false
-				t.fr = 0
-				t.fcnt = 0
-				return
-			else
-				t.burning = false
-				t.fcnt = 0
-				t.fr = 0
-				t.s = t.i
-			end
-		else
-			return
-		end
+		return
 	end
 
 	t.vx = 0
@@ -902,6 +887,32 @@ function dist_until_wall(x,y,dir,vert)
 	end
 end
 
+function do_bad_burning(t)
+	-- if burning, play burn animation
+	-- return true if still burning (or now dead), else false
+
+	if not t.burning then
+		return false
+	end
+	t.s = t.i + t.s_burn.s
+	if play_anim(t, 6, t.s_burn.f) then
+		if t.hp <= 0 then
+			t.burning = false
+			t.alive = false
+			t.fr = 0
+			t.fcnt = 0
+			return true
+		else
+			t.burning = false
+			t.fcnt = 0
+			t.fr = 0
+			t.s = t.i
+			return false
+		end
+	end
+	return true
+end
+
 function update_shooter(t)
 	-- always set shot to false to save doing it other places...
 	t.shot = false
@@ -916,24 +927,8 @@ function update_shooter(t)
 		return
 	end
 
-	if t.burning then
-		t.throwing = false
-		t.s = t.i + t.s_burn.s
-		if play_anim(t, 6, t.s_burn.f) then
-			if t.hp <= 0 then
-				t.alive = false
-				t.fr = 0
-				t.fcnt = 0
-				return
-			else
-				t.burning = false
-				t.fcnt = 0
-				t.fr = 0
-				t.s = t.i
-			end
-		else
-			return
-		end
+	if do_bad_burning(t) then
+		return
 	end
 
 	t.vx = 0
@@ -1080,22 +1075,12 @@ function update_frog(t)
 
 	local oldair = t.air
 
-	if t.burning then
-		t.s = t.i + t.s_burn.s
-		if play_anim(t, 8, t.s_burn.f) then
-			if t.hp <= 0 then
-				t.alive = false
-				t.fr = 0
-				t.fcnt = 0
-				return
-			else
-				t.burning = false
-				t.angry = true
-				t.jcount = 3
-			end
-		else
-			return
-		end
+	local oldburning = t.burning
+	if do_bad_burning(t) then
+		return
+	elseif oldburning then
+		t.angry = true
+		t.jcount = 3
 	end
 
 	-- not burning and not in the air
@@ -1203,7 +1188,6 @@ function update_frog(t)
 
 	if coll_spikes(t) then
 		sound(sfx_dat.hit)
-		t.angry = false
 		t.alive = false
 		t.fr = 0
 		t.fcnt = 0
@@ -1279,21 +1263,16 @@ function update_knight(t)
 	end
 
 	local oldatking = t.atking
+	local oldburning = t.burning
 
-	if t.burning then
-		t.s = t.i + t.s_burn.s
-		if t.fcnt >= 10 then
+	if do_bad_burning(t) then
+		if not t.alive then
+			sound(sfx_dat.knight_die)
+		end
+		return
+	else
+		if oldburning then
 			t.atking = false
-			t.burning = false
-			t.fcnt = 0
-			t.fr = 0
-			if t.hp <= 0 then
-				sound(sfx_dat.knight_die)
-				t.alive = false
-			end
-		else
-			t.fcnt += 1
-			return -- 'freeze' when hit in the air
 		end
 	end
 
