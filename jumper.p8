@@ -733,13 +733,7 @@ function update_icepick(t)
 end
 
 function update_thrower(t)
-	if not t.alive then
-		t.stops_projs = false
-		t.s = t.i + t.s_die.s
-		if play_anim(t, 6, t.s_die.f) then
-			del(thang, t)
-			room.num_bads -= 1
-		end
+	if do_bad_die(t) then
 		return
 	end
 
@@ -887,6 +881,21 @@ function dist_until_wall(x,y,dir,vert)
 	end
 end
 
+function do_bad_die(t)
+	-- if dead, play death animation, delete t when done
+	-- return true if dead
+	if not t.alive then
+		t.stops_projs = false
+		t.s = t.i + t.s_die.s
+		if play_anim(t, 5, t.s_die.f) then
+			del(thang, t)
+			room.num_bads -= 1
+		end
+		return true
+	end
+	return false
+end
+
 function do_bad_burning(t)
 	-- if burning, play burn animation
 	-- return true if still burning (or now dead), else false
@@ -917,13 +926,7 @@ function update_shooter(t)
 	-- always set shot to false to save doing it other places...
 	t.shot = false
 
-	if not t.alive then
-		t.stops_projs = false
-		t.s = t.i + t.s_die.s
-		if play_anim(t, 6, t.s_die.f) then
-			del(thang, t)
-			room.num_bads -= 1
-		end
+	if do_bad_die(t) then
 		return
 	end
 
@@ -1063,13 +1066,7 @@ function burn_frog(t)
 end
 
 function update_frog(t)
-	if not t.alive then
-		t.stops_projs = false
-		t.s = t.i + t.s_die.s
-		if play_anim(t, 4, t.s_die.f) then
-			del(thang, t)
-			room.num_bads -= 1
-		end
+	if do_bad_die(t) then
 		return
 	end
 
