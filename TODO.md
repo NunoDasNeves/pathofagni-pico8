@@ -1,14 +1,39 @@
 ### Misc
-- Refactor code to reduce lines...e.g. share physics code, burn code, die code between enemies
-- Shooter should spawn a thang (with its own update function) (moving/falling shooter doesn't work properly)
-- Moving from room to room - going backwards is weird
-    - Don't restore room if it's complete (all bads are gone)
+- Refactor code to reduce lines
+    - lanterns can be replaced by checkpoints at start of each room
+        - remove most of lantern code
+        - maybe have lanterns that will open a door (light all lanterns in room = open door)
+            - maybe requires another sprite
+            - maybe requires same amount of code
+            - some level designs are nicer, chill platforming levels are easier to design?
+            - color lantern/door combos?? (need more sprites)
+    - shooter/thrower have almost same logic
+        - should parameterize some stuff - maybe have a few enemy 'types'
+        - all code can be almost same between these two except what projectile is spawned
+        - and some parameters - move speed, reaction time etc
+    - bat code can probably be reduced
+    - player code can probably be reduced
+    - fireball code can probably be reduced
+
+### Levels
+- How to effectively teach player to shoot diagonally?
+- How to teach/use fireball slowdown (mainly useful for combat rn, not platforming)?
+- Probably don't have space for another enemy type unless almost identical to an existing one
+- cavern levels still have some dungeon stuff left
+- doors can maybe be drawn with palette swap
+- for DEMOs - maybe have a door to skip floors?
+- text for boss levels
 
 ### Sounds!
 - fireball explode?
 - light lantern?
 - enemy die?
-- 
+- archer LEAVE invis
+
+### Music
+- Come up with a structure that lasts a decent time, using existing ideas
+- Chill music for start/regular levels
+- Epic music for boss battles
 
 ### Enemies
 - Underside crawler - spider? 1x1
