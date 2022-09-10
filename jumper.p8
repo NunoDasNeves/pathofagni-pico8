@@ -254,20 +254,11 @@ function draw_frog(t)
 end
 
 function draw_archer(t)
-
-	-- body, legs, skin, hair, bow, (cloak)
-	local pal_k = {5,2,15,4,9,1}
-	-- invisible -> visible
-	local pal_v = {
-		{0, 1, 0, 1, 1, 0},
-		{1, 1, 1, 1, 1, 1},
-		{1, 2, 5, 2, 13, 1},
-	}
 	if t.invis then
-		local t = t.invistimer < 12 and 11 - t.invistimer or t.invistimer - 58
-		if t >= 0 then
-			for i,k in pairs(pal_k) do
-				pal(k,pal_v[t\4+1][i],0)
+		local fr = t.invistimer < 12 and 11 - t.invistimer or t.invistimer - 58
+		if fr >= 0 then
+			for i,k in pairs(t.invis_pal_k) do
+				pal(k,t.invis_pal_v[fr\4+1][i],0)
 			end
 		else
 			for i=1,15 do
@@ -669,7 +660,15 @@ thang_dat = {
 		s_shair = {s=9, f=3},
 		s_burn = {s=12, f=1},
 		s_die = {s=13, f=3},
-	},
+		-- body, legs, skin, hair, bow, (cloak)
+		invis_pal_k = {5,2,15,4,9,1},
+		-- invisible -> visible
+		invis_pal_v = {
+			{0, 1, 0, 1, 1, 0},
+			{1, 1, 1, 1, 1, 1},
+			{1, 2, 5, 2, 13, 1},
+		}
+	}
 }
 end
 
