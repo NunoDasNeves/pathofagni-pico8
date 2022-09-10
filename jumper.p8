@@ -243,20 +243,6 @@ function draw_shot(t)
 	line(t.arrowx, t.arrowy, t.endx, t.endy, t.arrow_color)
 end
 
-function draw_shooter(t)
-	draw_thang(t)
-	--if dbg then
-	--	if not t.shooting and t.shleft != nil then
-	--		rectfill(
-	--			t.x + 4 - t.shleft,
-	--			t.y,
-	--			t.x + 4 + t.shright,
-	--			t.y + 8,
-	--			14)
-	--	end
-	--end
-end
-
 function draw_frog(t)
 	if t.alive and t.angry then
 		pal(11, 8, 0) -- main
@@ -464,12 +450,8 @@ thang_dat = {
 		dircount = 0,
 		xspeed = 0.5,
 		yspeed = 0.4,
-		cx = 0,
-		cy = 0,
 		cw = 7,
 		ch = 6,
-		hx = 0,
-		hy = 0,
 		hw = 7,
 		hh = 6,
 	},
@@ -488,8 +470,6 @@ thang_dat = {
 		burning = false,
 		-- coll dimensions
 		-- todo same as player..
-		ftw = 0.99,
-		ftx = 3,
 		ch = 6.99,
 		cw = 5.99,
 		cx = 1,
@@ -520,8 +500,6 @@ thang_dat = {
 		sfr = 0,
 		xflip = false,
 		yflip = false,
-		hx = 0,
-		hy = 0,
 		hw = 4,
 		hh = 4,
 	},
@@ -547,8 +525,6 @@ thang_dat = {
 		bounced = false,
 		do_smol = true,
 		-- coll dimensions
-		ftw = 0.99,
-		ftx = 3,
 		ch = 4.99,
 		cw = 5.99,
 		cx = 1,
@@ -588,10 +564,6 @@ thang_dat = {
 		air = true,
 		g = 0.2,
 		max_vy = 4,
-		jump_vy = -3,
-		jump_vx = 1,
-		ftw = 0.99,
-		ftx = 3,
 		ch = 6.99,
 		cw = 5.99,
 		cx = 1,
@@ -613,7 +585,6 @@ thang_dat = {
 	[117] = { -- shooter
 		update = update_shooter,
 		burn = burn_bad,
-		draw = draw_shooter,
 		bad = true,
 		air = true,
 		g = 0.3,
@@ -626,8 +597,6 @@ thang_dat = {
 		burning = false,
 		-- coll dimensions
 		-- todo same as player..
-		ftw = 0.99,
-		ftx = 3,
 		ch = 6.99,
 		cw = 5.99,
 		cx = 1,
@@ -664,8 +633,6 @@ thang_dat = {
 		burning = false,
 		-- coll dimensions
 		-- todo same as player..
-		ftw = 0.99,
-		ftx = 3,
 		ch = 6.99,
 		cw = 5.99,
 		cx = 1,
@@ -1453,8 +1420,8 @@ function update_knight(t)
 				-- jump!
 				if t.phase == 2 and not t.air and t.fr == 1 and t.fcnt == 1 then
 					sound(sfx_dat.knight_jump)
-					t.vy = t.jump_vy
-					t.vx = t.jump_vx * dir
+					t.vy = -3
+					t.vx = 1 * dir
 					t.air = true
 				end
 				t.swrd_draw = true
@@ -1718,6 +1685,8 @@ function spawn_thang(i,x,y)
 		vy = 0,
 		alive = true,
 		-- collision
+		ftw = 0.99,
+		ftx = 3,
 		cx = 0,
 		cy = 0,
 		cw = 8,
