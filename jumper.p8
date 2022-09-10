@@ -631,6 +631,9 @@ thang_dat = {
 		shooting = false,
 		goingrght = true, -- going to go after throwing
 		burning = false,
+		phase = 0,
+		invis = false,
+		invistimer = 0,
 		-- coll dimensions
 		-- todo same as player..
 		ch = 6.99,
@@ -1094,6 +1097,11 @@ function update_archer(t)
 	end
 
 	if do_bad_burning(t) then
+		if t.alive then
+			t.invis = true
+			t.invistimer = 70
+			t.shooting = false
+		end
 		return
 	end
 
@@ -1127,13 +1135,22 @@ function update_archer(t)
 		end
 	-- else we walking or jumping
 	else
+		if t.phase == 0 then
+			t.s = t.i + t.s_idle.s
+			local r = get_room_xy(room.i)
+			if p.y > r.y + 16 then
+				t.phase = 1
+			end
+			return
+		end
 		-- remember which way we were going
 		t.rght = t.goingrght
 		if not t.air then
 			t.s = t.i + t.s_wlk.s
 			if coll_edge_turn_around(t,t.x,t.y + t.h) != 0 then
-				-- jump! or turn around
-				if rnd(1) < 0.5 then
+				-- jump! or turn around -- always jump when invis
+				if t.invis or rnd(1) < 0.5 then
+					sound(sfx_dat.knight_jump)
 					t.air = true
 					t.vy = -4
 					local dir = t.rght and 1 or -1
@@ -1149,6 +1166,7 @@ function update_archer(t)
 			end
 			loop_anim(t,4,t.s_wlk.f)
 		end
+
 		-- save which way we're going (we might face a different way when shooting)
 		t.goingrght = t.rght
 		-- check air again
@@ -1163,7 +1181,16 @@ function update_archer(t)
 			end
 		end
 
-		if t.shcount <= 0 then
+		if t.invis then
+			t.invistimer -= 1
+			if t.invistimer <= 0 then
+				t.invis = false
+			else
+				t.s = 0
+				t.fr = 0
+			end
+		-- don't attack unless visible
+		elseif t.shcount <= 0 then
 			t.shleft = dist_until_wall(t.x + 4, t.y + 4, -1)
 			t.shright = dist_until_wall(t.x + 4, t.y + 4, 1)
 			if hit_p(t.x + 4 - t.shleft, t.y, t.shleft + t.shright, 8) then
@@ -1195,6 +1222,7 @@ function update_archer(t)
 	end
 
 	if p.alive and hit_p(t.x,t.y,t.w,t.h) then
+		t.invis = false
 		kill_p()
 	end
 end
