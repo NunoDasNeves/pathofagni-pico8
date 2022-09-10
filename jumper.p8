@@ -274,11 +274,11 @@ function draw_knight(t)
 	draw_thang(t)
 	-- draw sword
 	if t.swrd_draw then
-		local xfac = flp and -1 or 1
+		local xfac = t.rght and 1 or -1
 		spr(t.i + t.s_swrd.s + t.swrd_fr,
 			t.x + (8 * xfac),
 			t.y,
-			1,1,flp)
+			1,1,not t.rght)
 		if dbg and t.swrd_hit then
 			local swrd_start_x = t.rght and 8 or -t.swrd_x_off
 			local x0 = t.x + swrd_start_x
@@ -857,7 +857,7 @@ function update_thrower(t)
 		end
 
 		if t.shcount <= 0 then
-			if dist({ x = t.x - p.x, y = t.y - p.y }) <= t.range then
+			if vlen({ x = t.x - p.x, y = t.y - p.y }) <= t.range then
 				t.throwing = true
 				t.fcnt = 0
 				t.fr = 0
