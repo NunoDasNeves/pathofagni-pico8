@@ -752,7 +752,7 @@ function init_lantern_thang(l)
 end
 
 function init_icepick(t)
-	if (p.x < t.x) then
+	if p.x < t.x then
 		t.xflip = true
 		t.vx = -t.vx
 	else
@@ -761,7 +761,7 @@ function init_icepick(t)
 end
 
 function kill_icepick(t)
-	if (t.alive) then
+	if t.alive then
 		sound(sfx_dat.ice_break)
 		t.vx = 0
 		t.vy = 0
@@ -773,13 +773,13 @@ function kill_icepick(t)
 end
 
 function update_icepick(t)
-	if (not t.alive) then
+	if not t.alive then
 		t.y += 0.5
 		t.fcnt += 1
-		if (t.fcnt & 1 == 0) then
+		if t.fcnt & 1 == 0 then
 			t.sfr += 1
 		end
-		if (t.fcnt == 8) then
+		if t.fcnt == 8 then
 			del(thang, t)
 		end
 		return
@@ -787,22 +787,22 @@ function update_icepick(t)
 	-- spin in correct direction
 	local xfac = t.xflip and -1 or 1
 	-- spin around 'ax'is
-	if (t.fcnt > 0 and t.fcnt % 2 == 0) then
-		if (t.fcnt == 2) then
+	if t.fcnt > 0 and t.fcnt % 2 == 0 then
+		if t.fcnt == 2 then
 			t.x += 2 * xfac
 			t.y += 1
-		elseif (t.fcnt == 4) then
+		elseif t.fcnt == 4 then
 			t.x -= 1 * xfac
 			t.y += 2
-		elseif (t.fcnt == 6) then
+		elseif t.fcnt == 6 then
 			t.x -= 2 * xfac
 			t.y -= 1
-		elseif (t.fcnt == 8) then
+		elseif t.fcnt == 8 then
 			t.x += 1 * xfac
 			t.y -= 2
 			t.fcnt = 0
 		end
-		if (t.sfr >= 3) then
+		if t.sfr >= 3 then
 			t.sfr = 0
 		else
 			t.sfr += 1
@@ -814,13 +814,13 @@ function update_icepick(t)
 	t.x += t.vx
 	t.y += t.vy
 
-	if (
+	if 
 			collmap(t.x+3, t.y+2, 1) or
-			collmap(t.x+1, t.y+2, 1)) then
+			collmap(t.x+1, t.y+2, 1) then
 		kill_icepick(t)
 	end
 
-	if (p.alive and hit_p(t.x,t.y,t.w,t.h)) then
+	if p.alive and hit_p(t.x,t.y,t.w,t.h) then
 		kill_p()
 		kill_icepick(t)
 	end
@@ -1082,7 +1082,7 @@ function update_shooter(t)
 			loop_anim(t,4,t.s_wlk.f)
 		end
 
-		if (t.shcount <= 0) then
+		if t.shcount <= 0 then
 			t.shleft = dist_until_wall(t.x + 4, t.y + 4, -1)
 			t.shright = dist_until_wall(t.x + 4, t.y + 4, 1)
 			--dbgstr = tostr(left)..' '..tostr(right)..'\n'..dbgstr
