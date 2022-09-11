@@ -50,19 +50,19 @@ poke(0x5f5c, 255)
 
 function init_room()
 	room = {
+		-- updated by move_room
 		i = 0,
 		x = 0,
 		y = 0,
-		sz = 128, -- 16*8 px
+		-- updated by spawn_room
 		old = nil, -- for restore
 		num_bads = 0, -- for unlock
 		checkpoint = nil -- checkpoint thang
 	}
-	move_room_by_idx(23)
-	camera(room.x, room.y)
+	move_room(23)
 end
 
-function move_room_by_idx(i)
+function move_room(i)
 	local r = get_room_xy(i)
 	room.i = i
 	room.x = r.x
@@ -79,52 +79,45 @@ function restore_room()
 end
 
 function get_room_i(x,y)
-	x \= room.sz
-	y \= room.sz
+	x \= 128
+	y \= 128
 	return x % 8 + y * 8
 end
 
 function get_room_xy(i)
 	return {
-		x = (i % 8) * room.sz,
-		y = (i \ 8) * room.sz
+		x = (i % 8) * 128,
+		y = (i \ 8) * 128
 	}
 end
 
-function in_room(x,y)
-	if x<room.x or x>room.x+room.sz then
-		return false
-	end
-	if y<room.y or y>room.y+room.sz then
-		return false
-	end
-	return true
-end
-
-function move_room(x,y)
-	room.i = get_room_i(x,y)
-	local r = get_room_xy(room.i)
-	room.x = r.x
-	room.y = r.y
-end
+--function in_room(x,y)
+--	if 		x < room.x or x >= room.x+128 or
+--			y < room.y or y >= room.y+128 then
+--		return false
+--	end
+--	return true
+--end
 
 function update_room()
+	-- update room and camera to where player currently is
 	local oldi = room.i
 	local px = p.x + p.w/2
 	local py = p.y + p.h/2
-	move_room(px,py)
-	if oldi != room.i then
+	local newi = get_room_i(px,py)
+	move_room(newi)
+	camera(room.x, room.y)
+	-- spawn the room if it's a new room
+	if oldi != newi then
 		-- give player a little kick through the door
 		if p.alive and not p.spawn then
 			local oldxy = get_room_xy(oldi)
-			local roomxy = get_room_xy(room.i)
-			if oldxy.x > roomxy.x then
+			if oldxy.x > room.x then
 				p.x -= 12
-			elseif oldxy.x < roomxy.x then
+			elseif oldxy.x < room.x then
 				p.x += 12
 			end
 		end
-		camera(room.x, room.y)
 		fireball = {}
 		restore_room()
 		spawn_room()
@@ -310,15 +303,6 @@ function draw_title()
 
 	print_in_room('\npsst!\n❎+⬆️\n❎+⬆️+⬅️', 25, 84, 1)
 	--print('❎/x+⬅️⬆️➡️⬇️ fire', room.x+40, room.y+77, 1)
-
-	--local sx = (252 % 16) * 8
-	--local sy = flr(252 \ 16) * 8
-	--sspr(
-	--	sx,sy,
-	--	8*4,8,
-	--	room.x+24,
-	--	room.y+64
-	--)
 end
 
 function _draw()
@@ -361,6 +345,7 @@ function _draw()
 			draw_fade(0b0000101000001010.1)
 		elseif fade_timer < 24 then
 			draw_fade(0b0101101001011010.1)
+			sound(sfx_dat.p_respawn)
 		end
 		fillp(0)
 	end
@@ -1868,7 +1853,6 @@ function spawn_p(x,y)
 		p[k] = v
 	end
 	p.s = p.i + p.s_spwn.s
-	sound(sfx_dat.p_respawn)
 end
 
 function kill_p()
@@ -2093,13 +2077,13 @@ function respawn_update_p()
 		return
 	end
 	if not p.alive then
-		if play_anim(p,2,p.s_die.f) then
+		if play_anim(p,3,p.s_die.f) then
 			-- fade out after death anim
 			fade_timer = 0
 			do_fade = true
 		end
 	elseif p.spawn then
-		if play_anim(p,2,p.s_spwn.f) then
+		if play_anim(p,3,p.s_spwn.f) then
 			p.fr = 0
 			p.fcnt = 0
 			p.s = p.i + p.s_wlk.s
@@ -2302,53 +2286,6 @@ function move_hit_wall(t)
 	end
 	return false
 end
-
---function coll_room_border(t)
---	-- t = {
---	--	 x  -- coord
---	--   y  -- coord
---	--   cx -- coll x offset
---	--   cw -- coll width
---	--   cy -- coll y offset
---	--   ch -- coll height
---	--   vx -- x vel
---	--	 vy -- y vel
---	-- }
---	-- apply vx, vy, and
---	-- return true if moving into edge of room
---	local newx = t.x + t.vx
---	local newy = t.y + t.vy
---	local cl = newx + t.cx
---	local cr = cl + t.cw
---	local ct = newy + t.cy
---	local cb = ct + t.ch
---	-- only check left or right
---	local cx = cr
---	if t.vx < 0 then
---		cx = cl
---	end
---	if 	(t.vx != 0)
---			and
---			(not in_room(cx,ct) or
---			not in_room(cx,cb))
---			 then
---		return true
---	end
-
---	local cy = cb
---	if t.vy < 0 then
---		cy = ct
---	end
---	if 	(t.vy != 0)
---			and
---			(not in_room(cl,cy) or
---			not in_room(cr,cy))
---			 then
---		return true
---	end
-
---	return false
---end
 
 -->8
 -- physics for platformu
