@@ -1,12 +1,5 @@
 ### Misc
 - Refactor code to reduce lines
-    - lanterns can be replaced by checkpoints at start of each room
-        - remove most of lantern code
-        - maybe have lanterns that will open a door (light all lanterns in room = open door)
-            - maybe requires another sprite
-            - maybe requires same amount of code
-            - some level designs are nicer, chill platforming levels are easier to design?
-            - color lantern/door combos?? (need more sprites)
     - shooter/thrower have almost same logic
         - should parameterize some stuff - maybe have a few enemy 'types'
         - all code can be almost same between these two except what projectile is spawned
@@ -14,6 +7,9 @@
     - bat code can probably be reduced
     - player code can probably be reduced
     - fireball code can probably be reduced
+- make fireball direction a little easier
+    - maybe stop movement for some frames after shooting
+- make it so you can move a little or retain momentum when charging fireball
 
 ### Levels
 - How to effectively teach player to shoot diagonally?
