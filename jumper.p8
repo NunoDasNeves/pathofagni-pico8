@@ -1066,6 +1066,7 @@ function update_archer(t)
 	elseif oldburning then
 		sound(sfx_dat.archer_invis)
 		t.invis = true
+		t.stops_projs = false
 		t.invistimer = 70
 		t.shooting = false
 		t.fr = 0
@@ -1141,6 +1142,7 @@ function update_archer(t)
 		if t.invis then
 			t.invistimer -= 1
 			if t.invistimer <= 0 then
+				t.stops_projs = true
 				t.invis = false
 			end
 		-- don't attack unless visible
