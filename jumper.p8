@@ -49,32 +49,30 @@ poke(0x5f5c, 255)
 
 
 function init_room()
-	room = {
-		-- updated by move_room
-		i = 0,
-		x = 0,
-		y = 0,
-		-- updated by spawn_room
-		old = nil, -- for restore
-		num_bads = 0, -- for unlock (bads door)
-		num_unlit = 0, -- for unlock (lanterns door)
-		checkpoint = nil -- checkpoint thang
-	}
-	move_room(23)
+	-- updated by move_room
+	room_i = 0
+	room_x = 0
+	room_y = 0
+	-- updated by spawn_room
+	room_old = nil -- for restore
+	room_num_bads = 0 -- for unlock (bads door)
+	room_num_unlit = 0 -- for unlock (lanterns door)
+	room_checkpoint = nil -- checkpoint thang
+	move_room(4)
 end
 
 function move_room(i)
 	local r = get_room_xy(i)
-	room.i = i
-	room.x = r.x
-	room.y = r.y
+	room_i = i
+	room_x = r.x
+	room_y = r.y
 end
 
 function restore_room()
-	if room.old == nil then
+	if room_old == nil then
 		return
 	end
-	for t in all(room.old) do
+	for t in all(room_old) do
 		mset(t.x,t.y,t.val)
 	end
 end
@@ -93,8 +91,8 @@ function get_room_xy(i)
 end
 
 --function in_room(x,y)
---	if 		x < room.x or x >= room.x+128 or
---			y < room.y or y >= room.y+128 then
+--	if 		x < room_x or x >= room_x+128 or
+--			y < room_y or y >= room_y+128 then
 --		return false
 --	end
 --	return true
@@ -102,25 +100,23 @@ end
 
 function update_room()
 	-- update room and camera to where player currently is
-	local oldi = room.i
-	local px = p.x + p.w/2
-	local py = p.y + p.h/2
-	local newi = get_room_i(px,py)
+	local oldi = room_i
+	local newi = get_room_i(p.x + p.w/2, p.y + p.h/2)
 	move_room(newi)
-	camera(room.x, room.y)
+	camera(room_x, room_y)
 	-- spawn the room if it's a new room
 	if oldi != newi then
 		-- give player a little kick through the door
 		if p.alive and not p.spawn then
 			local oldxy = get_room_xy(oldi)
-			if oldxy.x > room.x then
+			if oldxy.x > room_x then
 				p.x -= 12
-			elseif oldxy.x < room.x then
+			elseif oldxy.x < room_x then
 				p.x += 12
 			end
 		end
 		-- fade out music and stuff
-		if room.i == 17 then
+		if room_i == 17 then
 			music(-1,5000,3)
 		end
 		fireball = {}
@@ -132,29 +128,27 @@ end
 -- spawn thangs in current room
 -- save room
 function spawn_room()
-	local rmapx = room.x \ 8
-	local rmapy = room.y \ 8
-	local rmapr=rmapx+15
-	local rmapb=rmapy+15
+	local rmapx = room_x \ 8
+	local rmapy = room_y \ 8
 	thang = {}
 	max_z = 0
-	room.old = {}
-	room.num_bads = 0
-	room.num_unlit = 0
-	for y=rmapy,rmapb do
-		for x=rmapx,rmapr do
+	room_old = {}
+	room_num_bads = 0
+	room_num_unlit = 0
+	for y=rmapy,rmapy+15 do
+		for x=rmapx,rmapx+15 do
 			local val = mget(x,y)
-			add(room.old, {x=x,y=y,val=val})
+			add(room_old, {x=x,y=y,val=val})
 			if fget(val,4) then
 				local t = spawn_thang(val,x*8,y*8)
 				max_z = max(t.z, max_z)
 				mset(x,y,t.replace)
 				if t.bad then
-					room.num_bads += 1
+					room_num_bads += 1
 				elseif t.i == 82 then
-					room.num_unlit += 1
+					room_num_unlit += 1
 				elseif t.i == 91 then
-					room.checkpoint = t
+					room_checkpoint = t
 				end
 			end
 		end
@@ -167,7 +161,7 @@ fade_timer = 8
 function spawn_p_in_curr_room()
 	restore_room()
 	spawn_room()
-	spawn_p(room.checkpoint.x, room.checkpoint.y - 1)
+	spawn_p(room_checkpoint.x, room_checkpoint.y - 1)
 end
 
 function fade_update()
@@ -305,11 +299,11 @@ end
 
 function draw_fade(s)
 	fillp(s)
-	rectfill(room.x,room.y,room.x+16*8 - 1,room.y+16*8 - 1,1)
+	rectfill(room_x,room_y,room_x+16*8 - 1,room_y+16*8 - 1,1)
 end
 
 function print_in_room(s,x,y,c)
-	print(s,room.x+x,room.y+y,c)
+	print(s,room_x+x,room_y+y,c)
 end
 
 function draw_title()
@@ -319,7 +313,7 @@ function draw_title()
 
 	print_in_room('⬅️➡️ move\n🅾️ z jump\n❎ x fire', 45, 68, 6)
 
-	--print('❎/x+⬅️⬆️➡️⬇️ fire', room.x+40, room.y+77, 1)
+	--print('❎/x+⬅️⬆️➡️⬇️ fire', room_x+40, room_y+77, 1)
 end
 
 function _draw()
@@ -327,9 +321,9 @@ function _draw()
 
 	map(0,0,0,0,128,64)
 
-	if room.i == 23 then
+	if room_i == 23 then
 		draw_title()
-	elseif room.i == 22 then
+	elseif room_i == 22 then
 		--print_in_room('\npsst!\n      ⬆️\n ❎+⬅️⬇️➡️', 75, 54, 1)
 		print_in_room('\npsst!\n❎+⬆️\n❎+⬅️+⬇️', 80, 58, 1)
 	end
@@ -370,8 +364,8 @@ function _draw()
 	end
 
 	if dbg then
-		local x = room.x + 8
-		print(dbgstr,x,room.y,7)
+		local x = room_x + 8
+		print(dbgstr,x,room_y,7)
 	end
 end
 -->8
@@ -646,8 +640,8 @@ end
 
 function update_door(t)
 	local num = 1
-	num = t.type == 1 and room.num_bads or num
-	num = t.type == 2 and room.num_unlit or num
+	num = t.type == 1 and room_num_bads or num
+	num = t.type == 2 and room_num_unlit or num
 	if t.open then
 		if num > 0 then
 			if not coll_p(t.x,t.y,t.w,t.h) then
@@ -797,7 +791,7 @@ function do_boss_die(t)
 		t.s = t.i + t.s_die.s
 		if not t.air then
 			if play_anim(t, 10, t.s_die.f) then
-				room.num_bads = 0
+				room_num_bads = 0
 			end
 			-- don't want to keep doing physics when dead
 			-- this would break if he was on an ice block and you broke it
@@ -815,7 +809,7 @@ function do_bad_die(t)
 		t.s = t.i + t.s_die.s
 		if play_anim(t, 5, t.s_die.f) then
 			del(thang, t)
-			room.num_bads -= 1
+			room_num_bads -= 1
 		end
 		return true
 	end
@@ -1044,7 +1038,7 @@ function update_archer(t)
 		-- idle
 		if t.phase == 0 then
 			t.s = t.i + t.s_idle.s
-			local r = get_room_xy(room.i)
+			local r = get_room_xy(room_i)
 			if p.y > r.y + 16 then
 				t.phase = 1
 			end
@@ -1139,8 +1133,8 @@ function start_tp(t)
 	-- find tp plat
 	local plats = {}
 	-- start inside borders
-	local rmapx = room.x \ 8 + 2
-	local rmapy = room.y \ 8 + 4
+	local rmapx = room_x \ 8 + 2
+	local rmapy = room_y \ 8 + 4
 	for y=rmapy,rmapy+9 do
 		for x=rmapx,rmapx+11 do
 			local val = mget(x,y)
@@ -1211,7 +1205,7 @@ function update_wizard(t)
 				t.y += dir
 				reset_anim_state(t)
 			end
-			local r = get_room_xy(room.i)
+			local r = get_room_xy(room_i)
 			if p.y > r.y + 16 then
 				t.phase = 1
 				t.y += t.hover_up and 2 or 1
@@ -1620,7 +1614,7 @@ function update_bat(b)
 		b.deadf -= 1
 		if b.deadf == 0 then
 			del(thang, b)
-			room.num_bads -= 1
+			room_num_bads -= 1
 		end
 		loop_anim(b,4,2)
 		b.x += b.vx
@@ -1691,7 +1685,7 @@ end
 function burn_lantern(l)
 	if not l.lit then
 		l.lit = true
-		room.num_unlit -= 1
+		room_num_unlit -= 1
 		l.s += 1
 	end
 end
@@ -1860,7 +1854,7 @@ function spawn_p(x,y)
 	p = {
 		x = x,
 		y = y,
-		rght = not (room.i < 8 or room.i > 15),
+		rght = not (room_i < 8 or room_i > 15),
 		vx = 0,
 		vy = 0,
 		air = true, -- must start in air!
@@ -1881,11 +1875,11 @@ end
 
 function start_music()
 	-- silent room?
-	if room.i == 17 then
+	if room_i == 17 then
 		return
 	end
 	-- boss room?
-	if room.i == 16 then
+	if room_i == 16 then
 		-- TODO boss music, unless boss is dead
 		return
 	end
