@@ -375,6 +375,19 @@ function init_thang_dat()
 		h = 16,
 		stops_projs = false
 	}
+	local human_enemy = {
+		-- coll dimensions
+		-- same as player..
+		ch = 6.99,
+		cw = 5.99,
+		cx = 1,
+		cy = 1,
+		-- hurt box - bigger than player, same as collision box
+		hx = 1,
+		hy = 1,
+		hw = 5.99,
+		hh = 6.99
+	}
 thang_dat = {
 	[91] = { -- checkpoint
 		update = update_checkpoint,
@@ -432,23 +445,11 @@ thang_dat = {
 		air = true,
 		g = 0.3,
 		max_vy = 4,
-		w = 8,
-		h = 8,
 		hp = 3,
 		throwing = false,
 		goingrght = true, -- going to go after throwing
 		burning = false,
-		-- coll dimensions
-		-- todo same as player..
-		ch = 6.99,
-		cw = 5.99,
-		cx = 1,
-		cy = 1,
-		-- hurt box - bigger than player, same as collision box
-		hx = 1,
-		hy = 1,
-		hw = 5.99,
-		hh = 6.99,
+		template = human_enemy,
 		shcount = 0, -- throw stuff at player
 		range = 8*6, -- only throw at player in this range
 		s_wlk = {s=0, f=2},
@@ -486,8 +487,6 @@ thang_dat = {
 		jsmol_vy = -2.5,
 		jsmol_vx = 1.5,
 		jtiny_vy = -1.0,
-		w = 8,
-		h = 8,
 		hp = 2,
 		burning = false,
 		angry = false,
@@ -514,8 +513,6 @@ thang_dat = {
 		burn = burn_knight,
 		draw = draw_knight,
 		bad = true,
-		w = 8,
-		h = 8,
 		hp = 5,
 		burning = false,
 		atking = false,
@@ -534,14 +531,7 @@ thang_dat = {
 		air = true,
 		g = 0.2,
 		max_vy = 4,
-		ch = 6.99,
-		cw = 5.99,
-		cx = 1,
-		cy = 1,
-		hx = 1,
-		hy = 1,
-		hw = 5.99,
-		hh = 6.99,
+		template = human_enemy,
 		atkrange = 11, -- only attack player in this range
 		s_idle = {s=0, f=0},
 		s_wlk  = {s=1, f=2},
@@ -559,23 +549,11 @@ thang_dat = {
 		air = true,
 		g = 0.3,
 		max_vy = 4,
-		w = 8,
-		h = 8,
 		hp = 3,
 		shooting = false,
 		goingrght = true, -- going to go after throwing
 		burning = false,
-		-- coll dimensions
-		-- todo same as player..
-		ch = 6.99,
-		cw = 5.99,
-		cx = 1,
-		cy = 1,
-		-- hurt box - bigger than player, same as collision box
-		hx = 1,
-		hy = 1,
-		hw = 5.99,
-		hh = 6.99,
+		template = human_enemy,
 		shcount = 0, -- shoot stuff at player
 		s_wlk = {s=0, f=2},
 		s_sh = {s=2, f=3},
@@ -589,14 +567,12 @@ thang_dat = {
 	},
 	[208] = { -- archer
 		update = update_archer,
-		burn = burn_archer,
+		burn = burn_archer_wizard,
 		draw = draw_archer,
 		bad = true,
 		air = true,
 		g = 0.3,
 		max_vy = 4,
-		w = 8,
-		h = 8,
 		hp = 5,
 		shooting = false,
 		goingrght = true, -- going to go after throwing
@@ -604,17 +580,7 @@ thang_dat = {
 		phase = 0,
 		invis = false,
 		invistimer = 0,
-		-- coll dimensions
-		-- todo same as player..
-		ch = 6.99,
-		cw = 5.99,
-		cx = 1,
-		cy = 1,
-		-- hurt box - bigger than player, same as collision box
-		hx = 1,
-		hy = 1,
-		hw = 5.99,
-		hh = 6.99,
+		template = human_enemy,
 		shcount = 0, -- shoot stuff at player
 		s_idle = {s=0, f=1},
 		s_wlk = {s=1, f=2},
@@ -631,6 +597,21 @@ thang_dat = {
 			{1, 1, 1, 1, 1, 1},
 			{1, 2, 5, 2, 13, 1},
 		}
+	},
+	[224] = { -- wizard
+		init = init_wizard,
+		update = update_wizard,
+		burn = burn_archer_wizard,
+		draw = draw_thang,
+		bad = true,
+		hp = 5,
+		template = human_enemy,
+		hover_up = false,
+		shcount = 0,
+		phase = 0,
+		s_idle = {s=0, f=1},
+		s_cast = {s=1, f=3},
+		s_die = {s=6, f=3},
 	}
 }
 end
@@ -1196,6 +1177,69 @@ function burn_bad(t)
 	end
 end
 
+function init_wizard(t)
+	t.y -= 1
+end
+
+function update_wizard(t)
+
+	if do_boss_die(t) then
+		return
+	end
+
+	local oldburning = t.burning
+	if do_bad_burning(t) then
+		if not t.alive then
+			sound(sfx_dat.knight_die)
+		end
+		return
+	end
+
+	if t.teleporting then
+		
+	-- else we walking or jumping
+	else
+		-- idle
+		if t.phase == 0 then
+			t.s = t.i + t.s_idle.s
+			if play_anim(t, 20, t.s_idle.f) then
+				t.hover_up = not t.hover_up
+				local dir = t.hover_up and -1 or 1
+				t.y += dir
+				t.fr = 0
+				t.fcnt = 0
+			end
+			local r = get_room_xy(room.i)
+			if p.y > r.y + 16 then
+				t.phase = 1
+				t.y += t.hover_up and 2 or 1
+			end
+			return
+		end
+
+		t.s = t.i + t.s_cast.s
+		loop_anim(t,8,t.s_cast.f)
+
+		if t.invis then
+			t.invistimer -= 1
+			if t.invistimer <= 0 then
+				t.stops_projs = true
+				t.invis = false
+			end
+		-- don't attack unless visible
+		elseif t.shcount <= 0 then
+		else
+			t.shcount -= 1
+		end
+	end
+
+	if p.alive and hit_p(t.x,t.y,t.w,t.h) then
+		t.invis = false
+		kill_p()
+	end
+end
+
+
 function burn_frog(t)
 	if not t.angry then
 		burn_bad(t)
@@ -1322,7 +1366,7 @@ function burn_knight(t)
 	end
 end
 
-function burn_archer(t)
+function burn_archer_wizard(t)
 	if not t.invis then
 		burn_bad(t)
 	end
@@ -2717,13 +2761,13 @@ ccc11cc0000000000000000000000000000000000000000000000000000000000000000000000000
 
 __gff__
 0001010101030003100300000101101003030303030100030303000001010100030303030300000303000000000300010303030303000303030303030303030300000000000000000000000000000000000011010101131300000010000000001000000010000000101010000003030810101010101000000000000000030308
-0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010001000000000000000000000000000100000000000000000000000000000000000000000000000000000000303030300000000000000000000000003030303
+0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010001000000000000000000000000000100000000000000000000000000000001000000000000000000000000303030300000000000000000000000003030303
 __map__
 2121222222222222222121212121212121312121212121212121212121322121212121212121212121212121212121212222222222223816161616161616162121322121212121212121212121212121212121212121212121212121212121211411111111111111121111111111111105050505050505050505050505050505
 2116161616161616161616161616162113161616161637213816161616372110380000000000000000000000000000141300000000000000000060000000001014000000000000000000000000000014140000000000000000000000000000142400000000000000000000000000000005002121002100002200212100000005
 0e161616161616161616161616161621331616161616161616161616161637200e0000000000000000000000000000242300000000000000000000000000002024000000000000000000000000175b24240000000000000000000000600000242400000000560000005600000000000005002100002121002200210021000005
 2116161616161616161616161616162108000000000000000000000000000020000000000000000000000000000000242300000000000000000064000000002024000000000000000000000000000c24240060000000600000000000000000242400000000000000000000000000000005002121002100212200210021000005
-216400000000000000000000006400210000520000006f006f6f000000000020140303030303030303030303030303242300000000000100000001000000002024000000000000000000000000000024240000000000000000000000000000242400000000000000000000000000005205002100002100002200210021000005
+216400000000000000000000006400210000520000006f006f6f000000000020140303030303030303030303030303242300000000000100000001000000002024000000000000e00000000000000024240000000000000000000000000000242400000000000000000000000000005205002100002100002200210021000005
 2156560000000064000000005656002113271111111111111111111111280020240000000000000000000000000000242300000000000000000000000000602024000000000000171700000000000024240000000000000000000000000000242400000000000000000000000056561405002121002100002200212100000005
 21000000150056565600150000000021230000007f0018000000180000000020240100640000000000000064000000242300000000000000000000006f00002024000000010000000000000100000024240000000000000000000000006000242400005600000056000000560000002405000000000000000000000000000005
 2100000035060606060635000000002423000000000000000000000000000020240000000000000000000000000000242300000100000000000000001800002024000000000000000000000000000024240000000000000000000114000000242400006f6f6f6f6f6f6f6f6f6f6f6f2421210000212100210000002100002200
