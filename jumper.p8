@@ -164,6 +164,35 @@ function spawn_p_in_curr_room()
 	spawn_p(room_checkpoint.x, room_checkpoint.y - 1)
 end
 
+snd_p_respawn = 8
+snd_p_die = 9
+snd_p_jump = 10
+snd_p_shoot = 11
+snd_p_land = 12
+snd_hit = 13
+snd_bat_flap = 14
+snd_ice_break = 15
+snd_frog_croak = 16
+snd_frog_jump = 17
+snd_knight_jump = 18
+snd_knight_swing = 19
+snd_knight_die = 20
+snd_shooter_shot = 21
+snd_archer_invis = 22
+
+function start_music()
+	-- silent room?
+	if room_i == 17 then
+		return
+	end
+	-- boss room?
+	if room_i == 16 then
+		-- TODO boss music, unless boss is dead
+		return
+	end
+	music(0, 800, 3)
+end
+
 function fade_update()
 	if fade_timer == 12 then
 		spawn_p_in_curr_room()	
@@ -190,7 +219,6 @@ function _update()
 end
 
 function _init()
-	init_sfx_dat()
 	init_thang_dat()
 	init_room()
 	spawn_p_in_curr_room()	
@@ -667,7 +695,7 @@ end
 
 function burn_iceblock(t)
 	if t.alive then
-		sound(sfx_dat.ice_break)
+		sfx(snd_ice_break)
 		t.s = 88
 		t.alive = false
 		mset(t.x\8,t.y\8,0)
@@ -676,7 +704,7 @@ end
 
 function kill_icepick(t)
 	if t.alive then
-		sound(sfx_dat.ice_break)
+		sfx(snd_ice_break)
 		t.vx = 0
 		t.vy = 0
 		t.alive = false
@@ -818,7 +846,7 @@ end
 
 function check_bad_coll_spikes(t)
 	if coll_spikes(t) then
-		sound(sfx_dat.hit)
+		sfx(snd_hit)
 		t.alive = false
 		reset_anim_state(t)
 		t.s = t.i + t.s_die.s
@@ -985,7 +1013,7 @@ function shoot_shot(t)
 		t.shooting = false
 		reset_anim_state(t)
 	elseif t.fr == 2 and t.fcnt == 1 then
-		sound(sfx_dat.shooter_shot)
+		sfx(snd_shooter_shot)
 		local orig = {
 			x = t.rght and t.x + 8 or t.x - 1,
 			y = t.y + 3
@@ -1009,12 +1037,12 @@ function update_archer(t)
 	local oldburning = t.burning
 	if do_bad_burning(t) then
 		if not t.alive then
-			sound(sfx_dat.knight_die)
+			sfx(snd_knight_die)
 		end
 		return
 	-- not burning or dead
 	elseif oldburning then
-		sound(sfx_dat.archer_invis)
+		sfx(snd_archer_invis)
 		t.invis = true
 		t.stops_projs = false
 		t.invistimer = 70
@@ -1051,7 +1079,7 @@ function update_archer(t)
 			if coll_edge_turn_around(t,t.x,t.y + t.h) != 0 then
 				-- jump! or turn around -- always jump when invis
 				if t.invis or rnd(1) < 0.5 then
-					sound(sfx_dat.knight_jump)
+					sfx(snd_knight_jump)
 					t.air = true
 					t.vy = -4
 					local dir = t.rght and 1 or -1
@@ -1115,7 +1143,7 @@ end
 
 function burn_bad(t)
 	if t.alive and not t.burning then
-		sound(sfx_dat.hit)
+		sfx(snd_hit)
 		t.hp -= 1
 		reset_anim_state(t)
 		t.burning = true
@@ -1159,7 +1187,7 @@ function update_wizard(t)
 	local oldburning = t.burning
 	if do_bad_burning(t) then
 		if not t.alive then
-			sound(sfx_dat.knight_die)
+			sfx(snd_knight_die)
 		end
 		return
 	elseif oldburning then
@@ -1263,7 +1291,7 @@ function update_frog(t)
 			if t.croak then
 				-- play full idle anim (croak)
 				if play_anim(t, 5, t.s_idle.f) then
-					sound(sfx_dat.frog_croak)
+					sfx(snd_frog_croak)
 					t.croak = false
 					t.fr = 0
 					t.fcount = 0
@@ -1277,7 +1305,7 @@ function update_frog(t)
 				end
 			end
 			if p.sh then
-				sound(sfx_dat.frog_jump)
+				sfx(snd_frog_jump)
 				t.vy += t.jbig_vy
 				t.vx = t.jbig_vx * dir
 				t.air = true
@@ -1287,7 +1315,7 @@ function update_frog(t)
 				t.angry = false
 			else
 				t.jcount -= 1
-				sound(sfx_dat.frog_jump)
+				sfx(snd_frog_jump)
 				-- small jump
 				if not t.bounced or t.do_smol then
 					t.vy += t.jsmol_vy
@@ -1414,7 +1442,7 @@ function update_knight(t)
 
 	if do_bad_burning(t) then
 		if not t.alive then
-			sound(sfx_dat.knight_die)
+			sfx(snd_knight_die)
 		end
 		return
 	else
@@ -1442,12 +1470,12 @@ function update_knight(t)
 		else
 			if t.fr > 0 then
 				if t.phase == 1 and t.fr == 1 and t.fcnt == 1 then
-					sound(sfx_dat.knight_swing)
+					sfx(snd_knight_swing)
 				end
 				local dir = t.rght and 1 or -1
 				-- jump!
 				if t.phase == 2 and not t.air and t.fr == 1 and t.fcnt == 1 then
-					sound(sfx_dat.knight_jump)
+					sfx(snd_knight_jump)
 					t.vy = -3
 					t.vx = 1 * dir
 					t.air = true
@@ -1566,7 +1594,7 @@ end
 
 function burn_bat(b)
 	if b.alive then
-		sound(sfx_dat.hit)
+		sfx(snd_hit)
 		b.alive = false
 		b.s += 2
 		b.vy = 0.6
@@ -1624,7 +1652,7 @@ function update_bat(b)
 
 	-- b.alive
 	if loop_anim(b,4,2) then
-		sound(sfx_dat.bat_flap)
+		sfx(snd_bat_flap)
 	end
 
 	-- move the bat
@@ -1796,60 +1824,6 @@ p_dat = {
 	j_vy = -4, -- jump accel
 }
 
-function init_sfx_dat()
-sfx_dat = {
-	p_respawn = {
-		sfx = 8
-	},
-	p_die = {
-		sfx = 9
-	},
-	p_jump = {
-		sfx = 10
-	},
-	p_shoot = {
-		sfx = 11
-	},
-	p_land = {
-		sfx = 12
-	},
-	hit = {
-		sfx = 13
-	},
-	bat_flap = {
-		sfx = 14
-	},
-	ice_break = {
-		sfx = 15
-	},
-	frog_croak = {
-		sfx = 16
-	},
-	frog_jump = {
-		sfx = 17
-	},
-	knight_jump = {
-		sfx = 18
-	},
-	knight_swing = {
-		sfx = 19
-	},
-	knight_die = {
-		sfx = 20
-	},
-	shooter_shot = {
-		sfx = 21
-	},
-	archer_invis = {
-		sfx = 22
-	},
-}
-end
-
-function sound(snd)
-	sfx(snd.sfx)
-end
-
 function spawn_p(x,y)
 	p = {
 		x = x,
@@ -1873,21 +1847,8 @@ function spawn_p(x,y)
 	p.s = p.i + p.s_spwn.s
 end
 
-function start_music()
-	-- silent room?
-	if room_i == 17 then
-		return
-	end
-	-- boss room?
-	if room_i == 16 then
-		-- TODO boss music, unless boss is dead
-		return
-	end
-	music(0, 800, 3)
-end
-
 function kill_p()
-	sound(sfx_dat.p_die)
+	sfx(snd_p_die)
 	music(-1,800,3)
 	p.alive = false
 	p.s = p.i + p.s_die.s 
@@ -1996,11 +1957,11 @@ function update_p()
 	p.teeter = not p.air and coll_edge(p,p.x,p.y+p.fty)
 
 	if phys_result.landed then
-		sound(sfx_dat.p_land)
+		sfx(snd_p_land)
 	end
 
 	if jumped and not phys_result.ceil_cancel then
-		sound(sfx_dat.p_jump)
+		sfx(snd_p_jump)
 	end
 
 	if coll_spikes(p) then
@@ -2054,12 +2015,12 @@ function update_p()
 	if p.sh then
 		p.s = p.i + p.s_sh.s
 		if not oldsh then
-			sound(sfx_dat.p_shoot)
+			sfx(snd_p_shoot)
 			p.fr = 0
 			p.fcnt = 0
 		end
 		if loop_anim(p,3,p.s_sh.f) then
-			sound(sfx_dat.p_shoot)
+			sfx(snd_p_shoot)
 		end
 
 	elseif not p.air then
@@ -2126,7 +2087,7 @@ function respawn_update_p()
 			p.s = p.i + p.s_wlk.s
 			p.spawn = false
 		elseif p.fcnt == 1 then
-			sound(sfx_dat.p_respawn)
+			sfx(snd_p_respawn)
 			start_music()
 		end
 	end
