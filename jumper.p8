@@ -1132,6 +1132,31 @@ function init_wizard(t)
 	t.y -= 1
 end
 
+function start_tp(t)
+	t.tping = true
+	t.stops_projs = false
+	t.invis = true
+	reset_anim_state(t)
+	-- find tp plat
+	local plats = {}
+	-- start inside borders
+	local rmapx = room.x \ 8 + 2
+	local rmapy = room.y \ 8 + 4
+	for y=rmapy,rmapy+9 do
+		for x=rmapx,rmapx+11 do
+			local val = mget(x,y)
+			if fget(val,0) and not fget(val,1) then
+				local plat = {x = x*8, y = y*8 - t.h}
+				if plat.x != t.x then
+					add(plats, plat)
+				end
+			end
+		end
+	end
+	t.tp_to = rnd(plats)
+	t.tp_from = {x=t.x,y=t.y}
+end
+
 function update_wizard(t)
 
 	if do_boss_die(t) then
@@ -1145,28 +1170,7 @@ function update_wizard(t)
 		end
 		return
 	elseif oldburning then
-		t.tping = true
-		t.stops_projs = false
-		t.invis = true
-		reset_anim_state(t)
-		-- find tp plat
-		local plats = {}
-		-- start inside borders
-		local rmapx = room.x \ 8 + 2
-		local rmapy = room.y \ 8 + 4
-		for y=rmapy,rmapy+9 do
-			for x=rmapx,rmapx+11 do
-				local val = mget(x,y)
-				if fget(val,0) and not fget(val,1) then
-					local plat = {x = x*8, y = y*8 - t.h}
-					if plat.x != t.x then
-						add(plats, plat)
-					end
-				end
-			end
-		end
-		t.tp_to = rnd(plats)
-		t.tp_from = {x=t.x,y=t.y}
+		start_tp(t)
 	end	
 
 	face_p(t)
@@ -1198,6 +1202,7 @@ function update_wizard(t)
 			if p.y > r.y + 16 then
 				t.phase = 1
 				t.y += t.hover_up and 2 or 1
+				start_tp(t)
 			end
 			return
 		end
