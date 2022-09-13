@@ -119,6 +119,10 @@ function update_room()
 				p.x += 12
 			end
 		end
+		-- fade out music and stuff
+		if room.i == 17 then
+			music(-1,5000,3)
+		end
 		fireball = {}
 		restore_room()
 		spawn_room()
@@ -195,7 +199,6 @@ function _init()
 	init_sfx_dat()
 	init_thang_dat()
 	init_room()
-	music(0, 4000, 3)
 	spawn_p_in_curr_room()	
 end
 
@@ -341,7 +344,6 @@ function _draw()
 			draw_fade(0b0000101000001010.1)
 		elseif fade_timer < 24 then
 			draw_fade(0b0101101001011010.1)
-			sound(sfx_dat.p_respawn)
 		end
 		fillp(0)
 	end
@@ -1842,8 +1844,22 @@ function spawn_p(x,y)
 	p.s = p.i + p.s_spwn.s
 end
 
+function start_music()
+	-- silent room?
+	if room.i == 17 then
+		return
+	end
+	-- boss room?
+	if room.i == 16 then
+		-- TODO boss music, unless boss is dead
+		return
+	end
+	music(0, 800, 3)
+end
+
 function kill_p()
 	sound(sfx_dat.p_die)
+	music(-1,800,3)
 	p.alive = false
 	p.s = p.i + p.s_die.s 
 	p.fr = 0
@@ -2080,6 +2096,9 @@ function respawn_update_p()
 			p.fcnt = 0
 			p.s = p.i + p.s_wlk.s
 			p.spawn = false
+		elseif p.fcnt == 1 then
+			sound(sfx_dat.p_respawn)
+			start_music()
 		end
 	end
 end
