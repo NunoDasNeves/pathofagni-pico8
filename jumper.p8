@@ -229,7 +229,7 @@ end
 
 function draw_thang(t)
 	local flp = false
-	if not (t.rght == nil) then
+	if t.rght != nil then
 		flp = not t.rght
 	end
 	spr(t.s+t.fr,t.x,t.y,1,1,flp)
@@ -294,19 +294,11 @@ function draw_knight(t)
 	draw_thang(t)
 	-- draw sword
 	if t.swrd_draw then
-		local xfac = t.rght and 1 or -1
+		local xoff = t.rght and 8 or -8
 		spr(t.i + t.s_swrd.s + t.swrd_fr,
-			t.x + (8 * xfac),
+			t.x + xoff,
 			t.y,
 			1,1,not t.rght)
-		if dbg and t.swrd_hit then
-			local swrd_start_x = t.rght and 8 or -t.swrd_x_off
-			local x0 = t.x + swrd_start_x
-			local y0 = t.y + t.swrd_y
-			local x1 = x0 + t.swrd_w
-			local y1 = y0 + t.swrd_h
-			rectfill(x0,y0,x1,y1,8)
-		end
 	end
 end
 
@@ -327,21 +319,11 @@ end
 
 function draw_fade(s)
 	fillp(s)
-	rectfill(room_x,room_y,room_x+16*8 - 1,room_y+16*8 - 1,1)
+	rectfill(room_x,room_y,room_x+128 - 1,room_y+128 - 1,1)
 end
 
 function print_in_room(s,x,y,c)
 	print(s,room_x+x,room_y+y,c)
-end
-
-function draw_title()
-	print_in_room('path of', 53, 35, 1)
-	print_in_room('path of', 52, 34, 7)
-	print_in_room('demo 5', 52, 58, 11)
-
-	print_in_room('⬅️➡️ move\n🅾️ z jump\n❎ x fire', 45, 68, 6)
-
-	--print('❎/x+⬅️⬆️➡️⬇️ fire', room_x+40, room_y+77, 1)
 end
 
 function _draw()
@@ -350,7 +332,10 @@ function _draw()
 	map(0,0,0,0,128,64)
 
 	if room_i == 23 then
-		draw_title()
+		print_in_room('path of', 53, 35, 1)
+		print_in_room('path of', 52, 34, 7)
+		print_in_room('demo 5', 52, 58, 11)
+		print_in_room('⬅️➡️ move\n🅾️ z jump\n❎ x fire', 45, 68, 6)
 	elseif room_i == 22 then
 		--print_in_room('\npsst!\n      ⬆️\n ❎+⬅️⬇️➡️', 75, 54, 1)
 		print_in_room('\npsst!\n❎+⬆️\n❎+⬅️+⬇️', 80, 58, 1)
@@ -359,21 +344,17 @@ function _draw()
 	-- draw one layer at a time!
 	for z=max_z,0,-1 do
 		for t in all(thang) do
-	  if t.z == z then
-			 t:draw()
+			if t.z == z then
+				t:draw()
 			end
 		end
 	end
 
 	-- player
-	spr(p.s + p.fr,
-	    p.x,
-	    p.y,
-	    1, 1,
-	    not p.rght)
+	draw_thang(p)
 
 	for f in all(fireball) do
-		f:draw()
+		draw_smol_thang(f)
 	end
 
 	if do_fade then
@@ -418,34 +399,34 @@ function init_thang_dat()
 		h = 16,
 		stops_projs = false
 	}
-	local human_enemy = {
+	local enemy = {
+		burn = burn_bad,
+		burning = false,
 		-- coll dimensions
 		-- same as player..
-		ch = 6.99,
 		cw = 5.99,
+		ch = 6.99,
 		cx = 1,
 		cy = 1,
 		-- hurt box - bigger than player, same as collision box
+		hw = 5.99,
+		hh = 6.99,
 		hx = 1,
 		hy = 1,
-		hw = 5.99,
-		hh = 6.99
-	}
-	local thrower = {
-		update = update_shooter_thrower,
-		burn = burn_bad,
-		do_shoot = throw_icepick,
-		check_shoot = check_throw_icepick,
 		bad = true,
 		air = true,
 		g = 0.3,
-		max_vy = 4,
+		max_vy = 4
+	}
+	local thrower = {
+		update = update_shooter_thrower,
+		do_shoot = throw_icepick,
+		check_shoot = check_throw_icepick,
 		hp = 3,
 		shspeed = 8, -- only used by shooter
 		shooting = false,
 		goingrght = true, -- going to go after throwing
-		burning = false,
-		template = human_enemy,
+		template = enemy,
 		shcount = 0, -- throw/shoot stuff at player
 		range = 48, -- only used by thrower
 		s_wlk = {s=0, f=2},
@@ -550,9 +531,7 @@ thang_dat = {
 		update = update_knight,
 		burn = burn_knight,
 		draw = draw_knight,
-		bad = true,
 		hp = 5,
-		burning = false,
 		atking = false,
 		-- draw sword/sword hitbox present
 		swrd_fr = 0,
@@ -565,11 +544,8 @@ thang_dat = {
 		phase = 0, -- stand, walk, jump
 		atktimer = 0, -- how long since last attack
 		jmptime = 0, -- how long to wait before jumping
-		-- coll dimensions, physics
-		air = true,
 		g = 0.2,
-		max_vy = 4,
-		template = human_enemy,
+		template = enemy,
 		atkrange = 11, -- only attack player in this range
 		s_idle = {s=0, f=0},
 		s_wlk  = {s=1, f=2},
@@ -607,19 +583,14 @@ thang_dat = {
 		update = update_archer,
 		burn = burn_archer_wizard,
 		draw = draw_archer,
-		bad = true,
-		air = true,
-		g = 0.3,
-		max_vy = 4,
 		hp = 5,
 		shooting = false,
 		shspeed = 6,
 		goingrght = true, -- going to go after shooting 
-		burning = false,
 		phase = 0,
 		invis = false,
 		invistimer = 0,
-		template = human_enemy,
+		template = enemy,
 		shcount = 0, -- shoot stuff at player
 		s_idle = {s=0, f=1},
 		s_wlk = {s=1, f=2},
@@ -642,9 +613,8 @@ thang_dat = {
 		update = update_wizard,
 		burn = burn_archer_wizard,
 		draw = draw_wizard,
-		bad = true,
 		hp = 5,
-		template = human_enemy,
+		template = enemy,
 		hover_up = false,
 		shcount = 0,
 		phase = 0,
@@ -1764,13 +1734,16 @@ function spawn_thang(i,x,y)
 		-- replace on map when spawn
 		replace = 0,
 	}
-	for k,v in pairs(thang_dat[i]) do
-		t[k] = v
-	end
-	if t.template != nil then
-		for k,v in pairs(t.template) do
+	-- apply template first
+	local template = thang_dat[i].template
+	if template != nil then
+		for k,v in pairs(template) do
 			t[k] = v
 		end
+	end
+	-- overwrite defaults/template with specific stuff
+	for k,v in pairs(thang_dat[i]) do
+		t[k] = v
 	end
 	if t.init != nil then
 		t:init()
@@ -2107,7 +2080,6 @@ function make_fireball(xdir, ydir)
 		fcnt = 0,
 		speed = 3,
 		fr = 0,
-		draw = draw_smol_thang,
 		update = update_fireball,
 	}
 	if xdir == 0 or ydir == 0 then
