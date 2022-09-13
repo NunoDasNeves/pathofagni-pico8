@@ -507,26 +507,27 @@ thang_dat = {
 		s_swrd = {s=14, f=2},
 	},
 	[100] = { -- thrower
-		update = update_thrower,
+		update = update_shooter_thrower,
 		burn = burn_bad,
+		do_shoot = throw_icepick,
+		check_shoot = check_throw_icepick,
 		bad = true,
 		air = true,
 		g = 0.3,
 		max_vy = 4,
 		hp = 3,
-		throwing = false,
+		shooting = false,
 		goingrght = true, -- going to go after throwing
 		burning = false,
 		template = human_enemy,
 		shcount = 0, -- throw stuff at player
-		range = 8*6, -- only throw at player in this range
+		range = 48, -- only throw at player in this range
 		s_wlk = {s=0, f=2},
 		s_sh = {s=2, f=1},
 		s_burn = {s=3, f=1},
 		s_die = {s=4, f=3},
 	},
 	[107] = { -- icepick
-		init = init_icepick,
 		update = update_icepick,
 		burn = kill_icepick,
 		draw = draw_smol_thang,
@@ -543,14 +544,17 @@ thang_dat = {
 		hh = 4,
 	},
 	[117] = { -- shooter
-		update = update_shooter,
+		update = update_shooter_thrower,
 		burn = burn_bad,
+		do_shoot = shoot_shot,
+		check_shoot = check_shoot_shot,
 		bad = true,
 		air = true,
 		g = 0.3,
 		max_vy = 4,
 		hp = 3,
 		shooting = false,
+		shspeed = 8,
 		goingrght = true, -- going to go after throwing
 		burning = false,
 		template = human_enemy,
@@ -575,7 +579,8 @@ thang_dat = {
 		max_vy = 4,
 		hp = 5,
 		shooting = false,
-		goingrght = true, -- going to go after throwing
+		shspeed = 6,
+		goingrght = true, -- going to go after shooting 
 		burning = false,
 		phase = 0,
 		invis = false,
@@ -659,15 +664,6 @@ function burn_iceblock(t)
 	end
 end
 
-function init_icepick(t)
-	if p.x < t.x then
-		t.xflip = true
-		t.vx = -t.vx
-	else
-		t.xflip = false
-	end
-end
-
 function kill_icepick(t)
 	if t.alive then
 		sound(sfx_dat.ice_break)
@@ -731,81 +727,6 @@ function update_icepick(t)
 	if p.alive and hit_p(t.x,t.y,t.w,t.h) then
 		kill_p()
 		kill_icepick(t)
-	end
-end
-
-function update_thrower(t)
-	if do_bad_die(t) then
-		return
-	end
-
-	if do_bad_burning(t) then
-		t.throwing = false
-		return
-	end
-
-	t.vx = 0
-
-	if t.throwing then
-		if p.x < t.x then
-			t.rght = false
-		else
-			t.rght = true
-		end
-		local xfac = t.rght and 1 or -1
-
-		t.s = t.i + t.s_sh.s
-		if play_anim(t, 20, t.s_sh.f) then
-			t.throwing = false
-			spawn_thang(107,
-						t.x - 3 * xfac,
-						t.y + 4)
-			t.fcnt = 0
-			t.fr = 0
-		end
-
-	-- else we walking
-	else
-		t.s = t.i + t.s_wlk.s
-		-- remember which way we were going
-		t.rght = t.goingrght
-
-		if not t.air then
-			if t.rght then
-				t.vx = 0.75
-			else
-				t.vx = -0.75
-			end
-			loop_anim(t,4,t.s_wlk.f)
-		end
-
-		if t.shcount <= 0 then
-			if vlen({ x = t.x - p.x, y = t.y - p.y }) <= t.range then
-				t.throwing = true
-				t.fcnt = 0
-				t.fr = 0
-			end
-			t.shcount = 30
-		else
-			t.shcount -= 1
-		end
-	end
-
-	local phys_result = phys_thang(t, t.air)
-
-	if not t.air then
-		if phys_result.hit_wall or coll_edge_turn_around(t,t.x,t.y + t.h) != 0 then
-			t.rght = not t.rght
-			t.goingrght = t.rght
-		end
-	end
-
-	if check_bad_coll_spikes(t) then
-		return
-	end
-	
-	if p.alive and hit_p(t.x,t.y,t.w,t.h) then
-		kill_p()
 	end
 end
 
@@ -947,12 +868,60 @@ function update_shot(t)
 	t.fcnt += 1
 end
 
-function update_shooter(t)
+function throw_icepick(t)
+	local xfac = t.rght and 1 or -1
+	if play_anim(t, 20, t.s_sh.f) then
+		t.shooting = false
+		local i = spawn_thang(107,
+					t.x - 3 * xfac,
+					t.y + 4)
+		if not t.rght then
+			i.xflip = true
+			i.vx = -i.vx
+		end
+		t.fcnt = 0
+		t.fr = 0
+	end
+end
+
+function face_p(t)
+	if p.x < t.x then
+		t.rght = false
+	else
+		t.rght = true
+	end
+end
+
+function check_shoot_shot(t)
+	local shleft = dist_until_wall(t.x + 4, t.y + 4, -1)
+	local shright = dist_until_wall(t.x + 4, t.y + 4, 1)
+	if hit_p(t.x + 4 - shleft, t.y, shleft + shright, 8) then
+		face_p(t)
+		t.shcount = 5
+		t.shooting = true
+		t.fcnt = 0
+		t.fr = 0
+	end
+end
+
+function check_throw_icepick(t)
+	if vlen({ x = t.x - p.x, y = t.y - p.y }) <= t.range then
+		dbgstr = "YEP\n"..dbgstr
+		face_p(t)
+		t.shooting = true
+		t.fcnt = 0
+		t.fr = 0
+	end
+	t.shcount = 30
+end
+
+function update_shooter_thrower(t)
 	if do_bad_die(t) then
 		return
 	end
 
 	if do_bad_burning(t) then
+		-- t.shooting = false -- shooter keeps shooting
 		return
 	end
 
@@ -960,13 +929,7 @@ function update_shooter(t)
 
 	if t.shooting then
 		t.s = t.i + t.s_sh.s
-		if play_anim(t, 8, t.s_sh.f) then
-			t.shooting = false
-			t.fcnt = 0
-			t.fr = 0
-		elseif t.fr == 2 and t.fcnt == 1 then
-			shoot_shot(t)
-		end
+		t:do_shoot()
 	-- else we walking
 	else
 		t.s = t.i + t.s_wlk.s
@@ -982,20 +945,7 @@ function update_shooter(t)
 		end
 
 		if t.shcount <= 0 then
-			local shleft = dist_until_wall(t.x + 4, t.y + 4, -1)
-			local shright = dist_until_wall(t.x + 4, t.y + 4, 1)
-			--dbgstr = tostr(left)..' '..tostr(right)..'\n'..dbgstr
-			if hit_p(t.x + 4 - shleft, t.y, shleft + shright, 8) then
-				if p.x < t.x then
-					t.rght = false
-				else
-					t.rght = true
-				end
-				t.shcount = 5
-				t.shooting = true
-				t.fcnt = 0
-				t.fr = 0
-			end
+			t:check_shoot()
 		else
 			t.shcount -= 1
 		end
@@ -1020,18 +970,26 @@ function update_shooter(t)
 end
 
 function shoot_shot(t)
-	sound(sfx_dat.shooter_shot)
-	local orig = {
-		x = t.rght and t.x + 8 or t.x - 1,
-		y = t.y + 3
-	}
-	local shleft = dist_until_wall(t.x + 4, t.y + 4, -1)
-	local shright = dist_until_wall(t.x + 4, t.y + 4, 1)
-	local shot = spawn_thang(123, orig.x, orig.y)
-	shot.endx = t.x + 4 + (t.rght and shright or -shleft)
-	shot.endy = orig.y
-	shot.arrowx = t.rght and shot.endx - 5 or shot.endx + 5
-	shot.arrowy = orig.y
+	-- 8 shooter
+	-- 6 archer
+	if play_anim(t, t.shspeed, t.s_sh.f) then
+		t.shooting = false
+		t.fcnt = 0
+		t.fr = 0
+	elseif t.fr == 2 and t.fcnt == 1 then
+		sound(sfx_dat.shooter_shot)
+		local orig = {
+			x = t.rght and t.x + 8 or t.x - 1,
+			y = t.y + 3
+		}
+		local shleft = dist_until_wall(t.x + 4, t.y + 4, -1)
+		local shright = dist_until_wall(t.x + 4, t.y + 4, 1)
+		local shot = spawn_thang(123, orig.x, orig.y)
+		shot.endx = t.x + 4 + (t.rght and shright or -shleft)
+		shot.endy = orig.y
+		shot.arrowx = t.rght and shot.endx - 5 or shot.endx + 5
+		shot.arrowy = orig.y
+	end
 end
 
 function update_archer(t)
@@ -1067,13 +1025,7 @@ function update_archer(t)
 		else
 			t.s = t.i + t.s_sh.s
 		end
-		if play_anim(t, 6, t.s_sh.f) then
-			t.shooting = false
-			t.fcnt = 0
-			t.fr = 0
-		elseif t.fr == 2 and t.fcnt == 1 then
-			shoot_shot(t)
-		end
+		shoot_shot(t)
 	-- else we walking or jumping
 	else
 		-- idle
@@ -1131,19 +1083,7 @@ function update_archer(t)
 			end
 		-- don't attack unless visible
 		elseif t.shcount <= 0 then
-			local shleft = dist_until_wall(t.x + 4, t.y + 4, -1)
-			local shright = dist_until_wall(t.x + 4, t.y + 4, 1)
-			if hit_p(t.x + 4 - shleft, t.y, shleft + shright, 8) then
-				if p.x < t.x then
-					t.rght = false
-				else
-					t.rght = true
-				end
-				t.shcount = 5
-				t.shooting = true
-				t.fcnt = 0
-				t.fr = 0
-			end
+			check_shoot_shot(t)
 		else
 			t.shcount -= 1
 		end
