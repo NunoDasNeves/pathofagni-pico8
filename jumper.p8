@@ -388,6 +388,37 @@ function init_thang_dat()
 		hw = 5.99,
 		hh = 6.99
 	}
+	local thrower = {
+		update = update_shooter_thrower,
+		burn = burn_bad,
+		do_shoot = throw_icepick,
+		check_shoot = check_throw_icepick,
+		bad = true,
+		air = true,
+		g = 0.3,
+		max_vy = 4,
+		hp = 3,
+		shspeed = 8, -- only used by shooter
+		shooting = false,
+		goingrght = true, -- going to go after throwing
+		burning = false,
+		template = human_enemy,
+		shcount = 0, -- throw/shoot stuff at player
+		range = 48, -- only used by thrower
+		s_wlk = {s=0, f=2},
+		s_sh = {s=2, f=1},
+		s_burn = {s=3, f=1},
+		s_die = {s=4, f=3},
+	}
+	local shooter = {}
+	for k,v in pairs(thrower) do
+		shooter[k] = v
+	end
+	shooter.do_shoot = shoot_shot
+	shooter.check_shoot = check_shoot_shot
+	shooter.s_sh = {s=2,f=3}
+	shooter.s_burn = {s=5, f=1}
+	shooter.s_die = {s=104 - 117, f=3}
 thang_dat = {
 	[91] = { -- checkpoint
 		update = update_checkpoint,
@@ -506,27 +537,7 @@ thang_dat = {
 		s_die  = {s=11, f=3},
 		s_swrd = {s=14, f=2},
 	},
-	[100] = { -- thrower
-		update = update_shooter_thrower,
-		burn = burn_bad,
-		do_shoot = throw_icepick,
-		check_shoot = check_throw_icepick,
-		bad = true,
-		air = true,
-		g = 0.3,
-		max_vy = 4,
-		hp = 3,
-		shooting = false,
-		goingrght = true, -- going to go after throwing
-		burning = false,
-		template = human_enemy,
-		shcount = 0, -- throw stuff at player
-		range = 48, -- only throw at player in this range
-		s_wlk = {s=0, f=2},
-		s_sh = {s=2, f=1},
-		s_burn = {s=3, f=1},
-		s_die = {s=4, f=3},
-	},
+	[100] = thrower,
 	[107] = { -- icepick
 		update = update_icepick,
 		burn = kill_icepick,
@@ -543,27 +554,7 @@ thang_dat = {
 		hw = 4,
 		hh = 4,
 	},
-	[117] = { -- shooter
-		update = update_shooter_thrower,
-		burn = burn_bad,
-		do_shoot = shoot_shot,
-		check_shoot = check_shoot_shot,
-		bad = true,
-		air = true,
-		g = 0.3,
-		max_vy = 4,
-		hp = 3,
-		shooting = false,
-		shspeed = 8,
-		goingrght = true, -- going to go after throwing
-		burning = false,
-		template = human_enemy,
-		shcount = 0, -- shoot stuff at player
-		s_wlk = {s=0, f=2},
-		s_sh = {s=2, f=3},
-		s_burn = {s=5, f=1},
-		s_die = {s=104 - 117, f=3},
-	},
+	[117] = shooter,
 	[123] = { -- shot
 		update = update_shot,
 		draw = draw_shot,
@@ -810,8 +801,7 @@ function check_bad_coll_spikes(t)
 	if coll_spikes(t) then
 		sound(sfx_dat.hit)
 		t.alive = false
-		t.fcnt = 0
-		t.fr = 0
+		reset_anim_state(t)
 		t.s = t.i + t.s_die.s
 		return true
 	end
@@ -827,8 +817,7 @@ function do_bad_burning(t)
 	end
 	t.s = t.i + t.s_burn.s
 	if play_anim(t, 6, t.s_burn.f) then
-		t.fr = 0
-		t.fcnt = 0
+		reset_anim_state(t)
 		t.burning = false
 		if t.hp <= 0 then
 			t.alive = false
@@ -879,8 +868,7 @@ function throw_icepick(t)
 			i.xflip = true
 			i.vx = -i.vx
 		end
-		t.fcnt = 0
-		t.fr = 0
+		reset_anim_state(t)
 	end
 end
 
@@ -892,6 +880,11 @@ function face_p(t)
 	end
 end
 
+function reset_anim_state(t)
+	t.fcnt = 0
+	t.fr = 0
+end
+
 function check_shoot_shot(t)
 	local shleft = dist_until_wall(t.x + 4, t.y + 4, -1)
 	local shright = dist_until_wall(t.x + 4, t.y + 4, 1)
@@ -899,18 +892,15 @@ function check_shoot_shot(t)
 		face_p(t)
 		t.shcount = 5
 		t.shooting = true
-		t.fcnt = 0
-		t.fr = 0
+		reset_anim_state(t)
 	end
 end
 
 function check_throw_icepick(t)
 	if vlen({ x = t.x - p.x, y = t.y - p.y }) <= t.range then
-		dbgstr = "YEP\n"..dbgstr
 		face_p(t)
 		t.shooting = true
-		t.fcnt = 0
-		t.fr = 0
+		reset_anim_state(t)
 	end
 	t.shcount = 30
 end
@@ -974,8 +964,7 @@ function shoot_shot(t)
 	-- 6 archer
 	if play_anim(t, t.shspeed, t.s_sh.f) then
 		t.shooting = false
-		t.fcnt = 0
-		t.fr = 0
+		reset_anim_state(t)
 	elseif t.fr == 2 and t.fcnt == 1 then
 		sound(sfx_dat.shooter_shot)
 		local orig = {
@@ -1011,8 +1000,7 @@ function update_archer(t)
 		t.stops_projs = false
 		t.invistimer = 70
 		t.shooting = false
-		t.fr = 0
-		t.fcnt = 0
+		reset_anim_state(t)
 	end
 
 	if not t.air then
@@ -1067,8 +1055,7 @@ function update_archer(t)
 		if t.air then
 			if t.vy < 0 then
 				t.s = t.i + t.s_jmp.s-1
-				t.fr = 0
-				t.fcnt = 0
+				reset_anim_state(t)
 			else
 				t.s = t.i + t.s_jmp.s
 				loop_anim(t,4,t.s_jmp.f)
@@ -1111,8 +1098,7 @@ function burn_bad(t)
 	if t.alive and not t.burning then
 		sound(sfx_dat.hit)
 		t.hp -= 1
-		t.fcnt = 0
-		t.fr = 0
+		reset_anim_state(t)
 		t.burning = true
 	end
 end
@@ -1146,8 +1132,7 @@ function update_wizard(t)
 				t.hover_up = not t.hover_up
 				local dir = t.hover_up and -1 or 1
 				t.y += dir
-				t.fr = 0
-				t.fcnt = 0
+				reset_anim_state(t)
 			end
 			local r = get_room_xy(room.i)
 			if p.y > r.y + 16 then
@@ -1386,8 +1371,7 @@ function update_knight(t)
 		t.s = t.i + anim.s
 		if play_anim(t, 10, anim.f) then
 			t.atking = false
-			t.fcnt = 0
-			t.fr = 0
+			reset_anim_state(t)
 		else
 			if t.fr > 0 then
 				if t.phase == 1 and t.fr == 1 and t.fcnt == 1 then
@@ -1421,8 +1405,7 @@ function update_knight(t)
 
 		if t.phase == 0 then
 			t.s = t.i + t.s_idle.s
-			t.fr = 0
-			t.fcnt = 0
+			reset_anim_state(t)
 			-- don't advance phase if p is dead
 			if p.alive and dir != 0 then
 				t.phase = 1
@@ -1456,13 +1439,8 @@ function update_knight(t)
 			if do_attack then
 				t.atktimer = 0
 				t.atking = true
-				t.fcnt = 0
-				t.fr = 0
-				if p.x < t.x then
-					t.rght = false
-				else
-					t.rght = true
-				end
+				reset_anim_state(t)
+				face_p(t)
 			end
 		end
 	end
