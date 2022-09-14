@@ -116,8 +116,10 @@ function update_room()
 			end
 		end
 		-- fade out music and stuff
-		if room_i == 17 then
-			music(-1,5000,3)
+		if silent_rooms[room_i] then
+			music(-1,3000,3)
+		elseif start_music_rooms[room_i] then
+			start_music()
 		end
 		fireball = {}
 		restore_room()
@@ -180,17 +182,23 @@ snd_knight_die = 20
 snd_shooter_shot = 21
 snd_archer_invis = 22
 
+-- TODO token reduction?
+-- play the start of the music, overlaps with start_music_rooms
+intro_rooms = {[23]=1, [8]=1}
+-- silent rooms includes all rooms we want regular music to fade out, and NOT play on respawn (including boss rooms)
+silent_rooms = {[4]=1, [15]=1, [16]=1, [17]=1}
+-- call start_music() when entering these rooms (i.e. we need one after a silent room to restart music)
+start_music_rooms = {[8]=1}
+
 function start_music()
-	-- silent room?
-	if room_i == 17 then
+	if silent_rooms[room_i] then
+		-- boss music will start from boss monster's code
 		return
+	elseif intro_rooms[room_i] then
+		music(0, 800, 3)
+	else
+		music(2, 800, 3)
 	end
-	-- boss room?
-	if room_i == 16 then
-		-- TODO boss music, unless boss is dead
-		return
-	end
-	music(0, 800, 3)
 end
 
 function fade_update()
@@ -1009,6 +1017,7 @@ function update_archer(t)
 	if do_bad_burning(t) then
 		if not t.alive then
 			sfx(snd_knight_die)
+			music(-1,0,3)
 		end
 		return
 	-- not burning or dead
@@ -1184,6 +1193,7 @@ function update_wizard(t)
 	if do_bad_burning(t) then
 		if not t.alive then
 			sfx(snd_knight_die)
+			music(-1,0,3)
 		end
 		return
 	elseif oldburning then
@@ -2826,9 +2836,9 @@ __sfx__
 ae2800000200002000020000200002000020000200002000040000400004000040000400004000040000400007000070000700007000070000700007000070000500005000050000500005000050000500005000
 a02800000e2001320016200152001520015200152001520010200132001620018200182001820018200182001a200182001620015200152001520015200152001620018200162001520015200152001520015200
 __music__
-01 274b4c44
+00 274b4c44
 00 296a4344
-00 2d284344
+01 2d284344
 00 2e284344
 00 2a694c44
 00 1e204c44
