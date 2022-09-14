@@ -497,17 +497,13 @@ thang_dat = {
 		update = update_frog,
 		burn = burn_frog,
 		draw = draw_frog,
-		bad = true,
-		air = true,
-		g = 0.3,
-		max_vy = 4,
+		template = enemy,
 		jbig_vy = -3.5,
 		jbig_vx = 1.2,
 		jsmol_vy = -2.5,
 		jsmol_vx = 1.5,
 		jtiny_vy = -1.0,
 		hp = 2,
-		burning = false,
 		angry = false,
 		croak = false,
 		bounced = false,
@@ -640,18 +636,20 @@ function update_door(t)
 	local num = 1
 	num = t.type == 1 and room_num_bads or num
 	num = t.type == 2 and room_num_unlit or num
+	local mx = t.x\8
+	local my = t.y\8
 	if t.open then
 		if num > 0 then
 			if not coll_p(t.x,t.y,t.w,t.h) then
 					t.open = false
-					mset(t.x\8,t.y\8,t.s_top)
-					mset(t.x\8,t.y\8+1,t.s_bot)
+					mset(mx,my,t.s_top)
+					mset(mx,my+1,t.s_bot)
 			end
 		end
 	elseif num <= 0 then
 		t.open = true
-		mset(t.x\8,t.y\8,t.i)
-		mset(t.x\8,t.y\8+1,0)
+		mset(mx,my,t.i)
+		mset(mx,my+1,0)
 	end
 end
 
@@ -700,25 +698,18 @@ function update_icepick(t)
 	local xfac = t.xflip and -1 or 1
 	-- spin around 'ax'is
 	if t.fcnt > 0 and t.fcnt % 2 == 0 then
-		if t.fcnt == 2 then
-			t.x += 2 * xfac
-			t.y += 1
-		elseif t.fcnt == 4 then
-			t.x -= 1 * xfac
-			t.y += 2
-		elseif t.fcnt == 6 then
-			t.x -= 2 * xfac
-			t.y -= 1
-		elseif t.fcnt == 8 then
-			t.x += 1 * xfac
-			t.y -= 2
+		local fcnt_to_xy = {
+			[2] = {2,1},
+			[4] = {-1,2},
+			[6] = {-2,-1},
+			[8] = {1,-2}
+		}
+		t.x += fcnt_to_xy[t.fcnt][1] * xfac
+		t.y += fcnt_to_xy[t.fcnt][2]
+		if t.fcnt == 8 then
 			t.fcnt = 0
 		end
-		if t.sfr >= 3 then
-			t.sfr = 0
-		else
-			t.sfr += 1
-		end
+		t.sfr = (t.sfr + 1) % 4
 	end
 	t.fcnt += 1
 	t.vy += t.g
@@ -776,11 +767,8 @@ function dist_until_wall(x,y,dir,vert)
 	end
 
 	local off = vert and y or x
-	if dir > 0 then
-		return (tiles - 1)*8 + (roundup(off,8) - off)
-	else
-		return (tiles - 1)*8 + (off - rounddown(off,8))
-	end
+	local fn = dir > 0 and roundup or rounddown
+	return (tiles - 1)*8 + dir*(fn(off,8) - off)
 end
 
 function do_boss_die(t)
@@ -855,11 +843,13 @@ function update_shot(t)
 	if t.fcnt < 3 then
 		t.trace_color = 7
 		t.arrow_color = 7
-		local left = min(t.x, t.endx)
-		local top = min(t.y, t.endy)
-		local width = abs(t.endx - t.x)
-		local height = abs(t.endy - t.y)
-		if p.alive and hit_p(left, top, width, height) then
+		if		p.alive and
+				hit_p(
+					min(t.x, t.endx),	-- left
+					min(t.y, t.endy),	-- top
+					abs(t.endx - t.x),	-- width
+					abs(t.endy - t.y)	-- height
+				) then
 			kill_p()
 		end
 	elseif t.fcnt < 5 then
@@ -878,7 +868,8 @@ function throw_icepick(t)
 	local xfac = t.rght and 1 or -1
 	if play_anim(t, 20, t.s_sh.f) then
 		t.shooting = false
-		local i = spawn_thang(107,
+		local i = spawn_thang(
+					107,
 					t.x - 3 * xfac,
 					t.y + 4)
 		if not t.rght then
@@ -914,7 +905,7 @@ function check_shoot_shot(t)
 end
 
 function check_throw_icepick(t)
-	if vlen({ x = t.x - p.x, y = t.y - p.y }) <= t.range then
+	if vlen{ x = t.x - p.x, y = t.y - p.y } <= t.range then
 		face_p(t)
 		t.shooting = true
 		reset_anim_state(t)
@@ -1020,16 +1011,13 @@ function update_archer(t)
 		reset_anim_state(t)
 	end
 
-	if not t.air then
+	local oldair = t.air
+	if not oldair then
 		t.vx = 0
 	end
 
 	if t.shooting then
-		if t.air then
-			t.s = t.i + t.s_shair.s
-		else
-			t.s = t.i + t.s_sh.s
-		end
+		t.s = t.i + (t.air and t.s_shair.s or t.s_sh.s)
 		shoot_shot(t)
 	-- else we walking or jumping
 	else
@@ -1052,17 +1040,11 @@ function update_archer(t)
 					sfx(snd_knight_jump)
 					t.air = true
 					t.vy = -4
-					local dir = t.rght and 1 or -1
-					t.vx = dir * 1.0
 				else
 					t.rght = not t.rght
 				end
 			end
-			if t.rght then
-				t.vx = 1.2
-			else
-				t.vx = -1.2
-			end
+			t.vx = t.rght and 1.2 or -1.2
 			loop_anim(t,4,t.s_wlk.f)
 		end
 
@@ -1070,11 +1052,11 @@ function update_archer(t)
 		t.goingrght = t.rght
 		-- check air again
 		if t.air then
+			t.s = t.i + t.s_jmp.s
 			if t.vy < 0 then
-				t.s = t.i + t.s_jmp.s-1
+				t.s -= 1
 				reset_anim_state(t)
 			else
-				t.s = t.i + t.s_jmp.s
 				loop_anim(t,4,t.s_jmp.f)
 			end
 		end
@@ -1093,7 +1075,6 @@ function update_archer(t)
 		end
 	end
 
-	local oldair = t.air
 	local oldvx = t.vx
 	local phys_result = phys_thang(t, oldair)
 
@@ -2264,7 +2245,7 @@ end
 -- physics for platformu
 
 function phys_thang(t, oldair)
-	-- oldair = true if grounded, or just jumped this frame (air = true and vy < 0)
+	-- oldair = false if grounded, or just jumped this frame (air = true and vy < 0)
 	-- physics for thangs who obey gravity
 	-- apply gravity, do physics, stop them colliding with walls
 	-- ground if airborne and hit the ground
