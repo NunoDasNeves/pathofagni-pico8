@@ -1644,6 +1644,7 @@ end
 
 function update_bat(b)
 	if not b.alive then
+		b.stops_projs = false
 		b.deadf -= 1
 		if b.deadf == 0 then
 			del(thang, b)
