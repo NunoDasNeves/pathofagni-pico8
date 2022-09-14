@@ -181,6 +181,7 @@ snd_knight_swing = 19
 snd_knight_die = 20
 snd_shooter_shot = 21
 snd_archer_invis = 22
+snd_wizard_tp = 23
 
 -- TODO token reduction?
 -- play the start of the music, overlaps with start_music_rooms
@@ -1082,7 +1083,9 @@ function update_archer(t)
 
 		if t.invis then
 			t.invistimer -= 1
-			if t.invistimer <= 0 then
+			if t.invistimer == 15 then
+				sfx(snd_archer_invis)
+			elseif t.invistimer <= 0 then
 				t.stops_projs = true
 				t.invis = false
 			end
@@ -1128,6 +1131,7 @@ function start_tp(t)
 	t.tping = true
 	t.stops_projs = false
 	reset_anim_state(t)
+	sfx(snd_wizard_tp)
 	-- find tp plat
 	local plats = {}
 	-- start inside borders
@@ -1469,12 +1473,11 @@ function update_knight(t)
 	if do_bad_burning(t) then
 		if not t.alive then
 			sfx(snd_knight_die)
+			music(-1,0,3)
 		end
 		return
-	else
-		if oldburning then
-			t.atking = false
-		end
+	elseif oldburning then
+		t.atking = false
 	end
 
 	-- only conserve vx when airborne, otherwise reset...
@@ -1509,9 +1512,7 @@ function update_knight(t)
 				t.swrd_draw = true
 				t.swrd_fr = t.fr - 1
 				-- all frames hit for now, not just first frame
-				--if t.fr == 1 then
-					t.swrd_hit = true
-				--end
+				t.swrd_hit = true
 			end
 		end
 	end
@@ -1816,7 +1817,7 @@ p_dat = {
 	i = 64, -- base of sprite row
 	--  animations - s = offset from spr, f = num frames
 	s_wlk =  {s=0, f=2},
-	s_sh  =  {s=94-64, f=2},
+	s_sh  =  {s=30, f=2},
 	s_jmp =  {s=2, f=5},
 	s_die =  {s=7, f=5},
 	s_spwn = {s=12, f=4},
@@ -1882,8 +1883,7 @@ function kill_p()
 	music(-1,800,3)
 	p.alive = false
 	p.s = p.i + p.s_die.s 
-	p.fr = 0
-	p.fcnt = 0
+	reset_anim_state(p)
 	p.sh = false
 end
 
@@ -2064,12 +2064,11 @@ function update_p()
 		if abs(p.vx) > 0.5 then
 		--if (btn(➡️) or btn(⬅️)) then
 			--if stat(46) != 5 then
-			if p.fcnt == 1 and p.fr == 0 then
+			--if p.fcnt == 1 and p.fr == 0 then
 				--sfx(5,0,0,8)
-			end
-			if loop_anim(p,3,p.s_wlk.f) then
+			--end
+			loop_anim(p,3,p.s_wlk.f)
 			--	sfx(5,0,0,8)
-			end
 		elseif p.teeter then
 			p.fr = 1
 		else
@@ -2109,14 +2108,15 @@ function respawn_update_p()
 			-- fade out after death anim
 			fade_timer = 0
 			do_fade = true
+			reset_anim_state(p)
+			p.s = 0
 		end
 	elseif p.spawn then
 		if play_anim(p,3,p.s_spwn.f) then
-			p.fr = 0
-			p.fcnt = 0
+			reset_anim_state(p)
 			p.s = p.i + p.s_wlk.s
 			p.spawn = false
-		elseif p.fcnt == 1 then
+		elseif p.fr == 0 and p.fcnt == 1 then
 			sfx(snd_p_respawn)
 			start_music()
 		end
@@ -2793,8 +2793,8 @@ __sfx__
 90040000222201e2301925015250102300c21007210032101820014200122000e2000d20000200002000020000200002000020000200002000020000200002000020000200002000020000200002000020000200
 1014000015020110300e040100400c0400b0400b0400b0400b0300b0200b010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 040300001e0341703016030110200d0200a02007010040100201000014121040e1040d10400104001040010400104001040010400104001040010400104001040010400104001040010400104001040010400104
-510200001e9101d9101d9101c9101b9201a920189301693014920119200f9100d9100c9100c910019000c9000c900009000090000900009000090000900009000090000900009000090000900009000090000900
-001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+500200001e9101d9101d9101c9101b9201a920189301693014920119200f9100d9100a91009910019000c9000c900009000090000900009000090000900009000090000900009000090000900009000090000900
+1004000018531125310f5310c5410b5410c5410f541145311c5212152100501005010050100501005010050100501005010050100501005010050100501005010050100501005010050100501005010050100501
 001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
