@@ -1142,7 +1142,7 @@ function start_tp(t)
 			local val = mget(x,y)
 			if fget(val,0) and not fget(val,1) then
 				local plat = {x = x*8, y = y*8 - t.h}
-				if plat.x != t.x then
+				if plat.y != t.y and vlen{x=plat.x-p.x,y=plat.y-p.y} > 32 then
 					add(plats, plat)
 				end
 			end
