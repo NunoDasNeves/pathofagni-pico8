@@ -312,12 +312,11 @@ function draw_knight(t)
 end
 
 function draw_smol_thang(f)
-	local sp = f.s + f.fr
 	local sx = (f.sfr % 2) * 4
 	local sy = (f.sfr \ 2) * 4
 	sspr(
-		(sp % 16) * 8 + sx,
-		(sp \ 16) * 8 + sy,
+		(f.s % 16) * 8 + sx,
+		(f.s \ 16) * 8 + sy,
 		4,4,
   		f.x,
    		f.y,
@@ -2138,44 +2137,42 @@ end
 -->8
 -- fireball
 fireball = {}
+ball_dirs = {
+	-- start at xdir = 1, ydir = -1 (up right) 
+	-- sfr, vx, vy, xflip, yflip
+	{3, 0.7071, -0.7071, false, true},
+	{1, 1, 		0, false, false},
+	{3, 0.7071, 0.7071, false, false},
+	{2, 0, 		1, false, false},
+	{3, -0.7071, 0.7071, true, false},
+	{1, -1, 	0, true, false},
+	{3, -0.7071, -0.7071, true, true},
+	{2, 0, -1, false, true}
+}
 
 function make_fireball(xdir, ydir)
 	local f = {
-		w = 4,
-		h = 4,
 		x = p.x + (p.w - 4)/2,
 		y = p.y + (p.h - 4)/2,
 		s = 80,
 		alive = true,
-		fcnt = 0,
 		speed = 3,
-		fr = 0,
 		update = update_fireball,
+		fcnt = 0
 	}
-	if xdir == 0 or ydir == 0 then
-		f.vx = xdir * f.speed
-		f.vy = ydir * f.speed
-	else
-		f.vx = xdir * 0.7071 * f.speed
-		f.vy = ydir * 0.7071 * f.speed
-	end
-
-	f.sfr = 0 -- sub-frame
-	if ydir == 0 then
-		f.sfr = 1
+	local prop = nil
+	if xdir > 0 then
+		prop = ball_dirs[ydir + 2]
 	elseif xdir == 0 then
-		f.sfr = 2
+		prop = ball_dirs[ydir == 1 and 4 or 8]
 	else
-		f.sfr = 3
+		prop = ball_dirs[-ydir + 6]
 	end
-	f.xflip = false
-	f.yflip = false
-	if f.vy < 0 then
-		f.yflip = true
-	end
-	if f.vx < 0 then
-		f.xflip = true
-	end
+	f.sfr = prop[1] -- sub-frame
+	f.vx = prop[2] * f.speed
+	f.vy = prop[3] * f.speed
+	f.xflip = prop[4]
+	f.yflip = prop[5]
 	add(fireball, f)
 end
 
@@ -2183,7 +2180,7 @@ function kill_fireball(f)
 	f.alive = false
 	f.yflip = false
 	f.sfr = 0
-	f.fr = 1
+	f.s += 1
 	f.fcnt = 0
 end
 
@@ -2211,8 +2208,6 @@ function update_fireball(f)
 			if t.burn != nil then
 				t:burn()
 			end
-			-- don't stop on lanterns
-			-- or already dead stuff
 			if t.stops_projs then
 				kill_fireball(f)
 				return
@@ -2224,8 +2219,6 @@ function update_fireball(f)
 	if 
 			collmap(f.x+3,  f.y+2, 1) or
 			collmap(f.x+1,  f.y+2, 1) then
-		f.vx = 0
-		f.vy = 0
 		kill_fireball(f)
 	end
 end
