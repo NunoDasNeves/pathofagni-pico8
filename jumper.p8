@@ -563,7 +563,7 @@ thang_dat = {
 	[100] = thrower,
 	[107] = { -- icepick
 		update = update_icepick,
-		burn = kill_icepick,
+		burn = kill_ice_proj,
 		draw = draw_smol_thang,
 		w = 4,
 		h = 4,
@@ -576,8 +576,8 @@ thang_dat = {
 		yflip = false,
 		hw = 4,
 		hh = 4,
-		list = thang,
-		die_yinc = 0.5
+		die_yinc = 0.5,
+		s_die_s = 108
 	},
 	[117] = shooter,
 	[123] = { -- shot
@@ -644,10 +644,11 @@ thang_dat = {
 	},
 	[124] = { -- ice ball
 		update = update_iceball,
+		burn = kill_ice_proj,
 		draw = draw_smol_thang,
 		speed = 3,
-		list = thang,
-		die_yinc = 0.5
+		die_yinc = 0.5,
+		s_die_s = 108
 	}
 }
 end
@@ -697,20 +698,13 @@ function burn_iceblock(t)
 	end
 end
 
-function kill_icepick(t)
-	if t.alive then
-		sfx(snd_ice_break)
-		t.vx = 0
-		t.vy = 0
-		t.alive = false
-		t.fr = 1
-		t.sfr = 0
-		t.fcnt = 0
-	end
+function kill_ice_proj(t)
+	sfx(snd_ice_break)
+	kill_ball(t)
 end
 
 function update_icepick(t)
-	if do_ball_die(f) then
+	if do_ball_die(t) then
 		return
 	end
 	-- spin in correct direction
@@ -739,11 +733,11 @@ function update_icepick(t)
 	if 
 			collmap(t.x+3, t.y+2, 1) or
 			collmap(t.x+1, t.y+2, 1) then
-		kill_icepick(t)
+		kill_ice_proj(t)
 	end
 
 	if kill_p_on_coll(t) then
-		kill_icepick(t)
+		kill_ice_proj(t)
 	end
 end
 
@@ -1194,7 +1188,7 @@ function do_ball_die(f)
 			f.sfr += 1
 		end
 		if f.fcnt == 8 then
-			del(f.list, f)
+			del(f.list == nil and thang or f.list, f)
 		end
 		return true
 	end
@@ -1214,35 +1208,28 @@ function update_iceball(f)
 			f.x + 2,f.y + 2,4,4) then
 			kill_p()
 			kill_ball(f)
-	end
 	-- hit blocks
-	if collmap(f.x+2,  f.y+2, 1) then
+	elseif collmap(f.x+2,  f.y+2, 1) then
 		kill_ball(f)
 	end
 end
 
 function spell_frost_nova(t)
 	for i=1,8 do
-		local f = spawn_thang(124, t.x, t.y)
-		local prop = ball_dirs[i]
-		f.sfr = prop[1] -- sub-frame
-		f.vx = prop[2] * f.speed
-		f.vy = prop[3] * f.speed
-		f.xflip = prop[4]
-		f.yflip = prop[5]
+		local f = spawn_thang(124, t.x+4, t.y-2)
+		apply_ball_prop(f, ball_dirs[i])
 	end
 end
 
 function start_casting(t)
-	t.shcount = 60
 	t.casting = true
-	local spell = rnd({
-		--{fn = spell_summon_bats, pal = {}},
-		{fn = spell_frost_nova, pal = {}}
+	t.spell = rnd({
+		{fn = spell_summon_bats, pal = {}, cast_time = 55, recovery = 45},
+		{fn = spell_frost_nova, pal = {}, cast_time = 45, recovery = 30}
 	})
-	t.castfn = spell.fn
 	t.castu = spawn_thang(240, t.x, t.y - 6)	
-	t.castu.pal = spell.pal
+	t.castu.pal = t.spell.pal
+	t.shcount = t.spell.cast_time
 end
 
 function update_wizard(t)
@@ -1300,8 +1287,8 @@ function update_wizard(t)
 			t.casting = false
 			reset_anim_state(t)
 			-- now use shcount for resting
-			t.shcount = 60
-			t:castfn()	
+			t.shcount = t.spell.recovery
+			t.spell.fn(t)
 		end
 
 	-- else we standing or hovering around waving our arms
@@ -2189,6 +2176,13 @@ ball_dirs = {
 	{3, -0.7071, -0.7071, true, true},
 	{2, 0, -1, false, true}
 }
+function apply_ball_prop(f,prop)
+	f.sfr = prop[1] -- sub-frame
+	f.vx = prop[2] * f.speed
+	f.vy = prop[3] * f.speed
+	f.xflip = prop[4]
+	f.yflip = prop[5]
+end
 
 function make_fireball(xdir, ydir)
 	local f = {
@@ -2200,7 +2194,8 @@ function make_fireball(xdir, ydir)
 		update = update_fireball,
 		fcnt = 0,
 		list = fireball,
-		die_yinc = -0.5
+		die_yinc = -0.5,
+		s_die_s = 81
 	}
 	local prop = nil
 	if xdir > 0 then
@@ -2210,11 +2205,7 @@ function make_fireball(xdir, ydir)
 	else
 		prop = ball_dirs[-ydir + 6]
 	end
-	f.sfr = prop[1] -- sub-frame
-	f.vx = prop[2] * f.speed
-	f.vy = prop[3] * f.speed
-	f.xflip = prop[4]
-	f.yflip = prop[5]
+	apply_ball_prop(f, prop)
 	add(fireball, f)
 end
 
@@ -2222,7 +2213,7 @@ function kill_ball(f)
 	f.alive = false
 	f.yflip = false
 	f.sfr = 0
-	f.s += 1
+	f.s = f.s_die_s
 	f.fcnt = 0
 end
 
