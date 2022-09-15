@@ -1139,7 +1139,7 @@ function start_tp(t)
 			local val = mget(x,y)
 			if fget(val,0) and not fget(val,1) then
 				local plat = {x = x*8, y = y*8 - t.h}
-				if plat.y != t.y and vlen{x=plat.x-p.x,y=plat.y-p.y} > 32 then
+				if (plat.x != t.x or plat.y != t.y) and vlen{x=plat.x-p.x,y=plat.y-p.y} > 48 then
 					add(plats, plat)
 				end
 			end
@@ -1180,6 +1180,32 @@ function update_casting(t)
 	end
 end
 
+function spell_summon_bats(t)
+	for xy in all({{0,-6},{8,-6},{0,2}}) do
+		local b = spawn_thang(96, t.x+xy[1], t.y+xy[2])	
+		b.z = 1
+	end
+end
+
+function spell_frost_nova(t)
+	for i=0,7 do
+		local f = spawn_thang()
+		f.z = 1
+	end
+end
+
+function start_casting(t)
+	t.shcount = 60
+	t.casting = true
+	local spell = rnd({
+		{fn = spell_summon_bats, pal = {}},
+		{fn = spell_frost_nova, pal = {}}
+	})
+	t.castfn = spell.fn
+	t.castu = spawn_thang(240, t.x, t.y - 6)	
+	t.castu.pal = spell.pal
+end
+
 function update_wizard(t)
 
 	if do_boss_die(t) then
@@ -1199,8 +1225,6 @@ function update_wizard(t)
 		return
 	elseif oldburning then
 		start_tp(t)
-		t.shcount = 60
-		t.casting = true
 		if t.castu != nil then
 			t.castu.state = 2
 			reset_anim_state(t.castu)
@@ -1220,6 +1244,7 @@ function update_wizard(t)
 			reset_anim_state(t)
 			t.tping = false
 			t.stops_projs = true
+			start_casting(t)
 		end
 
 	-- else do some spelly welly
@@ -1228,24 +1253,16 @@ function update_wizard(t)
 		loop_anim(t,8,t.s_cast.f)
 		-- need to spawn casting here in case interrupted
 		t.shcount -= 1
-		if t.shcount == 59 then
-			t.castu = spawn_thang(240, t.x, t.y - 6)	
-		elseif t.shcount == 15 then
+		if t.shcount == 15 then
 			t.castu.state = 1
 			reset_anim_state(t.castu)
 			t.castu = nil
 		elseif t.shcount <= 0 then
 			t.casting = false
 			reset_anim_state(t)
-			local b = spawn_thang(96, t.x, t.y-6)	
-			b.z = 1
-			b = spawn_thang(96, t.x+8, t.y-6)	
-			b.z = 1
-			b = spawn_thang(96, t.x, t.y+2)	
-			b.z = 1
-
 			-- now use shcount for resting
 			t.shcount = 60
+			t:castfn()	
 		end
 
 	-- else we standing or hovering around waving our arms
@@ -1265,7 +1282,7 @@ function update_wizard(t)
 				t.y += t.hover_up and 2 or 1
 				start_tp(t)
 			end
-			t.shcount = 10
+			t.shcount = 0
 			return
 		end
 
@@ -1274,10 +1291,7 @@ function update_wizard(t)
 
 		t.shcount -= 1
 		if t.shcount <= 0 then
-			-- now use shcount for casting
-			t.shcount = 60
-			reset_anim_state(t)
-			t.casting = true
+			start_tp(t)
 		end
 	end
 
