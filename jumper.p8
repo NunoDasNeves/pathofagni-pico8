@@ -576,6 +576,8 @@ thang_dat = {
 		yflip = false,
 		hw = 4,
 		hh = 4,
+		list = thang,
+		die_yinc = 0.5
 	},
 	[117] = shooter,
 	[123] = { -- shot
@@ -639,6 +641,13 @@ thang_dat = {
 		timer = 15,
 		state = 0, -- 0 = casting, 1 = succeeded, 2 = fizzled
 		stops_projs = false,
+	},
+	[124] = { -- ice ball
+		update = update_iceball,
+		draw = draw_smol_thang,
+		speed = 3,
+		list = thang,
+		die_yinc = 0.5
 	}
 }
 end
@@ -701,15 +710,7 @@ function kill_icepick(t)
 end
 
 function update_icepick(t)
-	if not t.alive then
-		t.y += 0.5
-		t.fcnt += 1
-		if t.fcnt & 1 == 0 then
-			t.sfr += 1
-		end
-		if t.fcnt == 8 then
-			del(thang, t)
-		end
+	if do_ball_die(f) then
 		return
 	end
 	-- spin in correct direction
@@ -740,7 +741,6 @@ function update_icepick(t)
 			collmap(t.x+1, t.y+2, 1) then
 		kill_icepick(t)
 	end
-
 
 	if kill_p_on_coll(t) then
 		kill_icepick(t)
@@ -1186,10 +1186,50 @@ function spell_summon_bats(t)
 	end
 end
 
+function do_ball_die(f)
+	if not f.alive then
+		f.y += f.die_yinc
+		f.fcnt += 1
+		if f.fcnt & 1 == 0 then
+			f.sfr += 1
+		end
+		if f.fcnt == 8 then
+			del(f.list, f)
+		end
+		return true
+	end
+	return false
+end
+
+function update_iceball(f)
+	if do_ball_die(f) then
+		return
+	end
+
+	f.x += f.vx
+	f.y += f.vy
+	-- hit player
+	if aabb(
+			p.x + p.hx, p.y + p.hy, p.hw, p.hh,
+			f.x + 2,f.y + 2,4,4) then
+			kill_p()
+			kill_ball(f)
+	end
+	-- hit blocks
+	if collmap(f.x+2,  f.y+2, 1) then
+		kill_ball(f)
+	end
+end
+
 function spell_frost_nova(t)
-	for i=0,7 do
-		local f = spawn_thang()
-		f.z = 1
+	for i=1,8 do
+		local f = spawn_thang(124, t.x, t.y)
+		local prop = ball_dirs[i]
+		f.sfr = prop[1] -- sub-frame
+		f.vx = prop[2] * f.speed
+		f.vy = prop[3] * f.speed
+		f.xflip = prop[4]
+		f.yflip = prop[5]
 	end
 end
 
@@ -1197,7 +1237,7 @@ function start_casting(t)
 	t.shcount = 60
 	t.casting = true
 	local spell = rnd({
-		{fn = spell_summon_bats, pal = {}},
+		--{fn = spell_summon_bats, pal = {}},
 		{fn = spell_frost_nova, pal = {}}
 	})
 	t.castfn = spell.fn
@@ -2158,7 +2198,9 @@ function make_fireball(xdir, ydir)
 		alive = true,
 		speed = 3,
 		update = update_fireball,
-		fcnt = 0
+		fcnt = 0,
+		list = fireball,
+		die_yinc = -0.5
 	}
 	local prop = nil
 	if xdir > 0 then
@@ -2176,7 +2218,7 @@ function make_fireball(xdir, ydir)
 	add(fireball, f)
 end
 
-function kill_fireball(f)
+function kill_ball(f)
 	f.alive = false
 	f.yflip = false
 	f.sfr = 0
@@ -2185,15 +2227,7 @@ function kill_fireball(f)
 end
 
 function update_fireball(f)
-	if not f.alive then
-		f.y -= 0.5
-		f.fcnt += 1
-		if f.fcnt & 1 == 0 then
-			f.sfr += 1
-		end
-		if f.fcnt == 8 then
-			del(fireball, f)
-		end
+	if do_ball_die(f) then
 		return
 	end
 	f.x += f.vx
@@ -2209,7 +2243,7 @@ function update_fireball(f)
 				t:burn()
 			end
 			if t.stops_projs then
-				kill_fireball(f)
+				kill_ball(f)
 				return
 			end
 		end
@@ -2219,7 +2253,7 @@ function update_fireball(f)
 	if 
 			collmap(f.x+3,  f.y+2, 1) or
 			collmap(f.x+1,  f.y+2, 1) then
-		kill_fireball(f)
+		kill_ball(f)
 	end
 end
 
