@@ -241,7 +241,11 @@ function draw_thang(t)
 	if t.rght != nil then
 		flp = not t.rght
 	end
+	for k,v in pairs(t.pal) do
+		pal(k,v,0)
+	end
 	spr(t.s+t.fr,t.x,t.y,1,1,flp)
+	pal()
 end
 
 function draw_shot(t)
@@ -249,16 +253,6 @@ function draw_shot(t)
 	line(t.x, t.y, t.endx, t.endy, t.trace_color)
 	--arrow
 	line(t.arrowx, t.arrowy, t.endx, t.endy, t.arrow_color)
-end
-
-function draw_frog(t)
-	if t.alive and t.angry then
-		pal(11, 8, 0) -- main
-		pal(3, 2, 0)  -- shadow
-		pal(8, 10, 0) -- eyes
-	end
-	draw_thang(t)
-	pal()
 end
 
 function draw_wizard(t)
@@ -504,7 +498,6 @@ thang_dat = {
 	[112] = { -- frog
 		update = update_frog,
 		burn = burn_frog,
-		draw = draw_frog,
 		template = enemy,
 		jbig_vy = -3.5,
 		jbig_vx = 1.2,
@@ -530,6 +523,11 @@ thang_dat = {
 		s_jmp = {s=2, f=2},
 		s_burn = {s=4, f=1},
 		s_die = {s=104 - 112, f=3},
+		pal_angry = {
+			[11] = 8,	-- main
+			[3] = 2,	-- shadow
+			[8] = 10	-- eyes
+		}
 	},
 	[192] = { -- knight
 		update = update_knight,
@@ -1225,7 +1223,7 @@ function start_casting(t)
 	t.casting = true
 	t.spell = rnd({
 		{fn = spell_summon_bats, pal = {}, cast_time = 55, recovery = 45},
-		{fn = spell_frost_nova, pal = {}, cast_time = 45, recovery = 30}
+		{fn = spell_frost_nova, pal = {[8]=7,[2]=12}, cast_time = 45, recovery = 30}
 	})
 	t.castu = spawn_thang(240, t.x, t.y - 6)	
 	t.castu.pal = t.spell.pal
@@ -1344,6 +1342,7 @@ function update_frog(t)
 	elseif oldburning then
 		t.angry = true
 		t.jcount = 3
+		t.pal = t.pal_angry
 	end
 
 	local oldair = t.air
@@ -1380,6 +1379,7 @@ function update_frog(t)
 		else -- angry - jump rapidly at player
 			if t.jcount <= 0 then
 				t.angry = false
+				t.pal = {}
 			else
 				t.jcount -= 1
 				sfx(snd_frog_jump)
@@ -1830,6 +1830,8 @@ function spawn_thang(i,x,y)
 		stops_projs = true,
 		-- replace on map when spawn
 		replace = 0,
+		-- alt palette
+		pal = {},
 	}
 	-- apply template first
 	local template = thang_dat[i].template
