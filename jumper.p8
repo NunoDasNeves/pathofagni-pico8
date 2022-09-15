@@ -742,8 +742,8 @@ function update_icepick(t)
 		kill_icepick(t)
 	end
 
-	if p.alive and hit_p(t.x,t.y,t.w,t.h) then
-		kill_p()
+
+	if kill_p_on_coll(t) then
 		kill_icepick(t)
 	end
 end
@@ -981,9 +981,7 @@ function update_shooter_thrower(t)
 		return
 	end
 
-	if p.alive and hit_p(t.x,t.y,t.w,t.h) then
-		kill_p()
-	end
+	kill_p_on_coll(t)
 end
 
 function shoot_shot(t)
@@ -1108,9 +1106,8 @@ function update_archer(t)
 		t.goingrght = not t.goingrght
 	end
 
-	if p.alive and hit_p(t.x,t.y,t.w,t.h) then
+	if kill_p_on_coll(t) then
 		t.invis = false
-		kill_p()
 	end
 end
 
@@ -1284,8 +1281,8 @@ function update_wizard(t)
 		end
 	end
 
-	if not t.tping and p.alive and hit_p(t.x,t.y,t.w,t.h) then
-		kill_p()
+	if not t.tping then
+		kill_p_on_coll(t)
 	end
 end
 
@@ -1405,9 +1402,15 @@ function update_frog(t)
 		return
 	end
 
+	kill_p_on_coll(t)
+end
+
+function kill_p_on_coll(t)
 	if p.alive and hit_p(t.x,t.y,t.w,t.h) then
 		kill_p()
+		return true
 	end
+	return false
 end
 
 function burn_knight(t)
@@ -1604,12 +1607,11 @@ function update_knight(t)
 	end
 		
 	-- don't kill p if we're dead! (e.g. falling)
-	if t.alive and p.alive then
-		local swrd_start_x = t.rght and 8 or -t.swrd_x_off
-		if hit_p(t.x,t.y,t.w,t.h) then
-			kill_p()
+	if t.alive then
+		if kill_p_on_coll(t) then
 			t.phase = 0
 		end
+		local swrd_start_x = t.rght and 8 or -t.swrd_x_off
 		if t.swrd_hit then
 			if hit_p(t.x + swrd_start_x, t.y + t.swrd_y, t.swrd_w, t.swrd_h) then
 				kill_p()
@@ -1732,10 +1734,7 @@ function update_bat(b)
 		b.rght = false
 	end
 
-	if p.alive and
-	    hit_p(b.x,b.y,b.w,b.h) then
-		kill_p()
-	end
+	kill_p_on_coll(b)
 end
 
 function burn_lantern(l)
