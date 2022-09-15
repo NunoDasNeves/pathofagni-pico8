@@ -2228,13 +2228,8 @@ end
 
 function collmap(x,y,f)
 	local val = mget(x\8,y\8)
-	return (fget(val,f))
+	return fget(val,f)
 end
-
-function collmapv(v,f)
-	return collmap(v.x,v.y,f)
-end
-
 
 function coll_edge_turn_around(t,newx,fty)
 	-- t = {
@@ -2309,18 +2304,10 @@ function move_hit_wall(t)
 	local ct = newy + t.cy
 	local cb = ct + t.ch
 
-	local c_tl = {x=cl,y=ct}
-	local c_tr = {x=cr,y=ct}
-	local c_bl = {x=cl,y=cb}
-	local c_br = {x=cr,y=cb}
-
-	if 	collmapv(c_tl,1) or 
-			collmapv(c_tr,1) or
-			collmapv(c_bl,1) or 
-			collmapv(c_br,1) then
-		return true
-	end
-	return false
+	return 	collmap(cl, ct, 1) or 
+			collmap(cr, ct, 1) or
+			collmap(cl, cb, 1) or 
+			collmap(cr, cb, 1)
 end
 
 -->8
@@ -2445,19 +2432,14 @@ function phys_walls(t,newx,newy)
 	local ct = newy + t.cy
 	local cb = ct + t.ch
 
-	local c_tl = {x=cl,y=ct}
-	local c_tr = {x=cr,y=ct}
-	local c_bl = {x=cl,y=cb}
-	local c_br = {x=cr,y=cb}
-
 	local l_pen = 0
 	local r_pen = 0
-	if 	collmapv(c_bl,1) or 
-			collmapv(c_tl,1) then
+	if 	collmap(cl, cb, 1) or 
+			collmap(cl, ct, 1) then
 		l_pen = roundup(cl,8) - cl
 	end
-	if 	collmapv(c_br,1) or 
-			collmapv(c_tr,1) then
+	if 	collmap(cr, cb, 1) or 
+			collmap(cr, ct, 1) then
 		r_pen = cr - rounddown(cr,8)
 	end
 	
