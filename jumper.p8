@@ -276,23 +276,6 @@ function draw_wizard(t)
 	end
 end
 
-function draw_archer(t)
-	if t.invis then
-		local fr = t.invistimer < 12 and 11 - t.invistimer or t.invistimer - 58
-		if fr >= 0 then
-			for i,k in pairs(t.invis_pal_k) do
-				pal(k,t.invis_pal_v[fr\4+1][i],0)
-			end
-		else
-			for i=1,15 do
-				pal(i,0,0)
-			end
-		end
-	end
-	draw_thang(t)
-	pal()
-end
-
 function draw_knight(t)
 	draw_thang(t)
 	-- draw sword
@@ -583,7 +566,6 @@ thang_dat = {
 	[208] = { -- archer
 		update = update_archer,
 		burn = burn_archer_wizard,
-		draw = draw_archer,
 		hp = 5,
 		shooting = false,
 		shspeed = 6,
@@ -1069,11 +1051,23 @@ function update_archer(t)
 
 		if t.invis then
 			t.invistimer -= 1
+			-- palette select, kinda jank
+			t.pal_k = t.invis_pal_k
+			local fr = t.invistimer < 12 and 11 - t.invistimer or t.invistimer - 58
+			if fr >= 0 then
+				t.pal_v = t.invis_pal_v[fr\4+1]
+			else
+				for i=1,6 do
+					t.pal_v[i] = 0
+				end
+			end
+			--
 			if t.invistimer == 15 then
 				sfx(snd_archer_invis)
 			elseif t.invistimer <= 0 then
 				t.stops_projs = true
 				t.invis = false
+				t.pal_k = {}
 			end
 		-- don't attack unless visible
 		elseif t.shcount <= 0 then
