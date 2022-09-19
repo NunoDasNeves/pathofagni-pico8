@@ -1869,7 +1869,6 @@ function kill_p()
 	p.alive = false
 	p.s = p.i + p.s_die.s 
 	reset_anim_state(p)
-	p.sh = false
 end
 
 function hit_p(x,y,w,h)
@@ -1929,8 +1928,7 @@ function update_p()
 	end
 
 	-- vy - jump and land
-	local oldair = p.air
-	local jumped = false
+	local oldair,jumped = p.air, false
 	if btnp(🅾️) and not p.air and not p.sh then
 		jumped = true
 		p.vy += p.j_vy
@@ -1944,20 +1942,17 @@ function update_p()
 		p.g = p.g_norm
 	end
 
-	local oldx = p.x
-	local oldy = p.y
-	local oldvy = p.vy + p.g
-
+	local oldx,oldy = p.x,p.y
 	local phys_result = phys_thang(p, oldair)
 
+	-- fall off platform only if
+	-- holding direction of movement
+	-- kill 2 bugs with one hack
+	-- here - you slip off ice,
+	-- and fall when it's destroyed
 	if phys_result.fell and not p.onice then
-		-- fall off platform only if
-		-- holding direction of movement
-		-- kill 2 bugs with one hack
-		-- here - you slip off ice,
-		-- and fall when it's destroyed
-		if 		(btn(⬅️) and p.vx < 0) or
-				(btn(➡️) and p.vx > 0) then
+		if 		btn(⬅️) and p.vx < 0 or
+				btn(➡️) and p.vx > 0 then
 			-- none
 		else
 			p.air = false
@@ -1973,9 +1968,7 @@ function update_p()
 
 	if phys_result.landed then
 		sfx(snd_p_land)
-	end
-
-	if jumped and not phys_result.ceil_cancel then
+	elseif jumped and not phys_result.ceil_cancel then
 		sfx(snd_p_jump)
 	end
 
@@ -1990,8 +1983,7 @@ function update_p()
 			p.sh = true
 		end
 		if p.sh then
-			local ydir = 0
-			local xdir = 0
+			local xdir,ydir = 0,0
 			if btn(⬆️) then
 				ydir = -1
 			elseif btn(⬇️) then
@@ -2004,11 +1996,7 @@ function update_p()
 			-- default x dir, only if a direction hasn't been buffered,
 			-- and only if y dir is 0, to allow straight up and down
 			elseif p.shbuf == nil and ydir == 0 then
-				if p.rght then
-					xdir = 1
-				else
-					xdir = -1
-				end
+				xdir = p.rght and 1 or -1
 			end
 			if xdir != 0 or ydir != 0 then
 				p.shbuf = {x = xdir, y = ydir}
@@ -2043,17 +2031,9 @@ function update_p()
 		p.s = p.i + p.s_wlk.s
 		-- just landed, or changed dir
 		if oldair or btnp(➡️) or btnp(⬅️) then
-			p.fr = 0
-			p.fcnt = 0
-		end
-		if abs(p.vx) > 0.5 then
-		--if (btn(➡️) or btn(⬅️)) then
-			--if stat(46) != 5 then
-			--if p.fcnt == 1 and p.fr == 0 then
-				--sfx(5,0,0,8)
-			--end
+			reset_anim_state(p)
+		elseif abs(p.vx) > 0.5 then
 			loop_anim(p,3,p.s_wlk.f)
-			--	sfx(5,0,0,8)
 		elseif p.teeter then
 			p.fr = 1
 		else
@@ -2062,24 +2042,15 @@ function update_p()
 
 	else --p.air
 		p.s = p.i + p.s_jmp.s
-		if not oldair then	 
-			p.fr = 0
-			p.fcnt = 0
-			-- fell, not jumped
-			if not btn(🅾️) then
-				p.fr = 5
-			end
+		if not oldair then
+			reset_anim_state(p)
 		end
-	-- jump anim
-		if p.fcnt > 2 then
-			p.fr += 1
-			-- loop last 2 frames
-			if p.fr >= p.s_jmp.f then
-				p.fr -= 2
-			end
-			p.fcnt = 0
+		if p.vy >= 0 then
+			p.s += 3
+			loop_anim(p,3,2)
+		else
+			play_anim(p,3,4)
 		end
-		p.fcnt += 1
 	end
 end
 
