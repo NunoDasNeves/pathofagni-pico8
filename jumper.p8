@@ -460,14 +460,13 @@ thang_dat = {
 	[96] = { -- bat
 		init = init_bat,
 		update = update_bat,
-		burn = burn_bat,
+		burn = burn_bad,
 		bad = true,
+		hp = 1,
 		w = 7,
 		h = 6,
-		range = 8*8,
+		range = 56,
 		dircount = 0,
-		xspeed = 0.5,
-		yspeed = 0.4,
 		cw = 7,
 		ch = 6,
 		hw = 7,
@@ -1612,16 +1611,6 @@ function update_knight(t)
 	end
 end
 
-function burn_bat(b)
-	if b.alive then
-		sfx(snd_hit)
-		b.alive = false
-		b.s += 2
-		b.vy = 0.6
-		b.deadf = 20
-	end
-end
-
 function loop_anim(t,speed,frames)
 	-- t = {
 	--   s -- starting frame
@@ -1658,7 +1647,14 @@ function init_bat(b)
 end
 
 function update_bat(b)
-	if not b.alive then
+	if b.burning then
+		b.burning = false
+		b.alive = false
+		b.s = 98
+		b.vy = 0.6
+		b.deadf = 20
+		return
+	elseif not b.alive then
 		b.stops_projs = false
 		b.deadf -= 1
 		if b.deadf == 0 then
@@ -1698,23 +1694,22 @@ function update_bat(b)
 	if b.dircount <= 0 then
 		-- go toward player
 		if go_to_p then
-			b.vx = b2p.x * b.xspeed/dist2p
-			b.vy = b2p.y * b.yspeed/dist2p
+			b.vx = b2p.x * 0.5/dist2p
+			b.vy = b2p.y * 0.4/dist2p
 			b.dircount = 30
 		-- pick random direction
 		else
 			local rndv = {x = rnd(2) - 1, y = rnd(2) - 1}
 			local len = vlen(rndv)
-			b.vx = rndv.x * b.xspeed/len
-			b.vy = rndv.y * b.yspeed/len
+			b.vx = rndv.x * 0.5/len
+			b.vy = rndv.y * 0.4/len
+			-- reset quicker if we're in range
 			if in_range then
 				b.dircount = 20
 			else
 				b.dircount = 60
 			end
 		end
-	else
-		-- otherwise keep going the same way until dircount expires
 	end
 	b.dircount -= 1
 
@@ -1732,7 +1727,7 @@ function burn_lantern(l)
 	if not l.lit then
 		l.lit = true
 		room_num_unlit -= 1
-		l.s += 1
+		l.s = 83
 	end
 end
 
