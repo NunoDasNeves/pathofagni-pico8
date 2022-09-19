@@ -23,14 +23,9 @@ function roundup(val, multiple)
 end
 
 function aabb(x0,y0,w0,h0,x1,y1,w1,h1)
-    local r0 = x0 + w0
-    local r1 = x1 + w1
-    local b0 = y0 + h0
-    local b1 = y1 + h1
-    if r0 < x1 or r1 < x0 then
+    if x0 + w0 < x1 or x1 + w1 < x0 then
         return false
-    end
-    if b0 < y1 or b1 < y0 then
+	elseif y0 + h0 < y1 or y1 + h1 < y0 then
         return false
     end
     return true
@@ -482,11 +477,6 @@ thang_dat = {
 		update = update_frog,
 		burn = burn_frog,
 		template = enemy,
-		jbig_vy = -3.5,
-		jbig_vx = 1.2,
-		jsmol_vy = -2.5,
-		jsmol_vx = 1.5,
-		jtiny_vy = -1.0,
 		hp = 2,
 		angry = false,
 		croak = false,
@@ -1340,9 +1330,9 @@ function update_frog(t)
 	local oldair = t.air
 	-- not burning and not in the air
 	if not t.air then
-		t.s = t.i + 0
+		t.s = t.i
 		t.vx = 0
-		t.rght = p.x > t.x and true or false
+		face_p(t)
 		local dir = t.rght and 1 or -1
 		-- not angry - jump when player charges fireball
 		if not t.angry then
@@ -1351,21 +1341,19 @@ function update_frog(t)
 				if play_anim(t, 5, t.s_idle.f) then
 					sfx(snd_frog_croak)
 					t.croak = false
-					t.fr = 0
-					t.fcount = 0
+					reset_anim_state(t)
 				end
 			else
 				-- just play first frame for a bit
 				if play_anim(t, 40, 1) then
 					t.croak = true
-					t.fr = 0
-					t.fcount = 0
+					reset_anim_state(t)
 				end
 			end
 			if p.sh then
 				sfx(snd_frog_jump)
-				t.vy += t.jbig_vy
-				t.vx = t.jbig_vx * dir
+				t.vy = -3.5
+				t.vx = 1.2 * dir
 				t.air = true
 			end
 		else -- angry - jump rapidly at player
@@ -1377,15 +1365,15 @@ function update_frog(t)
 				sfx(snd_frog_jump)
 				-- small jump
 				if not t.bounced or t.do_smol then
-					t.vy += t.jsmol_vy
+					t.vy = -2.5
 					t.do_smol = false
 				-- big jump if we bounced off a wall
 				else
-					t.vy += t.jbig_vy
+					t.vy = -3.5
 					t.bounced = false
 					t.do_smol = true -- always do a small jump after a big one
 				end
-				t.vx = t.jsmol_vx * dir
+				t.vx = 1.5 * dir
 				t.air = true
 			end
 		end
@@ -1399,7 +1387,7 @@ function update_frog(t)
 	-- if hit ceiling, redo physics with tiny jump
 	if phys_result.ceil_cancel then
 		t.vx = oldvx
-		t.vy = t.jtiny_vy + t.g
+		t.vy = -1 + t.g
 		t.x = oldx
 		t.y = oldy
 		t.air = true
@@ -1423,7 +1411,7 @@ function update_frog(t)
 		end
 	end
 
-	-- on landing, reset animation state
+	-- on landing, reset to idle
 	if not t.air and phys_result.landed then
 		t.s = t.i + t.s_idle.s
 		t.fr = 0
@@ -1465,29 +1453,21 @@ function p_on_same_plat(t)
 	end
 
 	-- either floor tile from t and p are fine
-	local tfloor = t.lfloor != nil and t.lfloor or t.rfloor
-	local pfloor = p.lfloor != nil and p.lfloor or p.rfloor
+	local tfloor, pfloor = 	t.lfloor != nil and t.lfloor or t.rfloor,
+							p.lfloor != nil and p.lfloor or p.rfloor
 	-- on same level
 	if pfloor.my != tfloor.my then
 		return 0
 	end
 
-	local mx = tfloor.mx
-	local pmx = pfloor.mx
-	local topy = tfloor.my - 1
-	local boty = tfloor.my
-	local dir = p.x < t.x and -1 or 1
-
+	local mx, pmx, topy, boty, dir = tfloor.mx, pfloor.mx, tfloor.my - 1, tfloor.my, p.x < t.x and -1 or 1
 	while mx != pmx do
-		local bot = mget(mx, boty)
-		if not fget(bot, 0) then
+		if not fget(mget(mx, boty), 0) then
+			return 0
+		elseif fget(mget(mx, topy), 1) then
 			return 0
 		end
-		local top = mget(mx, topy)
-		if fget(top, 1) then
-			return 0
-		end
-		mx += 1 * dir
+		mx += dir
 	end
 	return dir
 end
@@ -1502,8 +1482,7 @@ function update_knight(t)
 		return
 	end
 
-	local oldatking = t.atking
-	local oldburning = t.burning
+	local oldair, oldatking, oldburning = t.air, t.atking, t.burning
 
 	if do_bad_burning(t) then
 		if not t.alive then
@@ -1520,28 +1499,25 @@ function update_knight(t)
 		t.vx = 0
 	end
 
-	local oldair = t.air
-
-	if t.alive and t.atking then
-		local anim = t.s_atk
-		if t.phase == 2 then
-			anim = t.s_jmp
-		end
-		t.s = t.i + anim.s
-		if play_anim(t, 10, anim.f) then
-			t.atking = false
-			reset_anim_state(t)
-		else
-			if t.fr > 0 then
+	if t.alive then
+		if t.atking then
+			local anim = t.s_atk
+			if t.phase == 2 then
+				anim = t.s_jmp
+			end
+			t.s = t.i + anim.s
+			if play_anim(t, 10, anim.f) then
+				t.atking = false
+				reset_anim_state(t)
+			elseif t.fr > 0 then
 				if t.phase == 1 and t.fr == 1 and t.fcnt == 1 then
 					sfx(snd_knight_swing)
 				end
-				local dir = t.rght and 1 or -1
 				-- jump!
 				if t.phase == 2 and not t.air and t.fr == 1 and t.fcnt == 1 then
 					sfx(snd_knight_jump)
 					t.vy = -3
-					t.vx = 1 * dir
+					t.vx = t.rght and 1 or -1
 					t.air = true
 				end
 				t.swrd_draw = true
@@ -1549,55 +1525,45 @@ function update_knight(t)
 				-- all frames hit for now, not just first frame
 				t.swrd_hit = true
 			end
-		end
-	end
+		-- grounded state
+		--  phase 0 - idle
+		--  phase 1 - walk toward player if on same platform, attack
+		--  phase 2 - walk until timer expires, then jump toward player
+		-- if atking ended, immediately walk this frame
+		elseif not t.air then
+			local dir = p_on_same_plat(t)
 
-	-- grounded state
-	--  phase 0 - idle
-	--  phase 1 - walk toward player if on same platform, attack
-	--  phase 2 - walk until timer expires, then jump toward player
-	-- if atking ended, immediately walk this frame
-	if t.alive and not t.air and not t.atking then
-		local dir = p_on_same_plat(t)
-
-		if t.phase == 0 then
-			t.s = t.i + t.s_idle.s
-			reset_anim_state(t)
-			-- don't advance phase if p is dead
-			if p.alive and dir != 0 then
-				t.phase = 1
-			end
-		end
-
-		if t.phase > 0 then
-			t.s = t.i + t.s_wlk.s
-			-- follow player if they're on same platform
-			if dir != 0 then
-				t.rght = dir == 1 and true or false
-			end
-			if t.rght then
-				t.vx = 0.75
-			else
-				t.vx = -0.75
-			end
-
-			loop_anim(t,3,t.s_wlk.f)
-
-			local do_attack = false
-			t.atktimer += 1 -- time since last attack
-			if t.phase == 1 then
-				do_attack = vlen({ x = t.x - p.x, y = t.y - p.y }) <= t.atkrange
-			end
-			if t.phase == 2 then
-				if t.atktimer >= t.jmptime then
-					do_attack = true
+			if t.phase == 0 then
+				t.s = t.i + t.s_idle.s
+				reset_anim_state(t)
+				-- don't advance phase if p is dead
+				if p.alive and dir != 0 then
+					t.phase = 1
 				end
 			end
-			if do_attack then
-				t.atktimer = 0
-				t.atking = true
-				reset_anim_state(t)
-				face_p(t)
+
+			if t.phase > 0 then
+				t.s = t.i + t.s_wlk.s
+				-- follow player if they're on same platform
+				if dir != 0 then
+					t.rght = dir == 1 and true or false
+				end
+				if t.rght then
+					t.vx = 0.75
+				else
+					t.vx = -0.75
+				end
+
+				loop_anim(t,3,t.s_wlk.f)
+
+				t.atktimer += 1 -- time since last attack
+				if 		t.phase == 1 and vlen{ x = t.x - p.x, y = t.y - p.y } <= t.atkrange or
+						t.phase == 2 and t.atktimer >= t.jmptime then
+					t.atktimer = 0
+					t.atking = true
+					reset_anim_state(t)
+					face_p(t)
+				end
 			end
 		end
 	end
@@ -1610,16 +1576,13 @@ function update_knight(t)
 			t.rght = not t.rght
 			t.vx = -oldvx
 		end
-	elseif not t.atking then
-		if phys_result.hit_wall or coll_edge_turn_around(t,t.x,t.y+t.h) != 0 then
-			t.rght = not t.rght
+		-- animate falling
+		if not t.atking then
+			t.s = t.i + t.s_fall.s
+			reset_anim_state(t)
 		end
-	end
-
-	-- animate falling
-	if t.air and not t.atking then
-		t.s = t.i + t.s_fall.s
-		t.fr = 0
+	elseif not t.atking and phys_result.hit_wall or coll_edge_turn_around(t,t.x,t.y+t.h) != 0 then
+		t.rght = not t.rght
 	end
 
 	-- change phase if attack ended for any reason
@@ -1631,24 +1594,20 @@ function update_knight(t)
 		else
 			t.phase = 1
 		end
-	end
 	-- change phase if haven't attacked in a while
-	if t.phase == 1 and t.atktimer > 60 then
+	elseif t.phase == 1 and t.atktimer > 60 then
 		t.phase = 2
 		t.jmptime = 10 + rnd({0,15,30})
 	end
 		
 	-- don't kill p if we're dead! (e.g. falling)
-	if t.alive then
+	if t.alive and p.alive then
+		local swrd_start_x = t.rght and 8 or -t.swrd_x_off
 		if kill_p_on_coll(t) then
 			t.phase = 0
-		end
-		local swrd_start_x = t.rght and 8 or -t.swrd_x_off
-		if t.swrd_hit then
-			if hit_p(t.x + swrd_start_x, t.y + t.swrd_y, t.swrd_w, t.swrd_h) then
-				kill_p()
-				t.phase = 0
-			end
+		elseif t.swrd_hit and hit_p(t.x + swrd_start_x, t.y + t.swrd_y, t.swrd_w, t.swrd_h) then
+			kill_p()
+			t.phase = 0
 		end
 	end
 end
