@@ -275,7 +275,12 @@ function draw_wizard(t)
 	else
 		draw_thang(t)
 		if t.shield then
-			circ(t.x+3,t.y+4,6,11)
+			--0b1001110010010011
+			--5/200 = 0.025
+			circ(t.x+3,t.y+4,6,9)
+			fillp((0b1101101110011100 >>< sin(t.shieldtimer*0.025)*2.99) + 0b0.1)
+			circfill(t.x+3,t.y+4,6,10)
+			fillp(0)
 		end
 	end
 end
@@ -605,7 +610,7 @@ thang_dat = {
 		casting = false,
 		castu = nil,
 		shield = false,
-		shieldtimer = 60,
+		shieldtimer = 0,
 		s_idle = {s=0, f=1},
 		s_cast = {s=1, f=3},
 		s_burn = {s=4, f=1},
@@ -1210,12 +1215,12 @@ end
 
 function spell_shield(t)
 	t.shield = true
-	t.shieldtimer = 180
+	t.shieldtimer = 190
 end
 
 spells = {{fn = spell_summon_bats, cast_time = 55, recovery = 45},
 		{fn = spell_frost_nova, pal_k = {8,2}, pal_v = {7,12}, cast_time = 45, recovery = 30},
-		{fn = spell_shield, pal_k = {1,2,8}, pal_v = {3,11,7}, cast_time = 50, recovery = 20}}
+		{fn = spell_shield, pal_k = {1,2,8}, pal_v = {4,9,10}, cast_time = 50, recovery = 20}}
 
 function too_many_bats()
 	local num = 0
@@ -1259,6 +1264,12 @@ function update_wizard(t)
 		if not t.alive then
 			sfx(snd_knight_die)
 			music(-1,0,3)
+			-- burn bats
+			for t in all(thang) do
+				if t.i == 96 then
+					t:burn()
+				end
+			end
 		end
 		return
 	elseif oldburning then
