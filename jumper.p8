@@ -274,6 +274,9 @@ function draw_wizard(t)
 		pal()
 	else
 		draw_thang(t)
+		if t.shield then
+			circ(t.x+3,t.y+4,6,11)
+		end
 	end
 end
 
@@ -601,6 +604,8 @@ thang_dat = {
 		shcount = 0,
 		casting = false,
 		castu = nil,
+		shield = false,
+		shieldtimer = 60,
 		s_idle = {s=0, f=1},
 		s_cast = {s=1, f=3},
 		s_burn = {s=4, f=1},
@@ -1114,7 +1119,7 @@ function start_tp(t)
 			local val = mget(x,y)
 			if fget(val,0) and not fget(val,1) then
 				local plat = {x = x*8, y = y*8 - t.h}
-				if (plat.x != t.x or plat.y != t.y) and vlen{x=plat.x-p.x,y=plat.y-p.y} > 48 then
+				if (plat.x != t.x or plat.y != t.y) and (t.shield or vlen{x=plat.x-p.x,y=plat.y-p.y} > 48) then
 					add(plats, plat)
 				end
 			end
@@ -1203,16 +1208,40 @@ function spell_frost_nova(t)
 	end
 end
 
+function spell_shield(t)
+	t.shield = true
+	t.shieldtimer = 180
+end
+
+spells = {{fn = spell_summon_bats, cast_time = 55, recovery = 45},
+		{fn = spell_frost_nova, pal_k = {8,2}, pal_v = {7,12}, cast_time = 45, recovery = 30},
+		{fn = spell_shield, pal_k = {1,2,8}, pal_v = {3,11,7}, cast_time = 50, recovery = 20}}
+
+function too_many_bats()
+	local num = 0
+	for t in all(thang) do
+		num += t.i == 96 and 1 or 0
+	end
+	return num >= 7
+end
+
 function start_casting(t)
 	t.casting = true
-	t.spell = rnd({
-		{fn = spell_summon_bats, cast_time = 55, recovery = 45},
-		{fn = spell_frost_nova, pal_k = {8,2}, pal_v = {7,12}, cast_time = 45, recovery = 30}
-	})
+	local sub_spells = {}
+	copy_into(spells,sub_spells)
+	if t.shield then
+		-- no re-shielding
+		deli(sub_spells)
+	end
+	if too_many_bats() then
+		-- no more bats!
+		deli(sub_spells, 1)
+	end
+	t.spell = rnd(sub_spells)
 	t.castu = spawn_thang(240, t.x, t.y - 6)	
 	t.castu.pal_k = t.spell.pal_k
 	t.castu.pal_v = t.spell.pal_v
-	t.shcount = t.spell.cast_time
+	t.shcount = t.shield and 20 or t.spell.cast_time
 end
 
 function update_wizard(t)
@@ -1270,7 +1299,7 @@ function update_wizard(t)
 			t.casting = false
 			reset_anim_state(t)
 			-- now use shcount for resting
-			t.shcount = t.spell.recovery
+			t.shcount = t.shield and 20 or t.spell.recovery
 			t.spell.fn(t)
 		end
 
@@ -1301,6 +1330,12 @@ function update_wizard(t)
 		t.shcount -= 1
 		if t.shcount <= 0 then
 			start_tp(t)
+		end
+	end
+	if t.shield then
+		t.shieldtimer-=1
+		if t.shieldtimer==0 then
+			t.shield=false
 		end
 	end
 
@@ -1443,7 +1478,7 @@ function burn_knight(t)
 end
 
 function burn_archer_wizard(t)
-	if not t.invis and not t.tping then
+	if not t.invis and not t.tping and not t.shield then
 		burn_bad(t)
 	end
 end
@@ -2146,7 +2181,6 @@ function update_fireball(f)
 		if aabb(
 				t.x + t.hx, t.y + t.hy, t.hw, t.hh,
 				f.x,f.y,4,4) then
-			-- todo - is alive the right check?
 			if t.burn != nil then
 				t:burn()
 			end
