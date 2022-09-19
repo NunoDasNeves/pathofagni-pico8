@@ -4,6 +4,12 @@ __lua__
 -- 'jumper' demo build #2
 -- by nuno
 
+function copy_into(a, b)
+	for k,v in pairs(a) do
+		b[k] = v
+	end
+end
+
 function clamp(val, min, max)
     if val < min then
         return min
@@ -415,9 +421,7 @@ function init_thang_dat()
 		s_die = {s=4, f=3},
 	}
 	local shooter = {}
-	for k,v in pairs(thrower) do
-		shooter[k] = v
-	end
+	copy_into(thrower, shooter)
 	shooter.do_shoot = shoot_shot
 	shooter.check_shoot = check_shoot_shot
 	shooter.s_sh = {s=2,f=3}
@@ -1782,14 +1786,10 @@ function spawn_thang(i,x,y)
 	-- apply template first
 	local template = thang_dat[i].template
 	if template != nil then
-		for k,v in pairs(template) do
-			t[k] = v
-		end
+		copy_into(template, t)
 	end
 	-- overwrite defaults/template with specific stuff
-	for k,v in pairs(thang_dat[i]) do
-		t[k] = v
-	end
+	copy_into(thang_dat[i], t)
 	if t.init != nil then
 		t:init()
 	end
@@ -1844,6 +1844,7 @@ p_dat = {
 
 function spawn_p(x,y)
 	p = {
+		s = p_dat.i + p_dat.s_spwn.s,
 		x = x,
 		y = y,
 		rght = not (room_i < 8 or room_i > 15),
@@ -1859,10 +1860,7 @@ function spawn_p(x,y)
 		alive = true,
 		spawn = true,
 	}
-	for k,v in pairs(p_dat) do
-		p[k] = v
-	end
-	p.s = p.i + p.s_spwn.s
+	copy_into(p_dat, p)
 end
 
 function kill_p()
