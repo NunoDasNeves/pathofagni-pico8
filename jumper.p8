@@ -944,7 +944,7 @@ function update_shooter_thrower(t)
 	local phys_result = phys_thang(t, t.air)
 
 	if not t.air and not t.shooting then
-		if phys_result.hit_wall or coll_edge_turn_around(t,t.x,t.y + t.h) != 0 then
+		if phys_result.hit_wall or coll_edge(t,t.x) != 0 then
 			t.rght = not t.rght
 			t.goingrght = t.rght
 		end
@@ -1025,7 +1025,7 @@ function update_archer(t)
 		t.rght = t.goingrght
 		if not t.air then
 			t.s = t.i + t.s_wlk.s
-			if coll_edge_turn_around(t,t.x,t.y + t.h) != 0 then
+			if coll_edge(t,t.x) != 0 then
 				-- jump! or turn around -- always jump when invis
 				if t.invis or rnd(1) < 0.5 then
 					sfx(snd_knight_jump)
@@ -1630,7 +1630,7 @@ function update_knight(t)
 			t.s = t.i + t.s_fall.s
 			reset_anim_state(t)
 		end
-	elseif not t.atking and phys_result.hit_wall or coll_edge_turn_around(t,t.x,t.y+t.h) != 0 then
+	elseif not t.atking and phys_result.hit_wall or coll_edge(t,t.x) != 0 then
 		t.rght = not t.rght
 	end
 
@@ -2010,7 +2010,7 @@ function update_p()
 	end
 
 	-- close to edge?
-	p.teeter = not p.air and coll_edge(p,p.x,p.y+p.fty)
+	p.teeter = not p.air and coll_edge(p,p.x,true)
 
 	if phys_result.landed then
 		sfx(snd_p_land)
@@ -2218,43 +2218,25 @@ function collmap(x,y,f)
 	return fget(val,f)
 end
 
-function coll_edge_turn_around(t,newx,fty)
+function coll_edge(t,newx,face_either_way)
 	-- t = {
 	--   ftx	-- foot x offset
 	--   ftw	-- foot width
 	--   rght	-- facing right
 	-- }
-	-- fty = foot y
-	-- check if foot is close to edge, and facing off edge
+	-- if face_either_way, return true if either foot is near an edge
+	-- otherwise check if foot is close to edge, and facing off edge
 	-- return 1 for right, -1 for left, 0 for not
+	local fty = t.y + t.h
 	local tftxl = newx + t.ftx
 	local tftxr = tftxl + t.ftw
-	if t.rght then
-		if not collmap(tftxr+1,fty,0) then
-			return 1
-		end
-	else
-		if not collmap(tftxl-1,fty,0) then
-			return -1
-		end
+	local coll_r,coll_l = collmap(tftxr+1,fty,0),collmap(tftxl-1,fty,0)
+	if face_either_way then
+		return not (coll_r and coll_l)
+	elseif t.rght then
+		return not coll_r and 1 or 0
 	end
-	return 0
-end
-
-function coll_edge(t,newx,fty)
-	-- t = {
-	--   ftx -- foot x offset
-	--   ftw -- foot width
-	-- }
-	-- fty = foot y
-	-- return true if 1 px from edge
-	local tftxl = newx + t.ftx
-	local tftxr = tftxl + t.ftw
-	if not (collmap(tftxl-1,fty,0) and
-			collmap(tftxr+1,fty,0)) then
-		return true
-	end
-	return false
+	return not coll_l and -1 or 0
 end
 
 function coll_spikes(t)
