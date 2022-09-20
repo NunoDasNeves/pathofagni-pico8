@@ -1256,6 +1256,13 @@ function update_wizard(t)
 			t.castu.state = 2
 			reset_anim_state(t.castu)
 		end
+		-- burn 1 bat per frame (looks better than burning all at once)
+		for t in all(thang) do
+			if t.i == 96 and t.alive then
+				t:burn()
+				break
+			end
+		end
 		return
 	end
 
@@ -1264,12 +1271,6 @@ function update_wizard(t)
 		if not t.alive then
 			sfx(snd_knight_die)
 			music(-1,0,3)
-			-- burn bats
-			for t in all(thang) do
-				if t.i == 96 then
-					t:burn()
-				end
-			end
 		end
 		return
 	elseif oldburning then
