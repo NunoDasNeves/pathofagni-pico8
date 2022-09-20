@@ -1871,18 +1871,8 @@ p_dat = {
 	hw = 3.99,
 	hh = 3.99,
 	-- physics
-	gax = 1, -- ground accel
-	iax = 0.2, -- ice accel
-	aax = 0.3, -- air accel
-	adax = 0.8, -- air decel factor
-	gdax = 0.6, -- ground decel factor
-	idax = 0.9, -- ice decel factor
 	max_vx = 1.4,
 	min_vx = 0.01, -- stop threshold
-	g_norm = 0.3,
-	g_sh = 0.05,
-	max_vy_norm = 4,
-	max_vy_sh = 1,
 	g = 0.3, -- gravity
 	max_vy = 4,
 	j_vy = -4, -- jump accel
@@ -1946,11 +1936,12 @@ function update_p()
 	if not p.sh then
 		local ax = 0
 		if p.air then
-			ax = p.aax
+			ax = 0.3
 		elseif p.onice then
-			ax = p.iax
+			ax = 0.2
 		else
-			ax = p.gax
+			-- ground
+			ax = 1
 		end
 		if btn(⬅️) and not p.rght then
 			-- accel left
@@ -1961,11 +1952,12 @@ function update_p()
 	end
 	if p.sh or (not btn(⬅️) and not btn(➡️)) then
 		if p.air then
-			p.vx *= p.adax
+			p.vx *= 0.8
 		elseif p.onice then
-			p.vx *= p.idax
+			p.vx *= 0.9
 		else
-			p.vx *= p.gdax
+			-- ground
+			p.vx *= 0.6
 		end
 	end
 	p.vx = clamp(p.vx, -p.max_vx, p.max_vx)
@@ -1981,11 +1973,11 @@ function update_p()
 		p.air = true
 	end
 	if p.sh and p.vy > 0 then
-		p.max_vy = p.max_vy_sh
-		p.g = p.g_sh
+		p.max_vy = 1
+		p.g = 0.05
 	else
-		p.max_vy = p.max_vy_norm
-		p.g = p.g_norm
+		p.max_vy = 4
+		p.g = 0.3
 	end
 
 	local oldx,oldy = p.x,p.y
