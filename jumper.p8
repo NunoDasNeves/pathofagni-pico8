@@ -1934,24 +1934,28 @@ function update_p()
 		p.rght = true
 	end
  
-	if not p.sh then
-		local ax = 0
-		if p.air then
-			ax = 0.3
-		elseif p.onice then
-			ax = 0.2
-		else
-			-- ground
-			ax = 1
-		end
-		if btn(⬅️) and not p.rght then
-			-- accel left
-			p.vx -= ax
-		elseif btn(➡️) and p.rght then
-			p.vx += ax
-		end
+
+	-- grounded ax
+	local ax = 1
+	p.max_vx = 1.4
+	if p.sh then
+		ax = 0.05
+		p.max_vx = p.air and 0.5 or 0
+	elseif p.air then
+		ax = 0.3
+	elseif p.onice then
+		ax = 0.2
 	end
-	if p.sh or (not btn(⬅️) and not btn(➡️)) then
+
+	-- accel
+	if btn(⬅️) and not p.rght then
+		p.vx -= ax
+	elseif btn(➡️) and p.rght then
+		p.vx += ax
+	end
+
+	--decel
+	if not btn(⬅️) and not btn(➡️) then
 		if p.air then
 			p.vx *= 0.8
 		elseif p.onice then
