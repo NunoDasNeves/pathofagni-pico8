@@ -1218,9 +1218,9 @@ function spell_shield(t)
 	t.shieldtimer = 190
 end
 
-spells = {{fn = spell_summon_bats, cast_time = 55, recovery = 45},
+spells = {{fn = spell_summon_bats, cast_time = 50, recovery = 45},
 		{fn = spell_frost_nova, pal_k = {8,2}, pal_v = {7,12}, cast_time = 45, recovery = 30},
-		{fn = spell_shield, pal_k = {1,2,8}, pal_v = {4,9,10}, cast_time = 50, recovery = 20}}
+		{fn = spell_shield, pal_k = {1,2,8}, pal_v = {4,9,10}, cast_time = 55, recovery = 20}}
 
 function too_many_bats()
 	local num = 0
@@ -1934,11 +1934,13 @@ function update_p()
 		p.rght = true
 	end
  
-
 	-- grounded ax
 	local ax = 1
 	p.max_vx = 1.4
-	if p.sh then
+	-- stop moving for 4 frames after firing (grounded)
+	if p.shcount >= 6 and not p.air then
+		p.max_vx = 0
+	elseif p.sh then
 		ax = 0.05
 		p.max_vx = p.air and 0.5 or 0
 	elseif p.air then
@@ -1965,6 +1967,7 @@ function update_p()
 			p.vx *= 0.6
 		end
 	end
+
 	p.vx = clamp(p.vx, -p.max_vx, p.max_vx)
 	if abs(p.vx) < p.min_vx then
 		p.vx = 0
