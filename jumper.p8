@@ -445,6 +445,10 @@ thang_dat = {
 		lit = false,
 		update = update_lantern,
 		burn = burn_lantern,
+		hx = 2,
+		hy = 2,
+		hw = 4,
+		hh = 4,
 		z = 1,
 		stops_projs = false
 	},
