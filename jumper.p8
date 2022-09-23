@@ -13,8 +13,7 @@ end
 function clamp(val, min, max)
     if val < min then
         return min
-    end
-    if val > max then
+	elseif val > max then
         return max
     end
     return val
@@ -29,9 +28,7 @@ function roundup(val, multiple)
 end
 
 function aabb(x0,y0,w0,h0,x1,y1,w1,h1)
-    if x0 + w0 < x1 or x1 + w1 < x0 then
-        return false
-	elseif y0 + h0 < y1 or y1 + h1 < y0 then
+    if x0 + w0 < x1 or x1 + w1 < x0 or y0 + h0 < y1 or y1 + h1 < y0 then
         return false
     end
     return true
@@ -50,31 +47,27 @@ poke(0x5f5c, 255)
 
 
 function init_room()
-	-- updated by move_room
-	room_i = 0
-	room_x = 0
-	room_y = 0
+	-- starting room
+	move_room(21)
 	-- updated by spawn_room
-	room_old = nil -- for restore
-	room_num_bads = 0 -- for unlock (bads door)
-	room_num_unlit = 0 -- for unlock (lanterns door)
-	room_checkpoint = nil -- checkpoint thang
-	move_room(4)
+	room_old, -- for restore
+	room_num_bads, -- for unlock (bads door)
+	room_num_unlit, -- for unlock (lanterns door)
+	room_checkpoint -- checkpoint thang
+	=
+	nil,0,0,nil
 end
 
 function move_room(i)
 	local r = get_room_xy(i)
-	room_i = i
-	room_x = r.x
-	room_y = r.y
+	room_i,room_x,room_y = i,r.x,r.y
 end
 
 function restore_room()
-	if room_old == nil then
-		return
-	end
-	for t in all(room_old) do
-		mset(t.x,t.y,t.val)
+	if room_old != nil then
+		for t in all(room_old) do
+			mset(t.x,t.y,t.val)
+		end
 	end
 end
 
@@ -97,9 +90,10 @@ is_end = false
 
 function update_room()
 	-- update room and camera to where player currently is
-	local oldi = room_i
-	local rx = (p.x + 4) \ 128
-	local ry = (p.y + 4) \ 128
+	local oldi,
+		  rx,ry = 
+		  room_i,
+		  (p.x + 4) \ 128, (p.y + 4) \ 128
 	if rx >= 0 then
 		local newi = rx % 8 + ry * 8
 		move_room(newi)
@@ -123,7 +117,6 @@ function update_room()
 			elseif start_music_rooms[room_i] then
 				start_music()
 			end
-			fireball = {}
 			restore_room()
 			spawn_room()
 		end
@@ -139,13 +132,8 @@ end
 -- spawn thangs in current room
 -- save room
 function spawn_room()
-	local rmapx = room_x \ 8
-	local rmapy = room_y \ 8
-	thang = {}
-	max_z = 0
-	room_old = {}
-	room_num_bads = 0
-	room_num_unlit = 0
+	local rmapx,rmapy  = room_x \ 8, room_y \ 8
+	thang,max_z,room_old,room_num_bads,room_num_unlit,fireball = {},0,{},0,0,{}
 	for y=rmapy,rmapy+15 do
 		for x=rmapx,rmapx+15 do
 			local val = mget(x,y)
@@ -201,14 +189,12 @@ silent_rooms = {[4]=1, [15]=1, [16]=1, [17]=1}
 start_music_rooms = {[8]=1}
 
 function start_music()
-	if silent_rooms[room_i] then
-		-- boss music will start from boss monster's code
-		return
-	elseif intro_rooms[room_i] then
+	if intro_rooms[room_i] then
 		music(0, 0, 3)
-	else
+	elseif not silent_rooms[room_i] then
 		music(2, 200, 3)
 	end
+	-- boss music will start from boss monster's code
 end
 
 function fade_update()
@@ -308,8 +294,7 @@ function draw_knight(t)
 end
 
 function draw_smol_thang(f)
-	local sx = (f.sfr % 2) * 4
-	local sy = (f.sfr \ 2) * 4
+	local sx,sy = (f.sfr % 2) * 4, (f.sfr \ 2) * 4
 	sspr(
 		(f.s % 16) * 8 + sx,
 		(f.s \ 16) * 8 + sy,
@@ -326,8 +311,10 @@ function draw_fade(s)
 	rectfill(room_x,room_y,room_x+128 - 1,room_y+128 - 1,1)
 end
 
-function print_in_room(s,x,y,c)
-	print(s,room_x+x,room_y+y,c)
+function print_in_room(r,s,x,y,c)
+	if room_i == r then
+		print(s,room_x+x,room_y+y,c)
+	end
 end
 
 function _draw()
@@ -335,17 +322,19 @@ function _draw()
 
 	map(0,0,0,0,128,64)
 
-	if room_i == 23 then
-		print_in_room('path of', 53, 35, 1)
-		print_in_room('path of', 52, 34, 7)
-		print_in_room('demo 5', 52, 58, 11)
-		print_in_room('⬅️➡️ move\n🅾️ z jump\n❎ x fire', 45, 68, 6)
-	elseif room_i == 22 then
-		--print_in_room('\npsst!\n      ⬆️\n ❎+⬅️⬇️➡️', 75, 54, 1)
-		print_in_room('\npsst!\n❎+⬆️\n❎+⬅️+⬇️', 80, 58, 1)
-	elseif room_i == 9 then
-		print_in_room('\npsst!\nhold ❎', 43, 80, 1)
+	if room_i == 0 then
+		spr(236,room_x+48,room_y+40,4,2)
 	end
+	for i in all({0,23}) do
+		print_in_room(i,'path of', 53, 35, 1)
+		print_in_room(i,'path of', 52, 34, 7)
+	end
+	print_in_room(23,'demo 5', 52, 58, 11)
+	print_in_room(23, '⬅️➡️ move\n🅾️ z jump\n❎ x fire', 46, 68, 6)
+	print_in_room(0,'the end', 52, 58, 11)
+	--print_in_room('\npsst!\n      ⬆️\n ❎+⬅️⬇️➡️', 75, 54, 1)
+	print_in_room(22, '\npsst!\n❎+⬆️\n❎+⬅️+⬇️', 80, 58, 1)
+	print_in_room(9, '\npsst!\nhold ❎', 43, 80, 1)
 
 	-- draw one layer at a time!
 	for z=max_z,0,-1 do
@@ -379,17 +368,14 @@ function _draw()
 	end
 
 	if dbg then
-		local x = room_x + 8
-		print(dbgstr,x,room_y,7)
+		print(dbgstr,room_x + 8,room_y,7)
 	end
 end
 -->8
 --thang - entity/actor
-
-thang = {}
-
+-- thang = {} -- created in spawn_room()
 -- number of layers to draw
-max_z = 0
+-- max_z = 0 -- created in spawn_room()
 
 function init_thang_dat()
 	local iceblock = {
@@ -656,11 +642,9 @@ function init_replace_i(t)
 end
 
 function update_door(t)
-	local num = 1
+	local num,mx,my = 1,t.x\8,t.y\8
 	num = t.type == 1 and room_num_bads or num
 	num = t.type == 2 and room_num_unlit or num
-	local mx = t.x\8
-	local my = t.y\8
 	if t.open then
 		if num > 0 then
 			if not coll_p(t.x,t.y,t.w,t.h) then
@@ -687,8 +671,7 @@ end
 function burn_iceblock(t)
 	if t.alive then
 		sfx(snd_ice_break)
-		t.s = 88
-		t.alive = false
+		t.s,t.alive = 88,false
 		mset(t.x\8,t.y\8,0)
 	end
 end
