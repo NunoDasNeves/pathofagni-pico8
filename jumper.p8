@@ -163,22 +163,23 @@ function spawn_p_in_curr_room()
 	spawn_p(room_checkpoint.x, room_checkpoint.y - 1)
 end
 
-snd_p_respawn = 8
-snd_p_die = 9
-snd_p_jump = 10
-snd_p_shoot = 11
-snd_p_land = 12
-snd_hit = 13
-snd_bat_flap = 14
-snd_ice_break = 15
-snd_frog_croak = 16
-snd_frog_jump = 17
-snd_knight_jump = 18
-snd_knight_swing = 19
-snd_knight_die = 20
-snd_shooter_shot = 21
-snd_archer_invis = 22
-snd_wizard_tp = 23
+snd_p_respawn,
+snd_p_die,
+snd_p_jump,
+snd_p_shoot,
+snd_p_land,
+snd_hit,
+snd_bat_flap,
+snd_ice_break,
+snd_frog_croak,
+snd_frog_jump,
+snd_knight_jump,
+snd_knight_swing,
+snd_knight_die,
+snd_shooter_shot,
+snd_archer_invis,
+snd_wizard_tp =
+8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22
 
 -- TODO token reduction?
 -- play the start of the music, overlaps with start_music_rooms
@@ -421,18 +422,20 @@ function init_thang_dat()
 		template = enemy,
 		shcount = 0, -- throw/shoot stuff at player
 		range = 48, -- only used by thrower
-		s_wlk = {s=0, f=2},
-		s_sh = {s=2, f=1},
-		s_burn = {s=3, f=1},
-		s_die = {s=4, f=3},
+		s_sh_f = 1,
+		s_burn_s = 3,
+		s_die_s = 4,
 	}
 	local shooter = {}
 	copy_into(thrower, shooter)
-	shooter.do_shoot = shoot_shot
-	shooter.check_shoot = check_shoot_shot
-	shooter.s_sh = {s=2,f=3}
-	shooter.s_burn = {s=5, f=1}
-	shooter.s_die = {s=104 - 117, f=3}
+	shooter.do_shoot,
+	shooter.check_shoot,
+	shooter.s_sh_f,
+	shooter.s_burn_s,
+	shooter.s_die_s =
+		shoot_shot,
+		check_shoot_shot,
+		3,5,-13 -- 104 - 117
 thang_dat = {
 	[91] = { -- checkpoint
 		update = update_checkpoint,
@@ -506,8 +509,8 @@ thang_dat = {
 		jcount = 0, -- jump
 		s_idle = {s=0, f=2},
 		s_jmp = {s=2, f=2},
-		s_burn = {s=4, f=1},
-		s_die = {s=104 - 112, f=3},
+		s_burn_s = 4,
+		s_die_s = -8, --104 - 112
 		pal_angry_k = {11,3,8},
 		pal_v = {8,2,10} -- angry
 	},
@@ -536,7 +539,7 @@ thang_dat = {
 		s_atk  = {s=3, f=3},
 		s_jmp  = {s=6, f=3},
 		s_fall = {s=9, f=1},
-		s_burn = {s=10, f=1},
+		s_burn_s = 10,
 		s_die  = {s=11, f=3},
 		s_swrd = {s=14, f=2},
 	},
@@ -579,10 +582,11 @@ thang_dat = {
 		shcount = 0, -- shoot stuff at player
 		s_idle = {s=0, f=1},
 		s_wlk = {s=1, f=2},
-		s_sh = {s=3, f=3},
+		s_sh_s = 3,
+		s_sh_f = 3,
 		s_jmp = {s=7, f=2},
-		s_shair = {s=9, f=3},
-		s_burn = {s=12, f=1},
+		s_shair_s=9,
+		s_burn_s = 12,
 		s_die = {s=13, f=3},
 		-- body, legs, skin, hair, bow, (cloak)
 		invis_pal_k = {5,2,15,4,9,1},
@@ -614,7 +618,7 @@ thang_dat = {
 		shieldtimer = 0,
 		s_idle = {s=0, f=1},
 		s_cast = {s=1, f=3},
-		s_burn = {s=4, f=1},
+		s_burn_s = 4,
 		s_die = {s=7, f=4},
 	},
 	[240] = { -- casting
@@ -782,8 +786,8 @@ function do_bad_die(t)
 	-- return true if dead
 	if not t.alive then
 		t.stops_projs = false
-		t.s = t.i + t.s_die.s
-		if play_anim(t, 5, t.s_die.f) then
+		t.s = t.i + t.s_die_s
+		if play_anim(t, 5, 3) then
 			del(thang, t)
 			room_num_bads -= 1
 		end
@@ -797,7 +801,7 @@ function check_bad_coll_spikes(t)
 		sfx(snd_hit)
 		t.alive = false
 		reset_anim_state(t)
-		t.s = t.i + t.s_die.s
+		t.s = t.i + t.s_die_s
 		return true
 	end
 	return false
@@ -810,8 +814,8 @@ function do_bad_burning(t)
 	if not t.burning then
 		return false
 	end
-	t.s = t.i + t.s_burn.s
-	if play_anim(t, 6, t.s_burn.f) then
+	t.s = t.i + t.s_burn_s
+	if play_anim(t, 6, 1) then
 		reset_anim_state(t)
 		t.burning = false
 		if t.hp <= 0 then
@@ -856,7 +860,7 @@ end
 
 function throw_icepick(t)
 	local xfac = t.rght and 1 or -1
-	if play_anim(t, 20, t.s_sh.f) then
+	if play_anim(t, 20, t.s_sh_f) then
 		t.shooting = false
 		local i = spawn_thang(
 					107,
@@ -916,11 +920,11 @@ function update_shooter_thrower(t)
 	t.vx = 0
 
 	if t.shooting then
-		t.s = t.i + t.s_sh.s
+		t.s = t.i + 2
 		t:do_shoot()
 	-- else we walking
 	else
-		t.s = t.i + t.s_wlk.s
+		t.s = t.i
 		-- remember which way we were going
 		t.rght = t.goingrght
 		if not t.air then
@@ -929,7 +933,7 @@ function update_shooter_thrower(t)
 			else
 				t.vx = -0.75
 			end
-			loop_anim(t,4,t.s_wlk.f)
+			loop_anim(t,4,2)
 		end
 
 		if t.shcount <= 0 then
@@ -956,9 +960,7 @@ function update_shooter_thrower(t)
 end
 
 function shoot_shot(t)
-	-- 8 shooter
-	-- 6 archer
-	if play_anim(t, t.shspeed, t.s_sh.f) then
+	if play_anim(t, t.shspeed, t.s_sh_f) then
 		t.shooting = false
 		reset_anim_state(t)
 	elseif t.fr == 2 and t.fcnt == 1 then
@@ -1006,7 +1008,7 @@ function update_archer(t)
 	end
 
 	if t.shooting then
-		t.s = t.i + (t.air and t.s_shair.s or t.s_sh.s)
+		t.s = t.i + (t.air and t.s_shair_s or t.s_sh_s)
 		shoot_shot(t)
 	-- else we walking or jumping
 	else
