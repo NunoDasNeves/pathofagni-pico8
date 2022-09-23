@@ -78,12 +78,6 @@ function restore_room()
 	end
 end
 
-function get_room_i(x,y)
-	x \= 128
-	y \= 128
-	return x % 8 + y * 8
-end
-
 function get_room_xy(i)
 	return {
 		x = (i % 8) * 128,
@@ -99,32 +93,46 @@ end
 --	return true
 --end
 
+is_end = false
+
 function update_room()
 	-- update room and camera to where player currently is
 	local oldi = room_i
-	local newi = get_room_i(p.x + p.w/2, p.y + p.h/2)
-	move_room(newi)
-	camera(room_x, room_y)
-	-- spawn the room if it's a new room
-	if oldi != newi then
-		-- give player a little kick through the door
-		if p.alive and not p.spawn then
-			local oldxy = get_room_xy(oldi)
-			if oldxy.x > room_x then
-				p.x -= 12
-			elseif oldxy.x < room_x then
-				p.x += 12
+	local rx = (p.x + 4) \ 128
+	local ry = (p.y + 4) \ 128
+	if rx >= 0 then
+		local newi = rx % 8 + ry * 8
+		move_room(newi)
+		camera(room_x, room_y)
+		-- spawn the room if it's a new room
+		if oldi != newi then
+			-- give player a little kick through the door
+			if p.alive and not p.spawn then
+				local oldxy = get_room_xy(oldi)
+				if oldxy.x > room_x then
+					p.x -= 12
+				elseif oldxy.x < room_x then
+					p.x += 12
+				end
+				-- due to stay-on-platform-assist, the player could stand on the air if we don't do this
+				p.air = true
 			end
+			-- fade out music and stuff
+			if silent_rooms[room_i] then
+				music(-1,3000,3)
+			elseif start_music_rooms[room_i] then
+				start_music()
+			end
+			fireball = {}
+			restore_room()
+			spawn_room()
 		end
-		-- fade out music and stuff
-		if silent_rooms[room_i] then
-			music(-1,3000,3)
-		elseif start_music_rooms[room_i] then
-			start_music()
+	else
+		p.x = -10
+		is_end = true
+		for f in all(fireball) do
+			kill_ball(f)
 		end
-		fireball = {}
-		restore_room()
-		spawn_room()
 	end
 end
 
@@ -215,8 +223,10 @@ function fade_update()
 end
 
 function _update()
-	update_room()
-	update_p()
+	if not is_end then
+		update_room()
+		update_p()
+	end
 	for t in all(thang) do
 		t:update()
 	end
