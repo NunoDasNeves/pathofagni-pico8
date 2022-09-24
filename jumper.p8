@@ -39,12 +39,26 @@ function vlen(v)
 end
 
 -- 
-dbg = false
+dbg = true
 dbgstr = ''
 
 -- disable btnp repeating
 poke(0x5f5c, 255)
 
+if dbg then
+	menuitem(
+		1,
+		"<- skip ->",
+		function(b)
+			move_room(clamp(room_i + (b == 1 and -1 or 1), 0, 23))
+			spawn_p_in_curr_room()
+			_update()
+			_draw()
+			flip()
+			return true
+		end
+	)
+end
 
 function init_room()
 	-- starting room
