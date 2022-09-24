@@ -287,7 +287,7 @@ function draw_knight(t)
 	-- draw sword
 	if t.swrd_draw then
 		local xoff = t.rght and 8 or -8
-		spr(t.i + t.s_swrd.s + t.swrd_fr,
+		spr(206 + t.swrd_fr,
 			t.x + xoff,
 			t.y,
 			1,1,not t.rght)
@@ -422,7 +422,6 @@ function init_thang_dat()
 		template = enemy,
 		shcount = 0, -- throw/shoot stuff at player
 		range = 48, -- only used by thrower
-		s_sh_f = 1,
 		s_burn_s = 3,
 		s_die_s = 4,
 	}
@@ -430,12 +429,11 @@ function init_thang_dat()
 	copy_into(thrower, shooter)
 	shooter.do_shoot,
 	shooter.check_shoot,
-	shooter.s_sh_f,
 	shooter.s_burn_s,
 	shooter.s_die_s =
 		shoot_shot,
 		check_shoot_shot,
-		3,5,-13 -- 104 - 117
+		5,-13 -- 104 - 117
 thang_dat = {
 	[91] = { -- checkpoint
 		update = update_checkpoint,
@@ -507,8 +505,6 @@ thang_dat = {
 		hw = 4.99,
 		hh = 5.99,
 		jcount = 0, -- jump
-		s_idle = {s=0, f=2},
-		s_jmp = {s=2, f=2},
 		s_burn_s = 4,
 		s_die_s = -8, --104 - 112
 		pal_angry_k = {11,3,8},
@@ -534,14 +530,8 @@ thang_dat = {
 		g = 0.2,
 		template = enemy,
 		atkrange = 11, -- only attack player in this range
-		s_idle = {s=0, f=0},
-		s_wlk  = {s=1, f=2},
-		s_atk  = {s=3, f=3},
-		s_jmp  = {s=6, f=3},
-		s_fall = {s=9, f=1},
 		s_burn_s = 10,
-		s_die  = {s=11, f=3},
-		s_swrd = {s=14, f=2},
+		s_die  = {s=11, f=3}
 	},
 	[100] = thrower,
 	[107] = { -- icepick
@@ -580,12 +570,6 @@ thang_dat = {
 		invistimer = 0,
 		template = enemy,
 		shcount = 0, -- shoot stuff at player
-		s_idle = {s=0, f=1},
-		s_wlk = {s=1, f=2},
-		s_sh_s = 3,
-		s_sh_f = 3,
-		s_jmp = {s=7, f=2},
-		s_shair_s=9,
 		s_burn_s = 12,
 		s_die = {s=13, f=3},
 		-- body, legs, skin, hair, bow, (cloak)
@@ -616,8 +600,6 @@ thang_dat = {
 		castu = nil,
 		shield = false,
 		shieldtimer = 0,
-		s_idle = {s=0, f=1},
-		s_cast = {s=1, f=3},
 		s_burn_s = 4,
 		s_die = {s=7, f=4},
 	},
@@ -786,7 +768,7 @@ function do_bad_die(t)
 	-- return true if dead
 	if not t.alive then
 		t.stops_projs = false
-		t.s = t.i + t.s_die_s
+		t.s = 104
 		if play_anim(t, 5, 3) then
 			del(thang, t)
 			room_num_bads -= 1
@@ -801,7 +783,7 @@ function check_bad_coll_spikes(t)
 		sfx(snd_hit)
 		t.alive = false
 		reset_anim_state(t)
-		t.s = t.i + t.s_die_s
+		t.s = 104
 		return true
 	end
 	return false
@@ -860,7 +842,7 @@ end
 
 function throw_icepick(t)
 	local xfac = t.rght and 1 or -1
-	if play_anim(t, 20, t.s_sh_f) then
+	if play_anim(t, 20, 1) then
 		t.shooting = false
 		local i = spawn_thang(
 					107,
@@ -960,7 +942,7 @@ function update_shooter_thrower(t)
 end
 
 function shoot_shot(t)
-	if play_anim(t, t.shspeed, t.s_sh_f) then
+	if play_anim(t, t.shspeed, 3) then
 		t.shooting = false
 		reset_anim_state(t)
 	elseif t.fr == 2 and t.fcnt == 1 then
@@ -1008,13 +990,13 @@ function update_archer(t)
 	end
 
 	if t.shooting then
-		t.s = t.i + (t.air and t.s_shair_s or t.s_sh_s)
+		t.s = t.i + (t.air and 9 or 3)
 		shoot_shot(t)
 	-- else we walking or jumping
 	else
 		-- idle
 		if t.phase == 0 then
-			t.s = t.i + t.s_idle.s
+			t.s = t.i
 			local r = get_room_xy(room_i)
 			if p.y > r.y + 16 then
 				t.phase = 1
@@ -1024,7 +1006,7 @@ function update_archer(t)
 		-- remember which way we were going
 		t.rght = t.goingrght
 		if not t.air then
-			t.s = t.i + t.s_wlk.s
+			t.s = t.i + 1
 			if coll_edge(t,t.x) != 0 then
 				-- jump! or turn around -- always jump when invis
 				if t.invis or rnd(1) < 0.5 then
@@ -1036,19 +1018,22 @@ function update_archer(t)
 				end
 			end
 			t.vx = t.rght and 1.2 or -1.2
-			loop_anim(t,4,t.s_wlk.f)
+			-- walk
+			loop_anim(t,4,2)
 		end
 
 		-- save which way we're going (we might face a different way when shooting)
 		t.goingrght = t.rght
 		-- check air again
 		if t.air then
-			t.s = t.i + t.s_jmp.s
+			t.s = t.i + 7
+			-- jump
 			if t.vy < 0 then
 				t.s -= 1
 				reset_anim_state(t)
+			-- fall
 			else
-				loop_anim(t,4,t.s_jmp.f)
+				loop_anim(t,4,2)
 			end
 		end
 
@@ -1285,7 +1270,7 @@ function update_wizard(t)
 	face_p(t)
 
 	if t.tping then
-		t.s = t.i + t.s_cast.s
+		t.s = t.i + 1
 		t.fr = 2
 		t.fcnt += 1
 		if t.fcnt == 9 then
@@ -1300,8 +1285,8 @@ function update_wizard(t)
 
 	-- else do some spelly welly
 	elseif t.casting then
-		t.s = t.i + t.s_cast.s
-		loop_anim(t,8,t.s_cast.f)
+		t.s = t.i + 1
+		loop_anim(t,8,3)
 		-- need to spawn casting here in case interrupted
 		t.shcount -= 1
 		if t.shcount == 15 then
@@ -1320,13 +1305,15 @@ function update_wizard(t)
 	else
 		-- idle
 		if t.phase == 0 then
-			t.s = t.i + t.s_idle.s
-			if play_anim(t, 20, t.s_idle.f) then
+			-- hover
+			t.s = t.i
+			if play_anim(t, 20, 1) then
 				t.hover_up = not t.hover_up
 				local dir = t.hover_up and -1 or 1
 				t.y += dir
 				reset_anim_state(t)
 			end
+			-- start combat - teleport away
 			local r = get_room_xy(room_i)
 			if p.y > r.y + 16 then
 				t.phase = 1
@@ -1337,7 +1324,7 @@ function update_wizard(t)
 			return
 		end
 
-		t.s = t.i + t.s_cast.s
+		t.s = t.i + 1
 		t.fr = 0
 
 		t.shcount -= 1
@@ -1389,7 +1376,7 @@ function update_frog(t)
 		if not t.angry then
 			if t.croak then
 				-- play full idle anim (croak)
-				if play_anim(t, 5, t.s_idle.f) then
+				if play_anim(t, 5, 2) then
 					sfx(snd_frog_croak)
 					t.croak = false
 					reset_anim_state(t)
@@ -1454,7 +1441,7 @@ function update_frog(t)
 
 	-- air animation
 	if t.air then
-		t.s = t.i + t.s_jmp.s
+		t.s = t.i + 2
 		if t.vy > 0 then
 			t.fr = 1 -- descend
 		else
@@ -1464,7 +1451,7 @@ function update_frog(t)
 
 	-- on landing, reset to idle
 	if not t.air and phys_result.landed then
-		t.s = t.i + t.s_idle.s
+		t.s = t.i
 		t.fr = 0
 		t.fcnt = rnd({0,10,20,30})
 	end
@@ -1552,12 +1539,8 @@ function update_knight(t)
 
 	if t.alive then
 		if t.atking then
-			local anim = t.s_atk
-			if t.phase == 2 then
-				anim = t.s_jmp
-			end
-			t.s = t.i + anim.s
-			if play_anim(t, 10, anim.f) then
+			t.s = t.phase == 2 and 198 or 195
+			if play_anim(t, 10, 3) then
 				t.atking = false
 				reset_anim_state(t)
 			elseif t.fr > 0 then
@@ -1585,7 +1568,7 @@ function update_knight(t)
 			local dir = p_on_same_plat(t)
 
 			if t.phase == 0 then
-				t.s = t.i + t.s_idle.s
+				t.s = t.i
 				reset_anim_state(t)
 				-- don't advance phase if p is dead
 				if p.alive and dir != 0 then
@@ -1594,7 +1577,7 @@ function update_knight(t)
 			end
 
 			if t.phase > 0 then
-				t.s = t.i + t.s_wlk.s
+				t.s = t.i + 1
 				-- follow player if they're on same platform
 				if dir != 0 then
 					t.rght = dir == 1 and true or false
@@ -1605,7 +1588,7 @@ function update_knight(t)
 					t.vx = -0.75
 				end
 
-				loop_anim(t,3,t.s_wlk.f)
+				loop_anim(t,3,2)
 
 				t.atktimer += 1 -- time since last attack
 				if 		t.phase == 1 and vlen{ x = t.x - p.x, y = t.y - p.y } <= t.atkrange or
@@ -1629,7 +1612,7 @@ function update_knight(t)
 		end
 		-- animate falling
 		if not t.atking then
-			t.s = t.i + t.s_fall.s
+			t.s = t.i + 9
 			reset_anim_state(t)
 		end
 	elseif not t.atking and phys_result.hit_wall or coll_edge(t,t.x) != 0 then
@@ -1850,12 +1833,6 @@ end
 
 p_dat = {
 	i = 64, -- base of sprite row
-	--  animations - s = offset from spr, f = num frames
-	s_wlk =  {s=0, f=2},
-	s_sh  =  {s=30, f=2},
-	s_jmp =  {s=2, f=5},
-	s_die =  {s=7, f=5},
-	s_spwn = {s=12, f=4},
 	w = 8,
 	h = 8,
 	--  physics
@@ -1882,7 +1859,7 @@ p_dat = {
 
 function spawn_p(x,y)
 	p = {
-		s = p_dat.i + p_dat.s_spwn.s,
+		s = 76,
 		x = x,
 		y = y,
 		rght = not (room_i < 8 or room_i > 15),
@@ -1905,7 +1882,7 @@ function kill_p()
 	sfx(snd_p_die)
 	music(-1,800,3)
 	p.alive = false
-	p.s = p.i + p.s_die.s 
+	p.s = 71
 	reset_anim_state(p)
 end
 
@@ -2062,24 +2039,24 @@ function update_p()
 
 	-- animate
 	if p.sh then
-		p.s = p.i + p.s_sh.s
+		p.s = 94
 		if not oldsh then
 			sfx(snd_p_shoot)
 			p.fr = 0
 			p.fcnt = 0
 		end
-		if loop_anim(p,3,p.s_sh.f) then
+		if loop_anim(p,3,2) then
 			sfx(snd_p_shoot)
 		end
 
 	elseif not p.air then
 		-- walk anim
-		p.s = p.i + p.s_wlk.s
+		p.s = 64
 		-- just landed, or changed dir
 		if oldair or btnp(➡️) or btnp(⬅️) then
 			reset_anim_state(p)
 		elseif abs(p.vx) > 0.5 then
-			loop_anim(p,3,p.s_wlk.f)
+			loop_anim(p,3,2)
 		elseif p.teeter then
 			p.fr = 1
 		else
@@ -2087,7 +2064,7 @@ function update_p()
 		end
 
 	else --p.air
-		p.s = p.i + p.s_jmp.s
+		p.s = 66
 		if not oldair then
 			reset_anim_state(p)
 		end
@@ -2106,7 +2083,7 @@ function respawn_update_p()
 		return
 	end
 	if not p.alive then
-		if play_anim(p,3,p.s_die.f) then
+		if play_anim(p,3,5) then
 			-- fade out after death anim
 			fade_timer = 0
 			do_fade = true
@@ -2114,9 +2091,9 @@ function respawn_update_p()
 			p.s = 0
 		end
 	elseif p.spawn then
-		if play_anim(p,3,p.s_spwn.f) then
+		if play_anim(p,3,4) then
 			reset_anim_state(p)
-			p.s = p.i + p.s_wlk.s
+			p.s = 64
 			p.spawn = false
 			start_music()
 		elseif p.fr == 0 and p.fcnt == 1 then
