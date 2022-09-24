@@ -1006,18 +1006,47 @@ function update_archer(t)
 		-- remember which way we were going
 		t.rght = t.goingrght
 		if not t.air then
-			t.s = t.i + 1
+			t.s = 209
+			-- default velocity, may be change if we fall
+			t.vx = 1.2
 			if coll_edge(t,t.x) != 0 then
-				-- jump! or turn around -- always jump when invis
-				if t.invis or rnd(1) < 0.5 then
+				-- is there a platform below us to fall down onto?
+				local check_x,check_y = t.x + 4, t.y + 20 -- t.x + 4 + 16 - tile below the one t is standing on
+				local is_plat_below = not fget(
+					mget(
+						check_x\8,
+						check_y\8 + dist_until_flag(check_x, check_y, 0, 1, true)\8 + 1
+					), 1)
+				-- choices of what to do when coll_edge
+				local choices = {0,1}
+				-- increase chance of jump when player above
+				if p.y < t.y then
+					add(choices,1)
+				end
+				if is_plat_below then
+					add(choices,2)
+					-- increase chance of drop down when player below
+					if p.y > t.y then
+						add(choices,2)
+					end
+				end
+				local choice = rnd(choices)
+				-- turn around
+				if choice == 0 then
+					t.rght = not t.rght
+				-- big jump
+				elseif choice == 1 then
 					sfx(snd_knight_jump)
 					t.air = true
 					t.vy = -4
+				-- fall down
 				else
-					t.rght = not t.rght
+					t.air = true
+					t.vy = 0
+					t.vx = 0.4
 				end
 			end
-			t.vx = t.rght and 1.2 or -1.2
+			t.vx = t.rght and t.vx or -t.vx
 			-- walk
 			loop_anim(t,4,2)
 		end
@@ -1078,6 +1107,7 @@ function update_archer(t)
 
 	if kill_p_on_coll(t) then
 		t.invis = false
+		t.pal_k = {}
 	end
 end
 
@@ -1418,9 +1448,7 @@ function update_frog(t)
 	end
 
 	-- physics - always run because falling could happen e.g. due to ice breaking
-	local oldvx = t.vx
-	local oldx = t.x
-	local oldy = t.y
+	local oldvx, oldx, oldy = t.vx, t.x, t.y
 	local phys_result = phys_thang(t, oldair)
 	-- if hit ceiling, redo physics with tiny jump
 	if phys_result.ceil_cancel then
@@ -1464,7 +1492,7 @@ function update_frog(t)
 end
 
 function kill_p_on_coll(t)
-	if p.alive and hit_p(t.x,t.y,t.w,t.h) then
+	if t.alive and p.alive and hit_p(t.x,t.y,t.w,t.h) then
 		kill_p()
 		return true
 	end
