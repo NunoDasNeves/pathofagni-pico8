@@ -705,7 +705,7 @@ function update_icepick(t)
 	end
 end
 
-function dist_until_wall(x,y,dir,vert)
+function dist_until_flag(x,y,flag,dir,vert)
 	-- x, y are some position in world space
 	-- dir can be -1 or 1 only
 	-- set vert to true for y direction, otherwise it's x
@@ -724,7 +724,7 @@ function dist_until_wall(x,y,dir,vert)
 	local tiles = 0
 	while true do
 		local tile = mget(mx, my)
-		if fget(tile, 1) then
+		if fget(tile, flag) then
 			break
 		end
 		mx += xinc
@@ -870,8 +870,8 @@ function reset_anim_state(t)
 end
 
 function check_shoot_shot(t)
-	local shleft = dist_until_wall(t.x + 4, t.y + 4, -1)
-	local shright = dist_until_wall(t.x + 4, t.y + 4, 1)
+	local shleft = dist_until_flag(t.x + 4, t.y + 4, 1, -1)
+	local shright = dist_until_flag(t.x + 4, t.y + 4, 1, 1)
 	if hit_p(t.x + 4 - shleft, t.y, shleft + shright, 8) then
 		face_p(t)
 		t.shcount = 5
@@ -951,8 +951,8 @@ function shoot_shot(t)
 			x = t.rght and t.x + 8 or t.x - 1,
 			y = t.y + 3
 		}
-		local shleft = dist_until_wall(t.x + 4, t.y + 4, -1)
-		local shright = dist_until_wall(t.x + 4, t.y + 4, 1)
+		local shleft = dist_until_flag(t.x + 4, t.y + 4, 1, -1)
+		local shright = dist_until_flag(t.x + 4, t.y + 4, 1, 1)
 		local shot = spawn_thang(123, orig.x, orig.y)
 		shot.endx = t.x + 4 + (t.rght and shright or -shleft)
 		shot.endy = orig.y
