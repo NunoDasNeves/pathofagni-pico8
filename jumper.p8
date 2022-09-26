@@ -373,16 +373,11 @@ function round(x)
 end
 ]]
 
-function _draw()
-	cls(1)
-	-- sky/horizon gradient
-	local colors = {0x1,0x2,0x8,0x9}
-	local dist = 80
+function gradient(y,h,colors)
+	-- TODO tokens
 	local grads = #colors-1
-	local cinc = ceil(dist/grads)
+	local cinc = ceil(h/grads)
 	local dinc = ceil(cinc/#dither_patterns)
-	--dbgstr = tostr(dinc)..dbgstr
-	local y = 16
 	for c=1,grads do
 		local c1,c2 = colors[c], colors[c+1]
 		for i=1,#dither_patterns do
@@ -395,25 +390,32 @@ function _draw()
 		end
 	end
 	fillp()
+end
+
+function _draw()
+	cls(1)
+	-- sky/horizon
+	gradient(16,80,{0x1,0x2,0x8,0x9,0xa})
 	-- landscape
-	--rectfill(0,64,128,128,3)
+	gradient(99,15,{0x0,0x1,0x3})
 
 	palt(0b0000000000000001)
 	map(0,0,0,0,128,64)
 	palt()
 
-	if room_i == 0 then
-		--spr(236,room_x+48,room_y+40,4,2)
-	end
 	print_in_room(23,'path of', 53, 35, 1)
 	print_in_room(23,'path of', 52, 34, 7)
 	print_in_room(23,'demo 5', 52, 58, 11)
 	print_in_room(23, '⬅️➡️ move\n🅾️ z jump\n❎ x fire', 46, 68, 6)
-	--print_in_room(0,'the end', 52, 58, 11)
 	print_in_room(22, '\npsst!\n❎+⬆️\n❎+⬅️+⬇️', 80, 58, 1)
 	print_in_room(9, '\npsst!\nhold ❎', 43, 80, 1)
 
 	--print_in_room('\npsst!\n      ⬆️\n ❎+⬅️⬇️➡️', 75, 54, 1)
+
+	-- ending
+	-- AGNI
+	--spr(236,room_x+48,room_y+40,4,2)
+	--print_in_room(0,'the end', 52, 58, 11)
 
 	-- draw one layer at a time!
 	for z=max_z,0,-1 do
