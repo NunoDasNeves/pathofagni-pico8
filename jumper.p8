@@ -111,7 +111,6 @@ function update_room()
 	if rx >= 0 then
 		local newi = rx % 8 + ry * 8
 		move_room(newi)
-		camera(room_x, room_y)
 		-- spawn the room if it's a new room
 		if oldi != newi then
 			-- give player a little kick through the door
@@ -335,12 +334,12 @@ end
 
 function draw_fade(s)
 	fillp(s)
-	rectfill(room_x,room_y,room_x+128 - 1,room_y+128 - 1,1)
+	rectfill(0,0,127,127,1)
 end
 
 function print_in_room(r,s,x,y,c)
 	if room_i == r then
-		print(s,room_x+x,room_y+y,c)
+		print(s,x,y,c)
 	end
 end
 
@@ -383,8 +382,8 @@ function gradient(y,h,colors)
 		for i=1,#dither_patterns do
 			fillp(dither_patterns[i])
 			rectfill(
-				room_x,		y,
-				room_x+128,	y + dinc,
+				0,		y,
+				128,	y + dinc,
 				(c1 << 4) | c2)
 			y += dinc
 		end
@@ -399,9 +398,11 @@ function _draw()
 	-- landscape
 	gradient(99,15,{0x0,0x1,0x3})
 
+	camera(room_x,room_y)
 	palt(0b0000000000000001)
 	map(0,0,0,0,128,64)
 	palt()
+	camera()
 
 	print_in_room(23,'path of', 53, 35, 1)
 	print_in_room(23,'path of', 52, 34, 7)
@@ -410,13 +411,12 @@ function _draw()
 	print_in_room(22, '\npsst!\n❎+⬆️\n❎+⬅️+⬇️', 80, 58, 1)
 	print_in_room(9, '\npsst!\nhold ❎', 43, 80, 1)
 
-	--print_in_room('\npsst!\n      ⬆️\n ❎+⬅️⬇️➡️', 75, 54, 1)
-
 	-- ending
 	-- AGNI
-	--spr(236,room_x+48,room_y+40,4,2)
+	--spr(236,48,40,4,2)
 	--print_in_room(0,'the end', 52, 58, 11)
 
+	camera(room_x,room_y)
 	-- draw one layer at a time!
 	for z=max_z,0,-1 do
 		for t in all(thang) do
@@ -442,6 +442,7 @@ function _draw()
 	for f in all(fireball) do
 		draw_smol_thang(f)
 	end
+	camera()
 
 	if do_fade then
 		if fade_timer < 4 then
@@ -459,7 +460,7 @@ function _draw()
 	end
 
 	if dbg then
-		print(dbgstr,room_x + 8,room_y,7)
+		print(dbgstr,8,0,7)
 	end
 end
 -->8
