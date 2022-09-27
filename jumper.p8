@@ -1577,7 +1577,7 @@ function update_frog(t)
 	if not t.air and phys_result.landed then
 		t.s = t.i
 		t.fr = 0
-		t.fcnt = rnd({0,10,20,30})
+		t.fcnt = rnd{0,10,20,30}
 	end
 
 	if check_bad_coll_spikes(t) then
@@ -1748,14 +1748,14 @@ function update_knight(t)
 	if oldatking and not t.atking then
 		if t.phase == 1 then
 			t.phase = 2
-			t.jmptime = 20 + rnd({0,15,30})
+			t.jmptime = 20 + rnd{0,15,30}
 		else
 			t.phase = 1
 		end
 	-- change phase if haven't attacked in a while
 	elseif t.phase == 1 and t.atktimer > 60 then
 		t.phase = 2
-		t.jmptime = 10 + rnd({0,15,30})
+		t.jmptime = 10 + rnd{0,15,30}
 	end
 		
 	-- don't kill p if we're dead! (e.g. falling)
@@ -1802,7 +1802,7 @@ function play_anim(t,speed,frames)
 end
 
 function init_bat(b)
-	b.fcnt = rnd({0,1,2,3})
+	b.fcnt = rnd{0,1,2,3}
 end
 
 function update_bat(b)
