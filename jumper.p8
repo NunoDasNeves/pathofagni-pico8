@@ -1049,7 +1049,7 @@ function shoot_shot(t)
 		}
 		local shleft = dist_until_flag(t.x + 4, t.y + 4, 1, -1)
 		local shright = dist_until_flag(t.x + 4, t.y + 4, 1, 1)
-		local shot = spawn_thang(123, orig.x, orig.y)
+		local shot = spawn_thang(256, orig.x, orig.y)
 		shot.endx = t.x + 4 + (t.rght and shright or -shleft)
 		shot.endy = orig.y
 		shot.arrowx = t.rght and shot.endx - 5 or shot.endx + 5
