@@ -362,15 +362,6 @@ dither_patterns = {
 	--0b0000000000001000,
 	0b0000000000000000
 }
---[[
-function round(x)
-	local fl = flr(x)
-	if x - fl < 0.5 then
-		return fl
-	end
-	return ceil(x)
-end
-]]
 
 function gradient(y,h,colors)
 	-- TODO tokens
@@ -391,12 +382,30 @@ function gradient(y,h,colors)
 	fillp()
 end
 
+rainfr, rainfcnt = 0, 0
+
 function _draw()
 	cls(1)
-	-- sky/horizon
-	gradient(16,80,{0x1,0x2,0x8,0x9,0xa})
-	-- landscape
-	gradient(99,15,{0x0,0x1,0x3})
+	if room_i == 0 then
+		-- sky/horizon
+		gradient(16,80,{0x1,0x2,0x8,0x9,0xa})
+		-- landscape
+		gradient(99,15,{0x0,0x1,0x3})
+	else
+		gradient(0,30,{0x6,0xd,0x1})
+	end
+
+	if rainfcnt > 1 then
+		rainfr = (rainfr + 1) % 4
+		rainfcnt = 0
+	end
+	rainfcnt += 1
+
+	fillp(rain_patterns[rainfr+1])
+	rectfill(0,0,128,128,0)
+	fillp()
+--end
+--function a()
 
 	camera(room_x,room_y)
 	palt(0b0000000000000001)
@@ -430,13 +439,10 @@ function _draw()
 	draw_thang(p)
 
 	for r in all(rain) do
-		fillp(rain_patterns[r.fr+1])
-		--rectfill(r.x,r.y,r.x+r.w-1,r.y+r.h,1)
-		fillp()
 		for i=-1,r.h\8-1 do
-			spr(123,r.x,i*8+r.fr*2)
+			spr(123,r.x,i*8+rainfr*2)
 		end
-		spr(235,r.x,r.h-8+r.fr\2)
+		spr(235,r.x,r.h-8+rainfr\2)
 	end
 
 	for f in all(fireball) do
@@ -709,7 +715,7 @@ thang_dat = {
 		s_die_s = 108
 	},
 	[257] = { -- rain
-		update = update_rain,
+		update = no_thang,
 		draw = no_thang
 	}
 }
@@ -904,14 +910,6 @@ function do_bad_burning(t)
 		end
 	end
 	return true
-end
-
-function update_rain(t)
-	if t.fcnt > 1 then
-		t.fr = (t.fr + 1) % 4
-		t.fcnt = 0
-	end
-	t.fcnt += 1
 end
 
 function update_shot(t)
