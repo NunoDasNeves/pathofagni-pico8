@@ -224,13 +224,13 @@ function start_music()
 end
 
 function fade_update()
+	fade_timer += 1
 	if fade_timer == 12 then
 		spawn_p_in_curr_room()	
 	elseif fade_timer > 23 then
 		fade_timer = 0
 		return false
 	end
-	fade_timer += 1
 	return true
 end
 
@@ -332,11 +332,6 @@ function draw_smol_thang(f)
     	f.yflip)
 end
 
-function draw_fade(s)
-	fillp(s)
-	rectfill(0,0,127,127,1)
-end
-
 function print_in_room(r,s,x,y,c)
 	if room_i == r then
 		print(s,x,y,c)
@@ -383,6 +378,15 @@ function gradient(y,h,colors)
 end
 
 rainfr, rainfcnt = 0, 0
+
+fade_patterns = {
+	0b0101101001011010.1,
+	0b0000101000001010.1,
+	0,
+	0,
+	0b0000101000001010.1,
+	0b0101101001011010.1
+}
 
 function _draw()
 	cls(1)
@@ -451,17 +455,8 @@ function _draw()
 	camera()
 
 	if do_fade then
-		if fade_timer < 4 then
-			draw_fade(0b0101101001011010.1)
-		elseif fade_timer < 8 then
-			draw_fade(0b0000101000001010.1)
-		elseif fade_timer < 16 then
-			draw_fade(0)
-		elseif fade_timer < 20 then
-			draw_fade(0b0000101000001010.1)
-		elseif fade_timer < 24 then
-			draw_fade(0b0101101001011010.1)
-		end
+		fillp(fade_patterns[(fade_timer \ 4) + 1])
+		rectfill(0,0,127,127,0)
 		fillp(0)
 	end
 
