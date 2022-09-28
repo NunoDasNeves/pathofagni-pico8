@@ -50,7 +50,7 @@ if dbg then
 		1,
 		"<- skip ->",
 		function(b)
-			move_room(clamp(room_i + (b == 1 and -1 or 1), 0, 23))
+			move_room((room_i + 24 + (b == 1 and -1 or 1)) % 24)
 			spawn_p_in_curr_room()
 			_update()
 			_draw()
