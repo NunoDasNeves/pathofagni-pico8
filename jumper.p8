@@ -2099,7 +2099,7 @@ function update_p()
 			p.sh = true
 		end
 		for t in all(thang) do
-			if t.i == 257 and hit_p(t.x,t.y,t.w,t.h) then
+			if t.i == 257 and hit_p(t.x+2,t.y+2,t.w-4,t.h-4) then
 				p.sh = false
 			end
 		end
