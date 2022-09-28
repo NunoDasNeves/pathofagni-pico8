@@ -341,9 +341,13 @@ function print_in_room(r,s,x,y,c)
 	end
 end
 
--- background ones
-rain_patterns = {0b1011101010101110.1,0b1110101110101010.1,0b1010111010111010.1,0b1010101011101011.1}
-dither_patterns = {
+rain_patterns,dither_patterns,fade_patterns =
+--rain
+{
+	0b1011101010101110.1,0b1110101110101010.1,0b1010111010111010.1,0b1010101011101011.1
+}
+--dither
+,{
 	0b1111111111111111,
 	--0b0111111111111111,
 	0b0111111111011111,
@@ -359,6 +363,15 @@ dither_patterns = {
 	0b0000001000001000,
 	--0b0000000000001000,
 	0b0000000000000000
+},
+--fade
+{
+	0b0101101001011010.1,
+	0b0000101000001010.1,
+	0,
+	0,
+	0b0000101000001010.1,
+	0b0101101001011010.1
 }
 
 function gradient(y,h,colors)
@@ -380,17 +393,7 @@ function gradient(y,h,colors)
 	fillp()
 end
 
-rainfr, rainfcnt = 0, 0
-
-fade_patterns = {
-	0b0101101001011010.1,
-	0b0000101000001010.1,
-	0,
-	0,
-	0b0000101000001010.1,
-	0b0101101001011010.1
-}
-horiz_off, horiz_vel, end_flash = 0,8,8
+rainfr, rainfcnt, horiz_off, horiz_vel, end_flash = 0,0,0,12,8
 
 function draw_fade(timer, color)
 	fillp(fade_patterns[(timer \ 4) + 1])
@@ -428,7 +431,7 @@ function _draw()
 	if is_end then
 		if horiz_off < 31 then
 			room_y -= horiz_vel
-			horiz_off += horiz_vel*0.25/1.2
+			horiz_off += horiz_vel*0.1/1.2
 			horiz_vel *= 0.999
 		else
 			for c in all{{1,0},{1,1},{0,1},{-1,1},{-1,0},{-1,-1},{0,-1},{1,-1}} do
@@ -2123,8 +2126,7 @@ function update_p()
 	else -- release - fire
 		if p.sh then
 			make_fireball(p.shbuf.x, p.shbuf.y)
-			p.shcount = 10
-			p.shbuf = nil
+			p.shcount, p.shbuf = 10, nil
 		end
 		p.sh = false
 	end
@@ -2137,8 +2139,7 @@ function update_p()
 		p.s = 94
 		if not oldsh then
 			sfx(snd_p_shoot)
-			p.fr = 0
-			p.fcnt = 0
+			reset_anim_state(p)
 		end
 		if loop_anim(p,3,2) then
 			sfx(snd_p_shoot)
