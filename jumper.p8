@@ -387,27 +387,53 @@ fade_patterns = {
 	0b0000101000001010.1,
 	0b0101101001011010.1
 }
+horiz_off, horiz_vel, end_flash = 0,8,8
+
+function draw_fade(timer, color)
+	fillp(fade_patterns[(timer \ 4) + 1])
+	rectfill(0,0,127,127,color)
+	fillp(0)
+end
 
 function _draw()
 	cls(1)
 	if room_i == 0 then
+		cls(0)
 		-- sky/horizon
-		gradient(16,80,{0x1,0x2,0x8,0x9,0xa})
+		gradient(-8 + horiz_off,90,{0x0,0x1,0x2,0x8,0x9,0xa})
 		-- landscape
-		gradient(99,15,{0x0,0x1,0x3})
+		gradient(99 + horiz_off,15,{0x0,0x1,0x3})
 	else
+		-- grey sky
 		gradient(0,30,{0x6,0xd,0x1})
+
+		if rainfcnt > 1 then
+			rainfr = (rainfr + 1) % 4
+			rainfcnt = 0
+		end
+		rainfcnt += 1
+		fillp(rain_patterns[rainfr+1])
+		rectfill(0,0,128,128,0)
+		fillp()
+	end
+	if is_end then
+		if horiz_off < 31 then
+			room_y -= horiz_vel
+			horiz_off += horiz_vel*0.25/1.2
+			horiz_vel *= 0.999
+		else
+			print('path of', 51, 55, 0)
+			print('path of', 50, 54, 7)
+			spr(236,47,60,4,2)
+			print('the end', 49, 78, 11)
+			if end_flash < 24 then
+				draw_fade(end_flash,7)
+				end_flash += 1
+			else
+			end
+		end
 	end
 
-	if rainfcnt > 1 then
-		rainfr = (rainfr + 1) % 4
-		rainfcnt = 0
-	end
-	rainfcnt += 1
-
-	fillp(rain_patterns[rainfr+1])
-	rectfill(0,0,128,128,0)
-	fillp()
 --end
 --function a()
 
@@ -423,11 +449,6 @@ function _draw()
 	print_in_room(23, '⬅️➡️ move\n🅾️ z jump\n❎ x fire', 46, 68, 6)
 	print_in_room(22, '\npsst!\n❎+⬆️\n❎+⬅️+⬇️', 80, 58, 1)
 	print_in_room(9, '\npsst!\nhold ❎', 43, 80, 1)
-
-	-- ending
-	-- AGNI
-	--spr(236,48,40,4,2)
-	--print_in_room(0,'the end', 52, 58, 11)
 
 	camera(room_x,room_y)
 	-- draw one layer at a time!
@@ -455,9 +476,7 @@ function _draw()
 	camera()
 
 	if do_fade then
-		fillp(fade_patterns[(fade_timer \ 4) + 1])
-		rectfill(0,0,127,127,0)
-		fillp(0)
+		draw_fade(fade_timer,0)
 	end
 
 	if dbg then
