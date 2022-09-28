@@ -639,10 +639,12 @@ thang_dat = {
 		hh = 6,
 	},
 	[112] = { -- frog
+		init = init_frog,
 		update = update_frog,
 		burn = burn_frog,
 		template = enemy,
 		hp = 2,
+		icefrog = false,
 		angry = false,
 		croak = false,
 		bounced = false,
@@ -659,8 +661,9 @@ thang_dat = {
 		jcount = 0, -- jump
 		s_burn_s = 4,
 		s_die_s = -8, --104 - 112
-		pal_angry_k = {11,3,8},
-		pal_v = {8,2,10} -- angry
+		pal_icefrog_k = {11,3,8,4}, -- main, shadow, eyes, loincloth
+		pal_icefrog_v = {12,1,7,5},
+		pal_angry_v = {8,2,10,5}
 	},
 	[192] = { -- knight
 		update = update_knight,
@@ -1493,10 +1496,15 @@ function update_wizard(t)
 	end
 end
 
-
 function burn_frog(t)
 	if not t.angry then
 		burn_bad(t)
+	end
+end
+
+function init_frog(t)
+	if room_i < 16 then
+		t.icefrog,t.pal_k,t.pal_v = true,t.pal_icefrog_k,t.pal_icefrog_v
 	end
 end
 
@@ -1508,17 +1516,14 @@ function update_frog(t)
 	local oldburning = t.burning
 	if do_bad_burning(t) then
 		return
-	elseif oldburning then
-		t.angry = true
-		t.jcount = 3
-		t.pal_k = t.pal_angry_k
+	elseif oldburning and t.icefrog then
+		t.angry,t.jcount,t.pal_v = true,3,t.pal_angry_v
 	end
 
 	local oldair = t.air
 	-- not burning and not in the air
 	if not t.air then
-		t.s = t.i
-		t.vx = 0
+		t.s, t.vx = t.i, 0
 		face_p(t)
 		local dir = t.rght and 1 or -1
 		-- not angry - jump when player charges fireball
@@ -1539,14 +1544,11 @@ function update_frog(t)
 			end
 			if p.sh then
 				sfx(snd_frog_jump)
-				t.vy = -3.5
-				t.vx = 1.2 * dir
-				t.air = true
+				t.vy,t.vx,t.air = -3.5, 1.2 * dir, true
 			end
 		else -- angry - jump rapidly at player
 			if t.jcount <= 0 then
-				t.angry = false
-				t.pal_k = {}
+				t.angry, t.pal_v = false,t.pal_icefrog_v
 			else
 				t.jcount -= 1
 				sfx(snd_frog_jump)
@@ -1571,19 +1573,13 @@ function update_frog(t)
 	local phys_result = phys_thang(t, oldair)
 	-- if hit ceiling, redo physics with tiny jump
 	if phys_result.ceil_cancel then
-		t.vx = oldvx
-		t.vy = -1 + t.g
-		t.x = oldx
-		t.y = oldy
-		t.air = true
+		t.vx,t.vy,t.x,t.y,t.air = oldvx, -0.7, oldx, oldy, true
 		phys_result = phys_thang(t, oldair)
 	end
 
 	-- bounce off wall
 	if phys_result.hit_wall then
-		t.rght = not t.rght
-		t.vx = -oldvx
-		t.bounced = true
+		t.rght,t.vx,t.bounced = not t.rght, -oldvx, true
 	end
 
 	-- air animation
@@ -1598,9 +1594,7 @@ function update_frog(t)
 
 	-- on landing, reset to idle
 	if not t.air and phys_result.landed then
-		t.s = t.i
-		t.fr = 0
-		t.fcnt = rnd{0,10,20,30}
+		t.s,t.fr,t.fcnt = t.i,0,rnd{0,10,20,30}
 	end
 
 	if check_bad_coll_spikes(t) then
