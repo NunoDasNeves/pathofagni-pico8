@@ -729,7 +729,9 @@ function update_door(t)
 	num = t.type == 2 and room_num_unlit or num
 	if t.open then
 		if num > 0 then
-			if not coll_p(t.x,t.y,t.w,t.h) then
+			if not aabb(t.x,t.y,t.w,t.h,
+						p.x+p.cx,p.y+p.cy,
+						p.cw,p.ch) then
 					t.open = false
 					mset(mx,my,t.s_top)
 					mset(mx,my+1,t.s_bot)
@@ -1962,8 +1964,7 @@ end
 function kill_p()
 	sfx(snd_p_die)
 	music(-1,800,3)
-	p.alive = false
-	p.s = 71
+	p.alive,p.s = false,71
 	reset_anim_state(p)
 end
 
@@ -1971,11 +1972,6 @@ function hit_p(x,y,w,h)
 	return aabb(x,y,w,h,
 				p.x+p.hx,p.y+p.hy,
 				p.hw,p.hh)
-end
-function coll_p(x,y,w,h)
-	return aabb(x,y,w,h,
-				p.x+p.cx,p.y+p.cy,
-				p.cw,p.ch)
 end
 
 function update_p()
@@ -2039,11 +2035,9 @@ function update_p()
 		p.air = true
 	end
 	if p.sh and p.vy > 0 then
-		p.max_vy = 1
-		p.g = 0.05
+		p.max_vy,p.g = 1, 0.05
 	else
-		p.max_vy = 4
-		p.g = 0.3
+		p.max_vy,p.g = 4, 0.3
 	end
 
 	local oldx,oldy = p.x,p.y
@@ -2059,11 +2053,7 @@ function update_p()
 				btn(➡️) and p.vx > 0 then
 			-- none
 		else
-			p.air = false
-			p.x = oldx
-			p.y = oldy
-			p.vy = 0
-			p.vx = 0
+			p.air,p.x,p.y,p.vx,p.vy = false,oldx,oldy,0,0
 		end
 	end
 
@@ -2189,7 +2179,6 @@ function respawn_update_p()
 end
 -->8
 -- fireball
-fireball = {}
 ball_dirs = {
 	-- start at xdir = 1, ydir = -1 (up right) 
 	-- sfr, vx, vy, xflip, yflip
@@ -2203,11 +2192,7 @@ ball_dirs = {
 	{2, 0, -1, false, true}
 }
 function apply_ball_prop(f,prop)
-	f.sfr = prop[1] -- sub-frame
-	f.vx = prop[2] * f.speed
-	f.vy = prop[3] * f.speed
-	f.xflip = prop[4]
-	f.yflip = prop[5]
+	f.sfr,f.vx,f.vy,f.xflip,f.yflip = prop[1],prop[2] * f.speed,prop[3] * f.speed,prop[4],prop[5]
 end
 
 function make_fireball(xdir, ydir)
@@ -2236,11 +2221,7 @@ function make_fireball(xdir, ydir)
 end
 
 function kill_ball(f)
-	f.alive = false
-	f.yflip = false
-	f.sfr = 0
-	f.s = f.s_die_s
-	f.fcnt = 0
+	f.alive,f.yflip,f.sfr,f.s,f.fcnt = false,false,0,f.s_die_s,0
 end
 
 function update_fireball(f)
