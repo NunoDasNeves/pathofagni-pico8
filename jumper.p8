@@ -471,20 +471,20 @@ end
 -- max_z = 0 -- created in spawn_room()
 
 function init_thang_dat()
-	local iceblock = {
+	local iceblock, door, enemy = {
 		init = init_replace_i,
 		update = update_iceblock,
 		burn = burn_iceblock
-	}
-	local door = {
+	},
+	{
 		init = init_replace_i,
 		update = update_door,
 		draw = no_thang,
 		open = true,
 		h = 16,
 		stops_projs = false
-	}
-	local enemy = {
+	},
+	{
 		burn = burn_bad,
 		burning = false,
 		-- coll dimensions
@@ -503,7 +503,7 @@ function init_thang_dat()
 		g = 0.3,
 		max_vy = 4
 	}
-	local thrower = {
+	local thrower,shooter = {
 		update = update_shooter_thrower,
 		do_shoot = throw_icepick,
 		check_shoot = check_throw_icepick,
@@ -516,8 +516,8 @@ function init_thang_dat()
 		range = 48, -- only used by thrower
 		s_burn_s = 3,
 		s_die_s = 4,
-	}
-	local shooter = {}
+	},
+	{}
 	copy_into(thrower, shooter)
 	shooter.do_shoot,
 	shooter.check_shoot,
@@ -811,13 +811,11 @@ function dist_until_flag(x,y,flag,dir,vert)
 		vert = false
 	end
 
-	local mx = x\8
-	local xinc = vert and 0 or dir
-	local my = y\8
-	local yinc = vert and dir or 0
-	local xroomorig = mx\16
-	local yroomorig = my\16
-	local tiles = 0
+	local tiles, mx,my, xroomorig,yroomorig, xinc,yinc = 
+		0,
+		x\8,y\8,
+		x\128,y\128,
+		vert and 0 or dir,vert and dir or 0
 	while true do
 		local tile = mget(mx, my)
 		if fget(tile, flag) then
@@ -826,10 +824,7 @@ function dist_until_flag(x,y,flag,dir,vert)
 		mx += xinc
 		my += yinc
 		tiles += 1
-		if mx\16 != xroomorig then
-			break
-		end
-		if my\16 != yroomorig then
+		if mx\16 != xroomorig or my\16 != yroomorig then
 			break
 		end
 	end
@@ -838,8 +833,7 @@ function dist_until_flag(x,y,flag,dir,vert)
 		return 0
 	end
 
-	local off = vert and y or x
-	local fn = dir > 0 and roundup or rounddown
+	local off,fn = vert and y or x,dir > 0 and roundup or rounddown
 	return (tiles - 1)*8 + dir*(fn(off,8) - off)
 end
 
@@ -913,8 +907,7 @@ function update_shot(t)
 		return
 	end
 	if t.fcnt < 3 then
-		t.trace_color = 7
-		t.arrow_color = 7
+		t.trace_color, t.arrow_color = 7, 7
 		if		p.alive and
 				hit_p(
 					min(t.x, t.endx),	-- left
@@ -927,8 +920,7 @@ function update_shot(t)
 	elseif t.fcnt < 5 then
 		t.trace_color = 12
 	else
-		t.trace_color = 1
-		t.arrow_color = 12
+		t.trace_color,t.arrow_color = 1,12
 	end
 	if t.fcnt > 6 then
 		t.arrow_color = 1
@@ -945,33 +937,25 @@ function throw_icepick(t)
 					t.x - 3 * xfac,
 					t.y + 4)
 		if not t.rght then
-			i.xflip = true
-			i.vx = -i.vx
+			i.xflip,i.vx = true,-i.vx
 		end
 		reset_anim_state(t)
 	end
 end
 
 function face_p(t)
-	if p.x < t.x then
-		t.rght = false
-	else
-		t.rght = true
-	end
+	t.rght = p.x >= t.x and true or false
 end
 
 function reset_anim_state(t)
-	t.fcnt = 0
-	t.fr = 0
+	t.fcnt,t.fr = 0,0
 end
 
 function check_shoot_shot(t)
-	local shleft = dist_until_flag(t.x + 4, t.y + 4, 1, -1)
-	local shright = dist_until_flag(t.x + 4, t.y + 4, 1, 1)
+	local shleft,shright = dist_until_flag(t.x + 4, t.y + 4, 1, -1),dist_until_flag(t.x + 4, t.y + 4, 1, 1)
 	if hit_p(t.x + 4 - shleft, t.y, shleft + shright, 8) then
 		face_p(t)
-		t.shcount = 5
-		t.shooting = true
+		t.shcount,t.shooting = 5,true
 		reset_anim_state(t)
 	end
 end
@@ -1006,11 +990,7 @@ function update_shooter_thrower(t)
 		-- remember which way we were going
 		t.rght = t.goingrght
 		if not t.air then
-			if t.rght then
-				t.vx = 0.75
-			else
-				t.vx = -0.75
-			end
+			t.vx = t.rght and 0.75 or -0.75
 			loop_anim(t,4,2)
 		end
 
@@ -1047,13 +1027,9 @@ function shoot_shot(t)
 			x = t.rght and t.x + 8 or t.x - 1,
 			y = t.y + 3
 		}
-		local shleft = dist_until_flag(t.x + 4, t.y + 4, 1, -1)
-		local shright = dist_until_flag(t.x + 4, t.y + 4, 1, 1)
-		local shot = spawn_thang(256, orig.x, orig.y)
-		shot.endx = t.x + 4 + (t.rght and shright or -shleft)
-		shot.endy = orig.y
-		shot.arrowx = t.rght and shot.endx - 5 or shot.endx + 5
-		shot.arrowy = orig.y
+		local shleft,shright,shot = dist_until_flag(t.x + 4, t.y + 4, 1, -1),dist_until_flag(t.x + 4, t.y + 4, 1, 1),spawn_thang(256, orig.x, orig.y)
+		shot.endx,shot.endy = t.x + 4 + (t.rght and shright or -shleft), orig.y
+		shot.arrowx,shot.arrowy = t.rght and shot.endx - 5 or shot.endx + 5, orig.y
 	end
 end
 
@@ -1073,10 +1049,7 @@ function update_archer(t)
 	-- not burning or dead
 	elseif oldburning then
 		sfx(snd_archer_invis)
-		t.invis = true
-		t.stops_projs = false
-		t.invistimer = 70
-		t.shooting = false
+		t.invis,t.stops_projs,t.invistimer,t.shooting = true, false, 70, false
 		reset_anim_state(t)
 	end
 
@@ -1133,13 +1106,10 @@ function update_archer(t)
 				-- big jump
 				elseif choice == 1 then
 					sfx(snd_knight_jump)
-					t.air = true
-					t.vy = -4
+					t.air,t.vy = true,-4
 				-- fall down
 				else
-					t.air = true
-					t.vy = 0
-					t.vx = 0.4
+					t.air,t.vy,t.vx = true,0,0.4
 				end
 			end
 			t.vx = t.rght and t.vx or -t.vx
@@ -1164,7 +1134,6 @@ function update_archer(t)
 
 		if t.invis then
 			t.invistimer -= 1
-			-- palette select, kinda jank
 			t.pal_k = t.invis_pal_k
 			local fr = t.invistimer < 12 and 11 - t.invistimer or t.invistimer - 58
 			if fr >= 0 then
@@ -1178,9 +1147,7 @@ function update_archer(t)
 			if t.invistimer == 15 then
 				sfx(snd_archer_invis)
 			elseif t.invistimer <= 0 then
-				t.stops_projs = true
-				t.invis = false
-				t.pal_k = {}
+				t.stops_projs,t.invis,t.pal_k = true,false,{}
 			end
 		-- don't attack unless visible
 		elseif t.shcount <= 0 then
@@ -1202,8 +1169,7 @@ function update_archer(t)
 	end
 
 	if kill_p_on_coll(t) then
-		t.invis = false
-		t.pal_k = {}
+		t.invis,t.pal_k = false,{}
 	end
 end
 
@@ -1221,8 +1187,7 @@ function init_wizard(t)
 end
 
 function start_tp(t)
-	t.tping = true
-	t.stops_projs = false
+	t.tping,t.stops_projs = true,false
 	reset_anim_state(t)
 	sfx(snd_wizard_tp)
 	-- find tp plat
@@ -1241,8 +1206,7 @@ function start_tp(t)
 			end
 		end
 	end
-	t.tp_to = rnd(plats)
-	t.tp_from = {x=t.x,y=t.y}
+	t.tp_to,t.tp_from = rnd(plats),{x=t.x,y=t.y}
 end
 
 function update_casting(t)
@@ -1354,10 +1318,8 @@ function start_casting(t)
 		-- no more bats!
 		deli(sub_spells, 1)
 	end
-	t.spell = rnd(sub_spells)
-	t.castu = spawn_thang(240, t.x, t.y - 6)	
-	t.castu.pal_k = t.spell.pal_k
-	t.castu.pal_v = t.spell.pal_v
+	t.spell,t.castu = rnd(sub_spells),spawn_thang(240, t.x, t.y - 6)	
+	t.castu.pal_k,t.castu.pal_v = t.spell.pal_k,t.spell.pal_v
 	t.shcount = t.shield and 20 or t.spell.cast_time
 end
 
