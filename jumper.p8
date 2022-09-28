@@ -146,7 +146,7 @@ end
 -- save room
 function spawn_room()
 	local rmapx,rmapy  = room_x \ 8, room_y \ 8
-	thang,max_z,room_old,room_num_bads,room_num_unlit,fireball = {},0,{},0,0,{}
+	thang,max_z,room_old,room_num_bads,room_num_unlit,fireball,rain = {p},0,{},0,0,{},{}
 	for y=rmapy,rmapy+15 do
 		for x=rmapx,rmapx+15 do
 			local val = mget(x,y)
@@ -166,7 +166,6 @@ function spawn_room()
 		end
 	end
 	-- rain
-	rain = {}
 	if room_i > 0 and room_i < 8 then
 		for x=rmapx,rmapx+15 do
 			if not fget(mget(x,0),1) then
@@ -278,11 +277,15 @@ function draw_shot(t)
 	line(t.arrowx, t.arrowy, t.endx, t.endy, t.arrow_color)
 end
 
+function pal_mono(color)
+	for i=1,15 do
+		pal(i,color,0)
+	end
+end
+
 function draw_wizard(t)
 	if t.tping then
-		for i=1,15 do
-			pal(i,7,0)
-		end
+		pal_mono(7)
 		if t.fcnt < 6 then
 			draw_thang(t)
 			spr(230, t.tp_to.x, t.tp_to.y)
@@ -360,8 +363,8 @@ dither_patterns = {
 
 function gradient(y,h,colors)
 	-- TODO tokens
-	local grads = #colors-1
 	--local cinc = ceil(h/grads)
+	local grads = #colors-1
 	local dinc = ceil(h/grads/#dither_patterns)
 	for c=1,grads do
 		local c1,c2 = colors[c], colors[c+1]
@@ -395,6 +398,12 @@ function draw_fade(timer, color)
 	fillp(0)
 end
 
+function end_text(xoff,yoff)
+	print('path of', 50+xoff, 54+yoff,7)
+	spr(236,47+xoff,60+yoff,4,2)
+	print('the end', 49+xoff, 78+yoff, 11)
+end
+
 function _draw()
 	cls(1)
 	if room_i == 0 then
@@ -422,10 +431,12 @@ function _draw()
 			horiz_off += horiz_vel*0.25/1.2
 			horiz_vel *= 0.999
 		else
-			print('path of', 51, 55, 0)
-			print('path of', 50, 54, 7)
-			spr(236,47,60,4,2)
-			print('the end', 49, 78, 11)
+			for c in all{{1,0},{1,1},{0,1},{-1,1},{-1,0},{-1,-1},{0,-1},{1,-1}} do
+				pal_mono(0)
+				end_text(c[1],c[2])
+			end
+			pal()
+			end_text(0,0)
 			if end_flash < 24 then
 				draw_fade(end_flash,7)
 				end_flash += 1
@@ -459,9 +470,6 @@ function _draw()
 			end
 		end
 	end
-
-	-- player
-	draw_thang(p)
 
 	for r in all(rain) do
 		for i=-1,r.h\8-1 do
@@ -546,9 +554,39 @@ function init_thang_dat()
 		check_shoot_shot,
 		5,-13 -- 104 - 117
 thang_dat = {
+	[64]= {
+		update = no_thang, -- update_p called directly
+		s = 76,
+		air = true, -- must start in air!
+		onice = false,
+		shcount = 0, -- shoot counter (cooldown)
+		sh = false, -- charging fireball
+		teeter = false,
+		spawn = true,
+		stops_projs = false,
+		--  coll dimensions
+		ftw = 2 - 1, -- 1 because we just care about pixel coords
+		ftx = 3,
+		fty = 8,
+		ch = 4,
+		cw = 5,
+		cx = 1,
+		cy = 2,
+		-- hurtbox dimensions
+		hx = 2,
+		hy = 2,
+		hw = 3.99,
+		hh = 3.99,
+		-- physics
+		max_vx = 1.4,
+		min_vx = 0.01, -- stop threshold
+		g = 0.3, -- gravity
+		max_vy = 4,
+		j_vy = -4, -- jump accel
+	},
 	[91] = { -- checkpoint
 		update = update_checkpoint,
-		z = 1,
+		z = 2,
 		stops_projs = false,
 	},
 	[82] = { -- lantern
@@ -559,7 +597,7 @@ thang_dat = {
 		hy = 2,
 		hw = 4,
 		hh = 4,
-		z = 1,
+		z = 2,
 		stops_projs = false
 	},
 	[8] = { -- door - only close, never open
@@ -1263,8 +1301,7 @@ end
 
 function spell_summon_bats(t)
 	for xy in all({{0,-6},{8,-6},{0,2}}) do
-		local b = spawn_thang(96, t.x+xy[1], t.y+xy[2])	
-		b.z = 1
+		spawn_thang(96, t.x+xy[1], t.y+xy[2])	
 	end
 	room_num_bads += 3
 end
@@ -1905,7 +1942,7 @@ function spawn_thang(i,x,y)
 		hh = 8,
 		-- animation/drawing
 		rght = true,
-		z = 0,
+		z = 1,
 		w = 8,
 		h = 8,
 		s = i,
@@ -1939,45 +1976,8 @@ end
 -- player
 
 function spawn_p(x,y)
-	p = {
-		i = 64, -- base of sprite row
-		w = 8,
-		h = 8,
-		s = 76,
-		x = x,
-		y = y,
-		rght = not (room_i < 8 or room_i > 15),
-		vx = 0,
-		vy = 0,
-		air = true, -- must start in air!
-		onice = false,
-		fr = 0, -- displayed frame offset
-		fcnt = 0, -- counter for advancing frame
-		shcount = 0, -- shoot counter (cooldown)
-		sh = false, -- charging fireball
-		teeter = false,
-		alive = true,
-		spawn = true,
-		--  coll dimensions
-		ftw = 2 - 1, -- 1 because we just care about pixel coords
-		ftx = 3,
-		fty = 8,
-		ch = 4,
-		cw = 5,
-		cx = 1,
-		cy = 2,
-		-- hurtbox dimensions
-		hx = 2,
-		hy = 2,
-		hw = 3.99,
-		hh = 3.99,
-		-- physics
-		max_vx = 1.4,
-		min_vx = 0.01, -- stop threshold
-		g = 0.3, -- gravity
-		max_vy = 4,
-		j_vy = -4, -- jump accel
-	}
+	p = spawn_thang(64,x,y)
+	p.rght = not (room_i < 8 or room_i > 15)
 end
 
 function kill_p()
