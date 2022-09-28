@@ -132,6 +132,7 @@ function update_room()
 			end
 			restore_room()
 			spawn_room()
+			add(thang,p)
 		end
 	else
 		p.x = -10
@@ -146,7 +147,7 @@ end
 -- save room
 function spawn_room()
 	local rmapx,rmapy  = room_x \ 8, room_y \ 8
-	thang,max_z,room_old,room_num_bads,room_num_unlit,fireball,rain = {p},0,{},0,0,{},{}
+	thang,max_z,room_old,room_num_bads,room_num_unlit,fireball,rain = {},0,{},0,0,{},{}
 	for y=rmapy,rmapy+15 do
 		for x=rmapx,rmapx+15 do
 			local val = mget(x,y)
@@ -582,7 +583,6 @@ thang_dat = {
 		hh = 3.99,
 		-- physics
 		max_vx = 1.4,
-		min_vx = 0.01, -- stop threshold
 		g = 0.3, -- gravity
 		max_vy = 4,
 		j_vy = -4, -- jump accel
@@ -1980,7 +1980,7 @@ end
 
 function spawn_p(x,y)
 	p = spawn_thang(64,x,y)
-	p.rght = not (room_i < 8 or room_i > 15)
+	p.rght = room_i >= 8 and room_i <= 15
 end
 
 function kill_p()
@@ -2045,7 +2045,7 @@ function update_p()
 	end
 
 	p.vx = clamp(p.vx, -p.max_vx, p.max_vx)
-	if abs(p.vx) < p.min_vx then
+	if abs(p.vx) < 0.01 then
 		p.vx = 0
 	end
 
