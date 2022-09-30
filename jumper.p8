@@ -673,12 +673,6 @@ thang_dat = {
 		atking = false,
 		-- draw sword/sword hitbox present
 		swrd_fr = 0,
-		swrd_hit = false,
-		swrd_draw = false,
-		swrd_x_off = 5, -- when attacking left, move sword back this much (same as width...)
-		swrd_y = 1,
-		swrd_w = 5,
-		swrd_h = 4,
 		phase = 0, -- stand, walk, jump
 		atktimer = 0, -- how long since last attack
 		jmptime = 0, -- how long to wait before jumping
@@ -1654,8 +1648,7 @@ end
 function update_knight(t)
 
 	-- default to sword not being out - saves putting it everywhere
-	t.swrd_draw = false
-	t.swrd_hit = false
+	t.swrd_draw,t.swrd_hit = false, false
 
 	if do_boss_die(t) then
 		return
@@ -1691,14 +1684,9 @@ function update_knight(t)
 				-- jump!
 				if t.phase == 2 and not t.air and t.fr == 1 and t.fcnt == 1 then
 					sfx(snd_knight_jump)
-					t.vy = -3
-					t.vx = t.rght and 1 or -1
-					t.air = true
+					t.vy,t.vx,t.air = -3,t.rght and 1 or -1,true
 				end
-				t.swrd_draw = true
-				t.swrd_fr = t.fr - 1
-				-- all frames hit for now, not just first frame
-				t.swrd_hit = true
+				t.swrd_draw,t.swrd_hit,t.swrd_fr = true,true,t.fr-1
 			end
 		-- grounded state
 		--  phase 0 - idle
@@ -1723,19 +1711,14 @@ function update_knight(t)
 				if dir != 0 then
 					t.rght = dir == 1 and true or false
 				end
-				if t.rght then
-					t.vx = 0.75
-				else
-					t.vx = -0.75
-				end
+				t.vx = t.rght and 0.75 or -0.75
 
 				loop_anim(t,3,2)
 
 				t.atktimer += 1 -- time since last attack
 				if 		t.phase == 1 and vlen{ x = t.x - p.x, y = t.y - p.y } <= t.atkrange or
 						t.phase == 2 and t.atktimer >= t.jmptime then
-					t.atktimer = 0
-					t.atking = true
+					t.atktimer,t.atking = 0,true
 					reset_anim_state(t)
 					face_p(t)
 				end
@@ -1748,8 +1731,7 @@ function update_knight(t)
 
 	if t.air then
 		if phys_result.hit_wall then
-			t.rght = not t.rght
-			t.vx = -oldvx
+			t.rght,t.vx = not t.rght,-oldvx
 		end
 		-- animate falling
 		if not t.atking then
@@ -1764,23 +1746,20 @@ function update_knight(t)
 	-- switch phase after attacking
 	if oldatking and not t.atking then
 		if t.phase == 1 then
-			t.phase = 2
-			t.jmptime = 20 + rnd{0,15,30}
+			t.phase,t.jmptime = 2,20 + rnd{0,15,30}
 		else
 			t.phase = 1
 		end
 	-- change phase if haven't attacked in a while
 	elseif t.phase == 1 and t.atktimer > 60 then
-		t.phase = 2
-		t.jmptime = 10 + rnd{0,15,30}
+		t.phase,t.jmptime = 2,10 + rnd{0,15,30}
 	end
 		
 	-- don't kill p if we're dead! (e.g. falling)
 	if t.alive and p.alive then
-		local swrd_start_x = t.rght and 8 or -t.swrd_x_off
 		if kill_p_on_coll(t) then
 			t.phase = 0
-		elseif t.swrd_hit and hit_p(t.x + swrd_start_x, t.y + t.swrd_y, t.swrd_w, t.swrd_h) then
+		elseif t.swrd_hit and hit_p(t.x + (t.rght and 8 or -5), t.y + 1, 5, 4) then
 			kill_p()
 			t.phase = 0
 		end
@@ -1799,8 +1778,7 @@ function loop_anim(t,speed,frames)
 		t.fcnt = 0
 		t.fr += 1
 		if t.fr >= frames then
-			ret = true
-			t.fr = 0
+			ret,t.fr = true,0
 		end
 	end
 	t.fcnt += 1
@@ -1811,8 +1789,7 @@ function play_anim(t,speed,frames)
 	-- see loop_anim
 	-- this one doesn't loop
 	if loop_anim(t,speed,frames) then
-		t.fr = frames - 1
-		t.fcnt = speed
+		t.fr,t.fcnt = frames - 1,speed
 		return true;
 	end
 	return false
@@ -1824,11 +1801,7 @@ end
 
 function update_bat(b)
 	if b.burning then
-		b.burning = false
-		b.alive = false
-		b.s = 98
-		b.vy = 0.6
-		b.deadf = 20
+		b.burning,b.alive,b.s,b.vy,b.deadf = false,false,98,0.6,20
 		return
 	elseif not b.alive then
 		b.stops_projs = false
@@ -1856,11 +1829,8 @@ function update_bat(b)
 
 	-- if collide with something, go in random direction
 	if move_hit_wall(b) then
-		b.dircount = 0
 		-- force pick a random direction
-		go_to_p = false
-		b.vx = 0
-		b.vy = 0
+		b.dircount,go_to_p,b.vx,b.vy = 0,false,0,0
 	else
 		b.x += b.vx
 		b.y += b.vy
@@ -1870,40 +1840,28 @@ function update_bat(b)
 	if b.dircount <= 0 then
 		-- go toward player
 		if go_to_p then
-			b.vx = b2p.x * 0.5/dist2p
-			b.vy = b2p.y * 0.4/dist2p
-			b.dircount = 30
+			b.vx,b.vy,b.dircount = b2p.x * 0.5/dist2p,b2p.y * 0.4/dist2p,30
 		-- pick random direction
 		else
 			local rndv = {x = rnd(2) - 1, y = rnd(2) - 1}
 			local len = vlen(rndv)
-			b.vx = rndv.x * 0.5/len
-			b.vy = rndv.y * 0.4/len
+			b.vx,b.vy = rndv.x * 0.5/len,rndv.y * 0.4/len
 			-- reset quicker if we're in range
-			if in_range then
-				b.dircount = 20
-			else
-				b.dircount = 60
-			end
+			b.dircount = in_range and 20 or 60
 		end
 	end
 	b.dircount -= 1
 
 	-- face the right way
-	if b.vx > 0 then
-		b.rght = true
-	else
-		b.rght = false
-	end
+	b.rght = b.vx > 0 and true or false
 
 	kill_p_on_coll(b)
 end
 
 function burn_lantern(l)
 	if not l.lit then
-		l.lit = true
 		room_num_unlit -= 1
-		l.s = 83
+		l.lit,l.s = true,83
 	end
 end
 
