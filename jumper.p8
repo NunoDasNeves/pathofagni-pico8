@@ -1605,7 +1605,7 @@ function update_frog(t)
 end
 
 function kill_p_on_coll(t)
-	if t.alive and p.alive and hit_p(t.x,t.y,t.w,t.h) then
+	if t.alive and p.alive and hit_p(t.x+t.cx,t.y+t.cy,t.cw,t.ch) then
 		kill_p()
 		return true
 	end
