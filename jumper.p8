@@ -211,7 +211,10 @@ snd_wizard_tp =
 -- play the start of the music, overlaps with start_music_rooms
 intro_rooms = {[23]=1, [8]=1, [7]=1}
 -- silent rooms includes all rooms we want regular music to fade out, and NOT play on respawn (including boss rooms)
-silent_rooms = {[1]=1, [0]=1, [14]=1, [15]=1, [16]=1, [17]=1}
+silent_rooms = {}
+for i in all{0,1,14,15,16,17} do
+	silent_rooms[i] = 1
+end
 -- call start_music() when entering these rooms (i.e. we need one after a silent room to restart music)
 start_music_rooms = {[7]=1, [8]=1}
 
