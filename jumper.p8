@@ -504,6 +504,14 @@ end
 -- max_z = 0 -- created in spawn_room()
 
 function init_thang_dat()
+	local smol_thang = {
+		w = 4,
+		h = 4,
+		cw = 4,
+		ch = 4,
+		hw = 4,
+		hh = 4
+	}
 	local iceblock, door, enemy = {
 		init = init_replace_i,
 		update = update_iceblock,
@@ -687,16 +695,13 @@ thang_dat = {
 		update = update_icepick,
 		burn = kill_ice_proj,
 		draw = draw_smol_thang,
-		w = 4,
-		h = 4,
+		template = smol_thang,
 		vx = 1.5,
 		vy = -4,
 		max_vy = 4,
 		sfr = 0,
 		xflip = false,
 		yflip = false,
-		hw = 4,
-		hh = 4,
 		die_yinc = 0.5,
 		s_die_s = 108
 	},
@@ -761,6 +766,7 @@ thang_dat = {
 		update = update_iceball,
 		burn = kill_ice_proj,
 		draw = draw_smol_thang,
+		template = smol_thang,
 		speed = 3,
 		die_yinc = 0.5,
 		s_die_s = 108
@@ -856,9 +862,7 @@ function update_icepick(t)
 			collmap(t.x+3, t.y+2, 1) or
 			collmap(t.x+1, t.y+2, 1) then
 		kill_ice_proj(t)
-	end
-
-	if kill_p_on_coll(t) then
+	elseif kill_p_on_coll(t) then
 		kill_ice_proj(t)
 	end
 end
@@ -1333,11 +1337,9 @@ function update_iceball(f)
 	f.x += f.vx
 	f.y += f.vy
 	-- hit player
-	if aabb(
-			p.x + p.hx, p.y + p.hy, p.hw, p.hh,
-			f.x + 2,f.y + 2,4,4) then
-			kill_p()
-			kill_ice_proj(f)
+
+	if kill_p_on_coll(f) then
+		kill_ice_proj(f)
 	-- hit blocks
 	elseif collmap(f.x+2,  f.y+2, 1) then
 		kill_ice_proj(f)
@@ -1354,8 +1356,7 @@ end
 
 function spell_frost_nova(t)
 	for i=1,8 do
-		local f = spawn_thang(124, t.x+2, t.y+2) -- TODO works ok for wizard?
-		apply_ball_prop(f, ball_dirs[i])
+		apply_ball_prop(spawn_thang(124, t.x+2, t.y+2), ball_dirs[i])
 	end
 end
 
