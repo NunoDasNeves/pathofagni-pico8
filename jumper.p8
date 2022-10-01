@@ -2234,7 +2234,9 @@ function update_fireball(f)
 	-- check two points to make it harder to abuse shooting straight up/down past blocks
 	if 
 			collmap(f.x+3,  f.y+2, 1) or
-			collmap(f.x+1,  f.y+2, 1) then
+			collmap(f.x+1,  f.y+2, 1) or
+			-- kill fireball if it leaves the map (upper levels)
+			f.x < -4 or f.y < -4 then
 		kill_ball(f)
 	end
 end
