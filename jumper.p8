@@ -144,6 +144,11 @@ function update_room()
 	end
 end
 
+function update_rain_h(t)
+	t.h = dist_until_flag(t.x,t.y,1,1,true) + 7
+	t.hh = t.h
+end
+
 -- spawn thangs in current room
 -- save room
 function spawn_room()
@@ -172,8 +177,7 @@ function spawn_room()
 		for x=rmapx,rmapx+15 do
 			if not fget(mget(x,0),1) then
 				local t = spawn_thang(257, x*8, 0)
-				t.h = dist_until_flag(t.x,t.y,1,1,true) + 7
-				t.hh = t.h
+				update_rain_h(t)
 				add(rain,t)
 			end
 		end
@@ -815,6 +819,9 @@ function burn_iceblock(t)
 		sfx(snd_ice_break)
 		t.s,t.alive = 88,false
 		mset(t.x\8,t.y\8,31)
+		for t in all(rain) do
+			update_rain_h(t)
+		end
 	end
 end
 
