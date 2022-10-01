@@ -1437,16 +1437,13 @@ function update_wizard(t)
 	face_p(t)
 
 	if t.tping then
-		t.s = t.i + 1
-		t.fr = 2
+		t.s,t.fr = t.i + 1,2
 		t.fcnt += 1
 		if t.fcnt == 9 then
-			t.x = t.tp_to.x
-			t.y = t.tp_to.y
+			t.x,t.y = t.tp_to.x,t.tp_to.y
 		elseif t.fcnt == 18 then
 			reset_anim_state(t)
-			t.tping = false
-			t.stops_projs = true
+			t.tping,t.stops_projs = false,true
 			start_casting(t)
 		end
 
@@ -1461,11 +1458,11 @@ function update_wizard(t)
 			reset_anim_state(t.castu)
 			t.castu = nil
 		elseif t.shcount <= 0 then
-			t.casting = false
 			reset_anim_state(t)
 			-- now use shcount for resting
-			t.shcount = t.shield and 20 or t.spell.recovery
+			t.casting,t.shcount = false,t.shield and 20 or t.spell.recovery
 			t.spell.fn(t)
+			sfx(snd_wizard_cast)
 		end
 
 	-- else we standing or hovering around waving our arms
