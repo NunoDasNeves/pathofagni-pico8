@@ -671,10 +671,7 @@ thang_dat = {
 		hh = 5.99,
 		jcount = 0, -- jump
 		s_burn_s = 4,
-		s_die_s = -8, --104 - 112
-		pal_icefrog_k = {11,3,8,4}, -- main, shadow, eyes, loincloth
-		pal_icefrog_v = {12,1,7,5},
-		pal_angry_v = {8,2,10,5}
+		s_die_s = -8 --104 - 112
 	},
 	[192] = { -- knight
 		update = update_knight,
@@ -727,15 +724,7 @@ thang_dat = {
 		template = enemy,
 		shcount = 0, -- shoot stuff at player
 		s_burn_s = 12,
-		s_die = {s=13, f=3},
-		-- body, legs, skin, hair, bow, (cloak)
-		invis_pal_k = {5,2,15,4,9,1},
-		-- invisible -> visible
-		invis_pal_v = {
-			{0, 1, 0, 1, 1, 0},
-			{1, 1, 1, 1, 1, 1},
-			{1, 2, 5, 2, 13, 1},
-		}
+		s_die = {s=13, f=3}
 	},
 	[224] = { -- wizard
 		init = init_wizard,
@@ -1101,6 +1090,14 @@ function shoot_shot(t)
 		shot.arrowx,shot.arrowy = t.rght and shot.endx - 5 or shot.endx + 5, orig.y
 	end
 end
+-- body, legs, skin, hair, bow, (cloak)
+pal_invis_k = {5,2,15,4,9,1}
+-- invisible -> visible
+pals_invis_v = {
+	{0, 1, 0, 1, 1, 0},
+	{1, 1, 1, 1, 1, 1},
+	{1, 2, 5, 2, 13, 1},
+}
 
 function update_archer(t)
 
@@ -1204,10 +1201,10 @@ function update_archer(t)
 
 		if t.invis then
 			t.invistimer -= 1
-			t.pal_k = t.invis_pal_k
+			t.pal_k = pal_invis_k
 			local fr = t.invistimer < 12 and 11 - t.invistimer or t.invistimer - 58
 			if fr >= 0 then
-				t.pal_v = t.invis_pal_v[fr\4+1]
+				t.pal_v = pals_invis_v[fr\4+1]
 			else
 				for i=1,6 do
 					t.pal_v[i] = 0
@@ -1507,6 +1504,10 @@ function update_wizard(t)
 	end
 end
 
+pal_icefrog_k = {11,3,8,4} -- main, shadow, eyes, loincloth
+pal_icefrog_v = {12,1,7,5}
+pal_icefrog_angry_v = {8,2,10,5}
+
 function burn_frog(t)
 	if not t.angry then
 		burn_bad(t)
@@ -1515,7 +1516,7 @@ end
 
 function init_frog(t)
 	if room_i < 16 then
-		t.icefrog,t.pal_k,t.pal_v = true,t.pal_icefrog_k,t.pal_icefrog_v
+		t.icefrog,t.pal_k,t.pal_v = true,pal_icefrog_k,pal_icefrog_v
 	end
 end
 
@@ -1525,7 +1526,7 @@ function update_frog(t)
 		t.pal_k = {}
 		return
 	elseif oldburning and t.icefrog then
-		t.angry,t.jcount,t.pal_k,t.pal_v = true,3,t.pal_icefrog_k,t.pal_angry_v
+		t.angry,t.jcount,t.pal_k,t.pal_v = true,3,pal_icefrog_k,pal_icefrog_angry_v
 	end
 
 	local oldair = t.air
@@ -1556,7 +1557,7 @@ function update_frog(t)
 			end
 		else -- angry - jump rapidly at player
 			if t.jcount <= 0 then
-				t.angry, t.pal_v = false,t.pal_icefrog_v
+				t.angry, t.pal_v = false,pal_icefrog_v
 			else
 				t.jcount -= 1
 				sfx(snd_frog_jump)
