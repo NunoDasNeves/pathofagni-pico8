@@ -1,9 +1,7 @@
 ### Misc
-- make fireball direction a little easier
-    - maybe stop movement for some frames after shooting/reduce accel
-- make it so you can move a little or retain momentum when charging fireball
-- figure out ending
-- archer maybe needs to be a little harder?
+- logo animation? bigger logo?
+- parallax the background for top of temple (a little, few pixels)
+- use japanese char arrows instead of pico-8 arrows for instructions in first screen
 - wizard is maybe too hard?
 - Refactor code to reduce lines
     - do all the little fixes like put local x,y,z on one line...
@@ -11,16 +9,19 @@
     - remove unnecessary thang/p/fireball data (hardcode)
     - hardcode sfx/music/etc (do this later i guess)
 - fix potential bugs with 'a and b or c' where b is or could be false (it will evaluate to c)
+- make doors more visible (color skull/flame?)
+- limit enemy sfx to radius around player? limit by open tiles (don't go through walls) - requires flood fill
+- save progress (may need a menu for continue/new game, or just use pause menu)
+- adjust rain collision boxes? so it's more clear when you're in the rain
+    - visual effect/palette swap?
 
 ### Levels
-- redesign (tree) tileset
+- level where bats spawn, gotta kill all the bats to open the door, you can stay and train vs bats as long as you want
+    - shortcut to training level?
+- reuse wizard spells as enemies? bat spawner enemy, ice nova trap? ice dart trap?
 - design/redesign more levels - sketch out last floor
-- How to effectively teach player to shoot diagonally?
-- How to teach/use fireball slowdown (mainly useful for combat rn, not platforming)?
 - Probably don't have space for another enemy type unless almost identical to an existing one
-- cavern levels still have some dungeon stuff left
 - doors can maybe be drawn with palette swap
-- for DEMOs - maybe have a door to skip floors?
 - text for boss levels
 
 ### Sounds!
