@@ -1098,10 +1098,20 @@ function shoot_shot(t)
 		shot.arrowx,shot.arrowy = t.rght and shot.endx - 5 or shot.endx + 5, orig.y
 	end
 end
+
+pal_icefrog_k, pal_icefrog_v,pal_icefrog_angry_v,
 -- body, legs, skin, hair, bow, (cloak)
-pal_invis_k = {5,2,15,4,9,1}
--- invisible -> visible
-pals_invis_v = {
+pal_invis_k,
+pals_invis_v
+=
+-- icefrog
+{11,3,8,4}, -- main, shadow, eyes, loincloth
+{12,1,7,5},
+{8,2,10,5},
+-- invis
+{5,2,15,4,9,1},
+-- ordered invisible -> visible
+{
 	{0, 1, 0, 1, 1, 0},
 	{1, 1, 1, 1, 1, 1},
 	{1, 2, 5, 2, 13, 1},
@@ -1150,9 +1160,8 @@ function update_archer(t)
 		-- remember which way we were going
 		t.rght = t.goingrght
 		if not t.air then
-			t.s = 209
-			-- default velocity, may be change if we fall
-			t.vx = 1.2
+			-- default velocity, may change if we fall
+			t.s,t.vx = 209,1.2
 			if coll_edge(t,t.x) != 0 then
 				-- is there a platform below us to fall down onto?
 				local check_x,check_y = t.x + 4, t.y + 20 -- t.x + 4 + 16 - tile below the one t is standing on
@@ -1268,8 +1277,7 @@ function start_tp(t)
 	-- find tp plat
 	local plats = {}
 	-- start inside borders
-	local rmapx = room_x \ 8 + 2
-	local rmapy = room_y \ 8 + 4
+	local rmapx,rmapy = room_x \ 8 + 2,room_y \ 8 + 4
 	for y=rmapy,rmapy+9 do
 		for x=rmapx,rmapx+11 do
 			local val = mget(x,y)
@@ -1316,7 +1324,7 @@ function update_casting(t)
 end
 
 function spell_summon_bats(t)
-	for xy in all({{0,-6},{8,-6},{0,2}}) do
+	for xy in all{{0,-6},{8,-6},{0,2}} do
 		spawn_thang(96, t.x+xy[1], t.y+xy[2])	
 	end
 	room_num_bads += 3
@@ -1369,8 +1377,7 @@ function spell_frost_nova(t)
 end
 
 function spell_shield(t)
-	t.shield = true
-	t.shieldtimer = 190
+	t.shield,t.shieldtimer = true,190
 end
 
 spells = {{fn = spell_summon_bats, cast_time = 50, recovery = 45},
@@ -1489,8 +1496,7 @@ function update_wizard(t)
 			return
 		end
 
-		t.s = t.i + 1
-		t.fr = 0
+		t.s,t.fr = t.i + 1,0
 
 		t.shcount -= 1
 		if t.shcount <= 0 then
@@ -1508,10 +1514,6 @@ function update_wizard(t)
 		kill_p_on_coll(t)
 	end
 end
-
-pal_icefrog_k = {11,3,8,4} -- main, shadow, eyes, loincloth
-pal_icefrog_v = {12,1,7,5}
-pal_icefrog_angry_v = {8,2,10,5}
 
 function burn_frog(t)
 	if not t.angry then
@@ -1568,16 +1570,13 @@ function update_frog(t)
 				sfx(snd_frog_jump)
 				-- small jump
 				if not t.bounced or t.do_smol then
-					t.vy = -2.5
-					t.do_smol = false
+					t.vy,t.do_smol = -2.5,false
 				-- big jump if we bounced off a wall
 				else
-					t.vy = -3.5
-					t.bounced = false
-					t.do_smol = true -- always do a small jump after a big one
+					-- always do a small jump after a big one
+					t.vy,t.bounced,t.do_smol = -3.5,false,true
 				end
-				t.vx = 1.5 * dir
-				t.air = true
+				t.vx,t.air = 1.5 * dir,true
 			end
 		end
 	end
@@ -2153,16 +2152,13 @@ function respawn_update_p()
 	if not p.alive then
 		if play_anim(p,3,5) then
 			-- fade out after death anim
-			fade_timer = 0
-			do_fade = true
+			fade_timer,do_fade,p.s = 0,true,31
 			reset_anim_state(p)
-			p.s = 31
 		end
 	elseif p.spawn then
 		if play_anim(p,3,4) then
 			reset_anim_state(p)
-			p.s = 64
-			p.spawn = false
+			p.s,p.spawn = 64,false
 			start_music()
 		elseif p.fr == 0 and p.fcnt == 1 then
 			sfx(snd_p_respawn, 3)
@@ -2183,6 +2179,7 @@ ball_dirs = {
 	{3, -0.7071, -0.7071, true, true},
 	{2, 0, -1, false, true}
 }
+
 function apply_ball_prop(f,prop)
 	f.sfr,f.vx,f.vy,f.xflip,f.yflip = prop[1],prop[2] * f.speed,prop[3] * f.speed,prop[4],prop[5]
 end
@@ -2304,8 +2301,7 @@ function move_hit_wall(t)
 	-- }
 	-- return true if any corner hit a wall, false otherwise
 
-	local newx = t.x + t.vx
-	local newy = t.y + t.vy
+	local newx,newy = t.x + t.vx,t.y + t.vy
 	local cl = newx + t.cx
 	local cr = cl + t.cw
 	local ct = newy + t.cy
@@ -2336,8 +2332,7 @@ function phys_thang(t, oldair)
 	t.vy += t.g
 	t.vy = clamp(t.vy, -t.max_vy, t.max_vy)
 
-	local newx = t.x + t.vx
-	local newy = t.y + t.vy
+	local newx,newy = t.x + t.vx,t.y + t.vy
 
 	if t.vy > 0 then
 		newy = phys_fall(t,newx,newy)
@@ -2352,15 +2347,13 @@ function phys_thang(t, oldair)
 	end
 
 	local pushx = phys_walls(t,newx,newy)
-	ret.hit_wall = pushx != newx
-	newx = pushx
+	ret.hit_wall, newx = pushx != newx, pushx
 
 	if oldair and not t.air then
 		ret.landed = true
 	end
 
-	t.x = newx
-	t.y = newy
+	t.x,t.y = newx,newy
 
 	return ret
 end
@@ -2373,8 +2366,7 @@ function phys_fall(t,newx,newy)
 	local ftxl = newx + t.ftx
 	local ftxr = ftxl + t.ftw
 
-	local stand_left = collmap(ftxl,fty,0)
-	local stand_right = collmap(ftxr,fty,0)
+	local stand_left,stand_right = collmap(ftxl,fty,0),collmap(ftxr,fty,0)
 
 	-- hit or stay on the ground
 	if 	(stand_left or
@@ -2389,14 +2381,10 @@ function phys_fall(t,newx,newy)
 				collmap(ftxr,fty,1)
 				)
 			 then
-		newy = rounddown(newy, 8)
-		t.vy = 0
-		t.air = false
-		local lblock = mget(ftxl\8,fty\8)
-		local rblock = mget(ftxr\8,fty\8)
+		newy,t.vy,t.air = rounddown(newy, 8),0,false
+		local lblock,rblock = mget(ftxl\8,fty\8),mget(ftxr\8,fty\8)
 		-- save position of which block we're standing on
-		t.lfloor = stand_left  and {mx = ftxl \ 8, my = fty \ 8} or nil
-		t.rfloor = stand_right and {mx = ftxr \ 8, my = fty \ 8} or nil
+		t.lfloor,t.rfloor = stand_left and {mx = ftxl \ 8, my = fty \ 8} or nil, stand_right and {mx = ftxr \ 8, my = fty \ 8} or nil
 		-- are we on ice?
 		t.onice = lblock == 86 or lblock == 87 or
 				  rblock == 86 or rblock == 87
@@ -2421,26 +2409,21 @@ function phys_jump(t,newx,newy,oldair)
 				collmap(hdxl,hdy,1) or
 				collmap(hdxr,hdy,1)) then
 		if not oldair then
-			t.air = false
-			t.vy = 0
+			t.air,t.vy = false,0
 		else
 			-- just sloow down on ceiling hit
 			t.vy = t.vy/10
 		end
-		newy = t.y + t.vy
+		return t.y + t.vy
 	end
 
 	return newy
 end
 
 function phys_walls(t,newx,newy)
-	local cl = newx + t.cx
-	local cr = cl + t.cw
-	local ct = newy + t.cy
-	local cb = ct + t.ch
+	local cl,ct = newx + t.cx,newy + t.cy
+	local cr,cb,l_pen,r_pen = cl + t.cw,ct + t.ch,0,0
 
-	local l_pen = 0
-	local r_pen = 0
 	if 	collmap(cl, cb, 1) or 
 			collmap(cl, ct, 1) then
 		l_pen = roundup(cl,8) - cl
