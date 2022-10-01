@@ -1520,15 +1520,12 @@ function init_frog(t)
 end
 
 function update_frog(t)
-	if do_bad_die(t) then
-		return
-	end
-
 	local oldburning = t.burning
-	if do_bad_burning(t) then
+	if do_bad_die(t) or do_bad_burning(t) then
+		t.pal_k = {}
 		return
 	elseif oldburning and t.icefrog then
-		t.angry,t.jcount,t.pal_v = true,3,t.pal_angry_v
+		t.angry,t.jcount,t.pal_k,t.pal_v = true,3,t.pal_icefrog_k,t.pal_angry_v
 	end
 
 	local oldair = t.air
