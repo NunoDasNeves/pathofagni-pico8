@@ -1338,10 +1338,10 @@ function update_iceball(f)
 			p.x + p.hx, p.y + p.hy, p.hw, p.hh,
 			f.x + 2,f.y + 2,4,4) then
 			kill_p()
-			kill_ball(f)
+			kill_ice_proj(f)
 	-- hit blocks
 	elseif collmap(f.x+2,  f.y+2, 1) then
-		kill_ball(f)
+		kill_ice_proj(f)
 	end
 end
 
