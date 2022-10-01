@@ -559,7 +559,7 @@ function init_thang_dat()
 		check_shoot_shot,
 		5,-13 -- 104 - 117
 thang_dat = {
-	[64]= {
+	[64]= { -- player
 		update = no_thang, -- update_p called directly
 		s = 76,
 		air = true, -- must start in air!
@@ -578,10 +578,10 @@ thang_dat = {
 		cx = 1,
 		cy = 2,
 		-- hurtbox dimensions
-		hx = 2,
-		hy = 2,
-		hw = 3.99,
-		hh = 3.99,
+		hx = 1.5,
+		hy = 1.5,
+		hw = 4.99,
+		hh = 4.99,
 		-- physics
 		max_vx = 1.4,
 		g = 0.3, -- gravity
@@ -651,10 +651,10 @@ thang_dat = {
 		bounced = false,
 		do_smol = true,
 		-- coll dimensions
-		ch = 4.99,
+		ch = 5.99,
 		cw = 5.99,
 		cx = 1,
-		cy = 2,
+		cy = 1,
 		hx = 1,
 		hy = 2,
 		hw = 4.99,
