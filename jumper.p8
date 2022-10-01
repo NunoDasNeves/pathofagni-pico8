@@ -204,13 +204,13 @@ snd_knight_die,
 snd_shooter_shot,
 snd_archer_invis,
 snd_wizard_tp =
-8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22
+8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23
 
 -- TODO token reduction?
 -- play the start of the music, overlaps with start_music_rooms
-intro_rooms = {[23]=1, [8]=1}
+intro_rooms = {[23]=1, [8]=1, [7]=1}
 -- silent rooms includes all rooms we want regular music to fade out, and NOT play on respawn (including boss rooms)
-silent_rooms = {[4]=1, [15]=1, [16]=1, [17]=1}
+silent_rooms = {[1]=1, [0]=1, [15]=1, [16]=1, [17]=1}
 -- call start_music() when entering these rooms (i.e. we need one after a silent room to restart music)
 start_music_rooms = {[8]=1}
 
@@ -585,8 +585,7 @@ thang_dat = {
 		-- physics
 		max_vx = 1.4,
 		g = 0.3, -- gravity
-		max_vy = 4,
-		j_vy = -4, -- jump accel
+		max_vy = 4
 	},
 	[91] = { -- checkpoint
 		update = update_checkpoint,
@@ -632,7 +631,6 @@ thang_dat = {
 		hp = 1,
 		w = 7,
 		h = 6,
-		range = 56,
 		dircount = 0,
 		cw = 7,
 		ch = 6,
@@ -692,7 +690,6 @@ thang_dat = {
 		h = 4,
 		vx = 1.5,
 		vy = -4,
-		g = 0.3,
 		max_vy = 4,
 		sfr = 0,
 		xflip = false,
@@ -849,7 +846,7 @@ function update_icepick(t)
 		t.sfr = (t.sfr + 1) % 4
 	end
 	t.fcnt += 1
-	t.vy += t.g
+	t.vy += 0.3
 	t.vy = clamp(t.vy,-t.max_vy,t.max_vy)
 	t.x += t.vx
 	t.y += t.vy
@@ -1837,7 +1834,7 @@ function update_bat(b)
 	-- move the bat
 	local b2p = {x=p.x-b.x,y=p.y-b.y}
 	local dist2p = vlen(b2p)
-	local in_range = dist2p < b.range and true or false
+	local in_range = dist2p < 56 and true or false
 	local go_to_p = in_range
 
 	-- if collide with something, go in random direction
@@ -2018,8 +2015,7 @@ function update_p()
 	local oldair,jumped = p.air, false
 	if btnp(🅾️) and not p.air and not p.sh then
 		jumped = true
-		p.vy += p.j_vy
-		p.air = true
+		p.vy,p.air = -4,true
 	end
 	if p.sh and p.vy > 0 then
 		p.max_vy,p.g = 1, 0.05
