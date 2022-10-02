@@ -1846,7 +1846,7 @@ function update_bat(b)
 
 	-- b.alive
 	if loop_anim(b,4,2) then
-		snd(snd_bat_flap)
+		--snd(snd_bat_flap)
 	end
 
 	-- move the bat
