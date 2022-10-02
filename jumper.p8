@@ -547,6 +547,7 @@ function init_thang_dat()
 	{
 		burn = burn_bad,
 		burning = false,
+		shcount = 0, -- throw/shoot stuff at player
 		-- coll dimensions
 		-- same as player..
 		cw = 5.99,
@@ -572,7 +573,6 @@ function init_thang_dat()
 		shooting = false,
 		goingrght = true, -- going to go after throwing
 		template = enemy,
-		shcount = 0, -- throw/shoot stuff at player
 		range = 48, -- only used by thrower
 		s_burn_s = 3,
 		s_die_s = 4,
@@ -734,7 +734,6 @@ thang_dat = {
 		invis = false,
 		invistimer = 0,
 		template = enemy,
-		shcount = 0, -- shoot stuff at player
 		s_burn_s = 12,
 		s_die = {s=13, f=3}
 	},
@@ -750,7 +749,6 @@ thang_dat = {
 		hover_up = false,
 		phase = 0,
 		tping = false,
-		shcount = 0,
 		casting = false,
 		castu = nil,
 		shield = false,
@@ -1094,13 +1092,17 @@ function shoot_shot(t)
 		reset_anim_state(t)
 	elseif t.fr == 2 and t.fcnt == 1 then
 		snd(snd_shooter_shot)
-		local orig = {
-			x = t.rght and t.x + 8 or t.x - 1,
-			y = t.y + 3
-		}
-		local shleft,shright,shot = dist_until_flag(t.x + 4, t.y + 4, 1, -1),dist_until_flag(t.x + 4, t.y + 4, 1, 1),spawn_thang(256, orig.x, orig.y)
-		shot.endx,shot.endy = t.x + 4 + (t.rght and shright or -shleft), orig.y
-		shot.arrowx,shot.arrowy = t.rght and shot.endx - 5 or shot.endx + 5, orig.y
+		local orig_y = t.y + 3
+		local shleft,shright,shot = 
+			dist_until_flag(t.x + 4, t.y + 4, 1, -1),
+			dist_until_flag(t.x + 4, t.y + 4, 1, 1),
+			spawn_thang(256, t.rght and t.x + 8 or t.x - 1, orig_y)
+		shot.endx,shot.endy = 
+			t.x + 4 + (t.rght and shright or -shleft),
+			orig_y
+		shot.arrowx,shot.arrowy =
+			t.rght and shot.endx - 5 or shot.endx + 5,
+			orig_y
 	end
 end
 
@@ -1854,12 +1856,18 @@ function update_bat(b)
 	local go_to_p = in_range
 
 	-- if collide with something, go in random direction
-	if move_hit_wall(b) then
+	local newx,newy = b.x + b.vx,b.y + b.vy
+	local cl,ct = newx + b.cx,newy + b.cy
+	local cr,cb = cl + b.cw,ct + b.ch
+
+	if 		collmap(cl, ct, 1) or 
+			collmap(cr, ct, 1) or
+			collmap(cl, cb, 1) or 
+			collmap(cr, cb, 1) then
 		-- force pick a random direction
 		b.dircount,go_to_p,b.vx,b.vy = 0,false,0,0
 	else
-		b.x += b.vx
-		b.y += b.vy
+		b.x,b.y = newx,newy
 	end
 
 	-- pick the direction for next frame
@@ -2281,10 +2289,8 @@ function coll_edge(t,newx,face_either_way)
 end
 
 function coll_spikes(t)
-	local hl = t.x + t.hx
-	local hr = hl + t.hw
-	local ht = t.y + t.hy
-	local hb = ht + t.hh
+	local hl,ht = t.x + t.hx,t.y + t.hy
+	local hr,hb = hl + t.hw,ht + t.hh
 	if 	collmap(hl,ht,3) or
 			collmap(hr,ht,3) or
 			collmap(hl,hb,3) or
@@ -2292,31 +2298,6 @@ function coll_spikes(t)
 		return true
 	end
 	return false
-end
-
-function move_hit_wall(t)
-	-- t = {
-	--	 x  -- coord
-	--   y  -- coord
-	--   cx -- coll x offset
-	--   cw -- coll width
-	--   cy -- coll y offset
-	--   ch -- coll height
-	--   vx -- x vel
-	--	 vy -- y vel
-	-- }
-	-- return true if any corner hit a wall, false otherwise
-
-	local newx,newy = t.x + t.vx,t.y + t.vy
-	local cl = newx + t.cx
-	local cr = cl + t.cw
-	local ct = newy + t.cy
-	local cb = ct + t.ch
-
-	return 	collmap(cl, ct, 1) or 
-			collmap(cr, ct, 1) or
-			collmap(cl, cb, 1) or 
-			collmap(cr, cb, 1)
 end
 
 -->8
