@@ -39,8 +39,7 @@ function vlen(v)
 end
 
 -- 
-dbg = true
-dbgstr = ''
+dbg,dbgstr = true,''
 
 -- disable btnp repeating
 poke(0x5f5c, 255)
@@ -61,17 +60,12 @@ if dbg then
 	)
 end
 
-function init_room()
-	-- starting room
-	move_room(5)
-	-- updated by spawn_room
-	room_old, -- for restore
-	room_num_bads, -- for unlock (bads door)
-	room_num_unlit, -- for unlock (lanterns door)
-	room_checkpoint -- checkpoint thang
-	=
-	nil,0,0,nil
-end
+room_old, -- for restore
+room_num_bads, -- for unlock (bads door)
+room_num_unlit, -- for unlock (lanterns door)
+room_checkpoint -- checkpoint thang
+=
+nil,0,0,nil
 
 function move_room(i)
 	local r = get_room_xy(i)
@@ -184,8 +178,7 @@ function spawn_room()
 	end
 end
 
-do_fade = true -- fade in
-fade_timer = 8
+do_fade,fade_timer = true,8 -- fade in
 
 function spawn_p_in_curr_room()
 	restore_room()
@@ -212,16 +205,38 @@ snd_wizard_tp,
 snd_wizard_cast =
 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24
 
+-- TODO this
+--[[
+function snd(s)
+	if s < 12 then
+		sfx(s)
+	elseif s >=12 and s < 23 then
+		local stat2,stat3 = stat(48),stat(49)
+		if stat2 == -1 or stat2 > 15 then
+			sfx(s,2)
+		elseif stat3 == -1 or stat3 > 15 then
+			sfx(s,3)
+		end
+	else
+		-- sfx 13,14,15 are low prio; don't let them override other sounds
+		if s > 15 or stat(49) == -1 then
+			sfx(s)
+		end
+	end
+end
+]]
+function snd(s)
+	sfx(s)
+end
+
 -- TODO token reduction?
+-- for state_music rooms: call start_music() when entering these rooms (i.e. we need one after a silent room to restart music)
 -- play the start of the music, overlaps with start_music_rooms
-intro_rooms = {[23]=1, [8]=1, [7]=1}
+silent_rooms,intro_rooms,start_music_rooms = {},{[23]=1, [8]=1, [7]=1},{[7]=1, [8]=1}
 -- silent rooms includes all rooms we want regular music to fade out, and NOT play on respawn (including boss rooms)
-silent_rooms = {}
 for i in all{0,1,14,15,16,17} do
 	silent_rooms[i] = 1
 end
--- call start_music() when entering these rooms (i.e. we need one after a silent room to restart music)
-start_music_rooms = {[7]=1, [8]=1}
 
 function start_music()
 	if intro_rooms[room_i] then
@@ -261,7 +276,8 @@ end
 
 function _init()
 	init_thang_dat()
-	init_room()
+	-- starting room
+	move_room(17)
 	spawn_p_in_curr_room()	
 end
 
@@ -269,14 +285,10 @@ end
 -- draw
 
 function draw_thang(t)
-	local flp = false
-	if t.rght != nil then
-		flp = not t.rght
-	end
 	for i,k in pairs(t.pal_k) do
 		pal(k,t.pal_v[i],0)
 	end
-	spr(t.s+t.fr,t.x,t.y,1,1,flp)
+	spr(t.s+t.fr,t.x,t.y,1,1,not t.rght)
 	pal()
 end
 
@@ -288,7 +300,7 @@ function draw_shot(t)
 end
 
 function pal_mono(color)
-	for i=1,15 do
+	for i=0,15 do
 		pal(i,color,0)
 	end
 end
@@ -298,13 +310,13 @@ function draw_wizard(t)
 		pal_mono(7)
 		if t.fcnt < 6 then
 			draw_thang(t)
-			spr(230, t.tp_to.x, t.tp_to.y)
+			spr(230, t.tp_to_x, t.tp_to_y)
 		elseif t.fcnt < 12 then
-			spr(229, t.tp_from.x, t.tp_from.y)
-			spr(229, t.tp_to.x, t.tp_to.y)
+			spr(229, t.tp_from_x, t.tp_from_y)
+			spr(229, t.tp_to_x, t.tp_to_y)
 		else
 			draw_thang(t)
-			spr(230, t.tp_from.x, t.tp_from.y)
+			spr(230, t.tp_from_x, t.tp_from_y)
 		end
 		pal()
 	else
@@ -738,8 +750,6 @@ thang_dat = {
 		hover_up = false,
 		phase = 0,
 		tping = false,
-		tp_to = nil,
-		tp_from = nil,
 		shcount = 0,
 		casting = false,
 		castu = nil,
@@ -812,7 +822,7 @@ end
 
 function burn_iceblock(t)
 	if t.alive then
-		sfx(snd_ice_break)
+		snd(snd_ice_break)
 		t.s,t.alive = 88,false
 		mset(t.x\8,t.y\8,31)
 		for t in all(rain) do
@@ -822,7 +832,7 @@ function burn_iceblock(t)
 end
 
 function kill_ice_proj(t)
-	sfx(snd_ice_break)
+	snd(snd_ice_break)
 	kill_ball(t)
 end
 
@@ -931,7 +941,7 @@ end
 
 function check_bad_coll_spikes(t)
 	if coll_spikes(t) then
-		sfx(snd_hit)
+		snd(snd_hit)
 		t.alive = false
 		reset_anim_state(t)
 		t.s = 104
@@ -1083,7 +1093,7 @@ function shoot_shot(t)
 		t.shooting = false
 		reset_anim_state(t)
 	elseif t.fr == 2 and t.fcnt == 1 then
-		sfx(snd_shooter_shot)
+		snd(snd_shooter_shot)
 		local orig = {
 			x = t.rght and t.x + 8 or t.x - 1,
 			y = t.y + 3
@@ -1121,13 +1131,13 @@ function update_archer(t)
 	local oldburning = t.burning
 	if do_bad_burning(t) then
 		if not t.alive then
-			sfx(snd_knight_die)
+			snd(snd_knight_die)
 			music(-1,0,3)
 		end
 		return
 	-- not burning or dead
 	elseif oldburning then
-		sfx(snd_archer_invis)
+		snd(snd_archer_invis)
 		t.invis,t.stops_projs,t.invistimer,t.shooting = true, false, 70, false
 		reset_anim_state(t)
 	end
@@ -1184,7 +1194,7 @@ function update_archer(t)
 					t.rght = not t.rght
 				-- big jump
 				elseif choice == 1 then
-					sfx(snd_knight_jump)
+					snd(snd_knight_jump)
 					t.air,t.vy = true,-4
 				-- fall down
 				else
@@ -1224,7 +1234,7 @@ function update_archer(t)
 			end
 			--
 			if t.invistimer == 15 then
-				sfx(snd_archer_invis)
+				snd(snd_archer_invis)
 			elseif t.invistimer <= 0 then
 				t.stops_projs,t.invis,t.pal_k = true,false,{}
 			end
@@ -1254,7 +1264,7 @@ end
 
 function burn_bad(t)
 	if t.alive and not t.burning then
-		sfx(snd_hit)
+		snd(snd_hit)
 		t.hp -= 1
 		reset_anim_state(t)
 		t.burning = true
@@ -1268,23 +1278,24 @@ end
 function start_tp(t)
 	t.tping,t.stops_projs = true,false
 	reset_anim_state(t)
-	sfx(snd_wizard_tp)
+	snd(snd_wizard_tp)
 	-- find tp plat
-	local plats = {}
+	local plats,plat = {}
 	-- start inside borders
 	local rmapx,rmapy = room_x \ 8 + 2,room_y \ 8 + 4
 	for y=rmapy,rmapy+9 do
 		for x=rmapx,rmapx+11 do
 			local val = mget(x,y)
 			if fget(val,0) and not fget(val,1) then
-				local plat = {x = x*8, y = y*8 - t.h}
+				plat = {x = x*8, y = y*8 - t.h}
 				if (plat.x != t.x or plat.y != t.y) and (t.shield or vlen{x=plat.x-p.x,y=plat.y-p.y} > 48) then
 					add(plats, plat)
 				end
 			end
 		end
 	end
-	t.tp_to,t.tp_from = rnd(plats),{x=t.x,y=t.y}
+	plat = rnd(plats)
+	t.tp_to_x,t.tp_to_y,t.tp_from_x,t.tp_from_y = plat.x,plat.y,t.x,t.y
 end
 
 function update_casting(t)
@@ -1424,7 +1435,7 @@ function update_wizard(t)
 	local oldburning = t.burning
 	if do_bad_burning(t) then
 		if not t.alive then
-			sfx(snd_knight_die)
+			snd(snd_knight_die)
 			music(-1,0,3)
 		end
 		return
@@ -1442,7 +1453,7 @@ function update_wizard(t)
 		t.s,t.fr = t.i + 1,2
 		t.fcnt += 1
 		if t.fcnt == 9 then
-			t.x,t.y = t.tp_to.x,t.tp_to.y
+			t.x,t.y = t.tp_to_x,t.tp_to_y
 		elseif t.fcnt == 18 then
 			reset_anim_state(t)
 			t.tping,t.stops_projs = false,true
@@ -1464,7 +1475,7 @@ function update_wizard(t)
 			-- now use shcount for resting
 			t.casting,t.shcount = false,t.shield and 20 or t.spell.recovery
 			t.spell.fn(t)
-			sfx(snd_wizard_cast)
+			snd(snd_wizard_cast)
 		end
 
 	-- else we standing or hovering around waving our arms
@@ -1542,7 +1553,7 @@ function update_frog(t)
 			if t.croak then
 				-- play full idle anim (croak)
 				if play_anim(t, 5, 2) then
-					sfx(snd_frog_croak)
+					snd(snd_frog_croak)
 					t.croak = false
 					reset_anim_state(t)
 				end
@@ -1554,7 +1565,7 @@ function update_frog(t)
 				end
 			end
 			if p.sh then
-				sfx(snd_frog_jump)
+				snd(snd_frog_jump)
 				t.vy,t.vx,t.air = -3.5, 1.2 * dir, true
 			end
 		else -- angry - jump rapidly at player
@@ -1562,7 +1573,7 @@ function update_frog(t)
 				t.angry, t.pal_v = false,pal_icefrog_v
 			else
 				t.jcount -= 1
-				sfx(snd_frog_jump)
+				snd(snd_frog_jump)
 				-- small jump
 				if not t.bounced or t.do_smol then
 					t.vy,t.do_smol = -2.5,false
@@ -1672,7 +1683,7 @@ function update_knight(t)
 
 	if do_bad_burning(t) then
 		if not t.alive then
-			sfx(snd_knight_die)
+			snd(snd_knight_die)
 			music(-1,0,3)
 		end
 		return
@@ -1693,11 +1704,11 @@ function update_knight(t)
 				reset_anim_state(t)
 			elseif t.fr > 0 then
 				if t.phase == 1 and t.fr == 1 and t.fcnt == 1 then
-					sfx(snd_knight_swing)
+					snd(snd_knight_swing)
 				end
 				-- jump!
 				if t.phase == 2 and not t.air and t.fr == 1 and t.fcnt == 1 then
-					sfx(snd_knight_jump)
+					snd(snd_knight_jump)
 					t.vy,t.vx,t.air = -3,t.rght and 1 or -1,true
 				end
 				t.swrd_draw,t.swrd_hit,t.swrd_fr = true,true,t.fr-1
@@ -1833,7 +1844,7 @@ function update_bat(b)
 
 	-- b.alive
 	if loop_anim(b,4,2) then
-		sfx(snd_bat_flap)
+		snd(snd_bat_flap)
 	end
 
 	-- move the bat
@@ -1951,7 +1962,7 @@ function spawn_p(x,y)
 end
 
 function kill_p()
-	sfx(snd_p_die)
+	snd(snd_p_die)
 	music(-1,800,3)
 	p.alive,p.s = false,71
 	reset_anim_state(p)
@@ -2049,9 +2060,9 @@ function update_p()
 	p.teeter = not p.air and coll_edge(p,p.x,true)
 
 	if phys_result.landed then
-		sfx(snd_p_land)
+		snd(snd_p_land)
 	elseif jumped and not phys_result.ceil_cancel then
-		sfx(snd_p_jump)
+		snd(snd_p_jump)
 	end
 
 	if coll_spikes(p) then
@@ -2104,11 +2115,11 @@ function update_p()
 	if p.sh then
 		p.s = 94
 		if not oldsh then
-			sfx(snd_p_shoot)
+			snd(snd_p_shoot)
 			reset_anim_state(p)
 		end
 		if loop_anim(p,3,2) then
-			sfx(snd_p_shoot)
+			snd(snd_p_shoot)
 		end
 
 	elseif not p.air then
@@ -2156,7 +2167,7 @@ function respawn_update_p()
 			p.s,p.spawn = 64,false
 			start_music()
 		elseif p.fr == 0 and p.fcnt == 1 then
-			sfx(snd_p_respawn, 3)
+			snd(snd_p_respawn, 3)
 		end
 	end
 end
