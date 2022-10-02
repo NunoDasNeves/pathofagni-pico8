@@ -333,10 +333,9 @@ function draw_knight(t)
 end
 
 function draw_smol_thang(f)
-	local sx,sy = (f.sfr % 2) * 4, (f.sfr \ 2) * 4
 	sspr(
-		(f.s % 16) * 8 + sx,
-		(f.s \ 16) * 8 + sy,
+		(f.s % 16) * 8 + (f.sfr % 2) * 4,
+		(f.s \ 16) * 8 + (f.sfr \ 2) * 4,
 		4,4,
   		f.x,
    		f.y,
@@ -587,7 +586,7 @@ thang_dat = {
 		spawn = true,
 		stops_projs = false,
 		--  coll dimensions
-		ftw = 2 - 1, -- 1 because we just care about pixel coords
+		ftw = 1, -- 1 because we just care about pixel coords
 		ftx = 3,
 		fty = 8,
 		ch = 4,
@@ -598,11 +597,7 @@ thang_dat = {
 		hx = 1.5,
 		hy = 1.5,
 		hw = 4.99,
-		hh = 4.99,
-		-- physics
-		max_vx = 1.4,
-		g = 0.3, -- gravity
-		max_vy = 4
+		hh = 4.99
 	},
 	[91] = { -- checkpoint
 		update = update_checkpoint,
