@@ -1284,7 +1284,7 @@ function start_tp(t)
 	reset_anim_state(t)
 	snd(snd_wizard_tp)
 	-- find tp plat
-	local plats,plat = {}
+	local plats,minplat_d,minplat,plat = {},999
 	-- start inside borders
 	local rmapx,rmapy = room_x \ 8 + 2,room_y \ 8 + 4
 	for y=rmapy,rmapy+9 do
@@ -1292,13 +1292,20 @@ function start_tp(t)
 			local val = mget(x,y)
 			if fget(val,0) and not fget(val,1) then
 				plat = {x = x*8, y = y*8 - t.h}
-				if (plat.x != t.x or plat.y != t.y) and (t.shield or vlen{x=plat.x-p.x,y=plat.y-p.y} > 48) then
-					add(plats, plat)
+				local d = vlen{x=plat.x-p.x,y=plat.y-p.y}
+				if plat.x != t.x or plat.y != t.y then
+					if t.shield then
+						if d < minplat_d then
+							minplat,minplat_d = plat,d
+						end
+					elseif d > 48 then
+						add(plats, plat)
+					end
 				end
 			end
 		end
 	end
-	plat = rnd(plats)
+	plat = t.shield and minplat or rnd(plats)
 	t.tp_to_x,t.tp_to_y,t.tp_from_x,t.tp_from_y = plat.x,plat.y,t.x,t.y
 end
 
