@@ -2300,15 +2300,7 @@ function coll_edge(t,newx,face_either_way)
 end
 
 function coll_spikes(t)
-	local hl,ht = t.x + t.hx,t.y + t.hy
-	local hr,hb = hl + t.hw,ht + t.hh
-	if 	collmap(hl,ht,3) or
-			collmap(hr,ht,3) or
-			collmap(hl,hb,3) or
-			collmap(hr,hb,3) then
-		return true
-	end
-	return false
+	return collmap(t.x + t.w/2, t.y + t.h/2, 3)
 end
 
 -->8
