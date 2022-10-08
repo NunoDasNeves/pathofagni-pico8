@@ -1382,7 +1382,9 @@ end
 function update_ice_trap(t)
 	t.fcnt += 1
 	if t.fcnt == 40 then
-		spell_frost_nova(t)
+		for i=2,8,2 do
+			apply_ball_prop(spawn_thang(124, t.x+2, t.y+2), ball_dirs[i])
+		end
 		t.fcnt = 0
 	end
 end
