@@ -1572,7 +1572,7 @@ function update_frog(t)
 				end
 			else
 				-- just play first frame for a bit
-				if play_anim(t, 40, 1) then
+				if play_anim(t, 120, 1) then
 					t.croak = true
 					reset_anim_state(t)
 				end
@@ -1626,7 +1626,7 @@ function update_frog(t)
 
 	-- on landing, reset to idle
 	if not t.air and phys_result.landed then
-		t.s,t.fr,t.fcnt = t.i,0,rnd{0,10,20,30}
+		t.s,t.fr,t.fcnt = t.i,0,rnd{0,20,30}
 	end
 
 	if check_bad_coll_spikes(t) then
