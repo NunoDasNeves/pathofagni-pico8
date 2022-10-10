@@ -426,8 +426,16 @@ end
 
 function end_text(xoff,yoff)
 	print('path of', 50+xoff, 54+yoff,7)
-	spr(236,47+xoff,60+yoff,4,2)
-	print('the end', 49+xoff, 78+yoff, 11)
+	spr(236,47+xoff,60+yoff,4,2)	
+	print('BY nUNO dAS nEVES', 29+xoff, 78+yoff, 11)
+	print('the end', 49+xoff, 94+yoff, 7)
+
+	--[[
+	print('path of', 50+xoff, 42+yoff,7)
+	sspr((236 % 16) * 8, (236 \ 16) * 8, 32, 16, 31+xoff, 50+yoff, 64, 32)
+	print('BY nUNO dAS nEVES', 29+xoff, 86+yoff, 11)
+	print('the end', 49+xoff, 102+yoff, 7)
+	]]
 end
 
 function _draw()
