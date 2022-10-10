@@ -1,8 +1,8 @@
 pico-8 cartridge // http://www.pico-8.com
 version 38
 __lua__
--- 'jumper' demo build #6
--- by nuno
+-- 'Path of Agni' demo build #7
+-- by Nuno Das Neves
 
 function copy_into(a, b)
 	for k,v in pairs(a) do
@@ -277,7 +277,6 @@ end
 
 function _init()
 	init_thang_dat()
-	-- starting room
 	move_room(23)
 	spawn_p_in_curr_room()	
 end
@@ -431,10 +430,7 @@ function end_text(xoff,yoff)
 	print('the end', 49+xoff, 94+yoff, 7)
 
 	--[[
-	print('path of', 50+xoff, 42+yoff,7)
 	sspr((236 % 16) * 8, (236 \ 16) * 8, 32, 16, 31+xoff, 50+yoff, 64, 32)
-	print('BY nUNO dAS nEVES', 29+xoff, 86+yoff, 11)
-	print('the end', 49+xoff, 102+yoff, 7)
 	]]
 end
 
@@ -490,7 +486,7 @@ function _draw()
 
 	print_in_room(23,'path of', 53, 35, 1)
 	print_in_room(23,'path of', 52, 34, 7)
-	print_in_room(23,'demo 6', 52, 58, 11)
+	print_in_room(23,'demo 7', 52, 58, 11)
 	print_in_room(23, '⬅️➡️ move\n🅾️ z jump\n❎ x fire', 46, 68, 6)
 	print_in_room(22, 'psst!\n❎+⬆️\n❎+⬅️+⬇️', 80, 66, 1)
 	print_in_room(9, 'psst!\nhold ❎', 17, 12, 1)
