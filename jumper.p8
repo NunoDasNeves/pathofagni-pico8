@@ -34,11 +34,11 @@ function aabb(x0,y0,w0,h0,x1,y1,w1,h1)
     return true
 end
 
-function vlen(v)
-    return sqrt(v.x*v.x + v.y*v.y)
+function dist2p(x,y)
+	local dx,dy = p.x-x,p.y-y
+	return sqrt(dx*dx + dy*dy)
 end
 
--- 
 dbg,dbgstr = true,''
 
 -- disable btnp repeating
@@ -1036,7 +1036,7 @@ function check_shoot_shot(t)
 end
 
 function check_throw_icepick(t)
-	if vlen{ x = t.x - p.x, y = t.y - p.y } <= t.range then
+	if dist2p(t.x,t.y) <= t.range then
 		face_p(t)
 		t.shooting = true
 		reset_anim_state(t)
@@ -1296,7 +1296,7 @@ function start_tp(t)
 			local val = mget(x,y)
 			if fget(val,0) and not fget(val,1) then
 				plat = {x = x*8, y = y*8 - t.h}
-				local d = vlen{x=plat.x-p.x,y=plat.y-p.y}
+				local d = dist2p(plat.x,plat.y)
 				if plat.x != t.x or plat.y != t.y then
 					if t.shield then
 						if d < minplat_d then
@@ -1759,7 +1759,7 @@ function update_knight(t)
 				loop_anim(t,3,2)
 
 				t.atktimer += 1 -- time since last attack
-				if 		t.phase == 1 and vlen{ x = t.x - p.x, y = t.y - p.y } <= t.atkrange or
+				if 		t.phase == 1 and dist2p(t.x,t.y) <= t.atkrange or
 						t.phase == 2 and t.atktimer >= t.jmptime then
 					t.atktimer,t.atking = 0,true
 					reset_anim_state(t)
@@ -1859,15 +1859,15 @@ function update_bat(b)
 		return
 	end
 
-	-- b.alive
-	if loop_anim(b,4,2) then
+	loop_anim(b,4,2)
+	--if loop_anim(b,4,2) then
 		--snd(snd_bat_flap)
-	end
+	--end
 
 	-- move the bat
 	local b2p = {x=p.x-b.x,y=p.y-b.y}
-	local dist2p = vlen(b2p)
-	local in_range = dist2p < 56 and true or false
+	local dist_to_p = dist2p(b.x,b.y)
+	local in_range = dist_to_p < 56 and true or false
 	local go_to_p = in_range
 
 	-- if collide with something, go in random direction
@@ -1889,12 +1889,12 @@ function update_bat(b)
 	if b.dircount <= 0 then
 		-- go toward player
 		if go_to_p then
-			b.vx,b.vy,b.dircount = b2p.x * 0.5/dist2p,b2p.y * 0.4/dist2p,30
+			b.vx,b.vy,b.dircount = b2p.x * 0.5/dist_to_p,b2p.y * 0.4/dist_to_p,30
 		-- pick random direction
 		else
-			local rndv = {x = rnd(2) - 1, y = rnd(2) - 1}
-			local len = vlen(rndv)
-			b.vx,b.vy = rndv.x * 0.5/len,rndv.y * 0.4/len
+			local rndx,rndy = rnd(2) - 1, rnd(2) - 1
+			local len = sqrt(rndx*rndx + rndy*rndy)
+			b.vx,b.vy = rndx * 0.5/len,rndy * 0.4/len
 			-- reset quicker if we're in range
 			b.dircount = in_range and 20 or 60
 		end
