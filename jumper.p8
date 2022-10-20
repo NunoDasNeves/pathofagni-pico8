@@ -186,6 +186,7 @@ function spawn_p_in_curr_room()
 	spawn_p(room_checkpoint.x, room_checkpoint.y - 1)
 end
 
+snd_knight_hit,
 snd_door_open,
 snd_p_respawn,
 snd_p_die,
@@ -204,28 +205,8 @@ snd_shooter_shot,
 snd_archer_invis,
 snd_wizard_tp
 =
-7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23
+6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23
 
--- TODO this
---[[
-function snd(s)
-	if s < 12 then
-		sfx(s)
-	elseif s >=12 and s < 23 then
-		local stat2,stat3 = stat(48),stat(49)
-		if stat2 == -1 or stat2 > 15 then
-			sfx(s,2)
-		elseif stat3 == -1 or stat3 > 15 then
-			sfx(s,3)
-		end
-	else
-		-- sfx 13,14,15 are low prio; don't let them override other sounds
-		if s > 15 or stat(49) == -1 then
-			sfx(s)
-		end
-	end
-end
-]]
 function snd(s)
 	sfx(s)
 end
@@ -1660,6 +1641,8 @@ end
 function burn_knight(t)
 	if t.atking and t.fr > 0 then
 		burn_bad(t)
+	elseif t.alive then
+		snd(snd_knight_hit)
 	end
 end
 
