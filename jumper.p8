@@ -44,9 +44,10 @@ dbg,dbgstr = true,''
 -- disable btnp repeating
 poke(0x5f5c, 255)
 
+--[[
 if dbg then
 	menuitem(
-		1,
+		3,
 		"<- skip ->",
 		function(b)
 			move_room((room_i + 24 + (b == 1 and -1 or 1)) % 24)
@@ -59,6 +60,7 @@ if dbg then
 		end
 	)
 end
+]]
 
 room_old, -- for restore
 room_num_bads, -- for unlock (bads door)
@@ -120,6 +122,8 @@ function update_room()
 			do_not_restore = false
 			restore_and_spawn_room()
 			add(thang,p)
+			dset(0,1)
+			dset(1,room_i)
 		end
 	else
 		p.x = -10
@@ -270,8 +274,23 @@ function _update()
 end
 
 function _init()
+	menuitem(
+		1,
+		"reset room",
+		kill_p	
+	)
+	menuitem(
+		2,
+		"reset progress",
+		function()
+			dset(0,0)
+			move_room(23)
+			spawn_p_in_curr_room()
+		end
+	)
+	cartdata('nunodasneves_path_of_agni_v1')
 	init_thang_dat()
-	move_room(23)
+	move_room(dget(0) == 0 and 23 or dget(1))
 	spawn_p_in_curr_room()	
 end
 
