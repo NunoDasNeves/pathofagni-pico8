@@ -607,11 +607,7 @@ thang_dat = {
 		cw = 5,
 		cx = 1,
 		cy = 2,
-		-- hurtbox dimensions
-		hx = 1.5,
-		hy = 1.5,
-		hw = 4.99,
-		hh = 4.99
+		-- hurtbox dimensions are hardcoded in hit_p
 	},
 	[91] = { -- checkpoint
 		update = update_checkpoint,
@@ -810,9 +806,10 @@ function update_door(t)
 	num = t.type == 2 and room_num_unlit or num
 	if t.open then
 		if num > 0 then
-			if not aabb(t.x,t.y,t.w,t.h,
-						p.x+p.cx,p.y+p.cy,
-						p.cw,p.ch) then
+			-- hardcoded p.c*
+			if not aabb(t.x,t.y,8,8,
+						p.x+1,p.y+2,
+						5,4) then
 					t.open = false
 					mset(mx,my,t.s_top)
 					mset(mx,my+1,t.s_bot)
@@ -1998,9 +1995,10 @@ function kill_p()
 end
 
 function hit_p(x,y,w,h)
+	-- hardcoded p.h*
 	return aabb(x,y,w,h,
-				p.x+p.hx,p.y+p.hy,
-				p.hw,p.hh)
+				p.x+1.5,p.y+1.5,
+				4.99,4.99)
 end
 
 function update_p()
@@ -2312,7 +2310,8 @@ function coll_edge(t,newx,face_either_way)
 end
 
 function coll_spikes(t)
-	return collmap(t.x + t.w/2, t.y + t.h/2, 3)
+	-- everything that uses this has w = 4, h = 4
+	return collmap(t.x + 4, t.y + 4, 3)
 end
 
 -->8
