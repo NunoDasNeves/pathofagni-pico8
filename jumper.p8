@@ -72,14 +72,6 @@ function move_room(i)
 	room_i,room_x,room_y = i,r.x,r.y
 end
 
-function restore_room()
-	if room_old != nil then
-		for t in all(room_old) do
-			mset(t.x,t.y,t.val)
-		end
-	end
-end
-
 function get_room_xy(i)
 	return {
 		x = (i % 8) * 128,
@@ -125,8 +117,8 @@ function update_room()
 			elseif start_music_rooms[room_i] then
 				start_music()
 			end
-			restore_room()
-			spawn_room()
+			do_not_restore = false
+			restore_and_spawn_room()
 			add(thang,p)
 		end
 	else
@@ -145,7 +137,18 @@ end
 
 -- spawn thangs in current room
 -- save room
-function spawn_room()
+function restore_and_spawn_room()
+	if do_not_restore then
+		del(thang, p)
+		return
+	end
+	-- restore
+	if room_old != nil then
+		for t in all(room_old) do
+			mset(t.x,t.y,t.val)
+		end
+	end
+	-- spawn
 	local rmapx,rmapy  = room_x \ 8, room_y \ 8
 	thang,max_z,room_old,room_num_bads,room_num_unlit,fireball,rain = {},0,{},0,0,{},{}
 	for y=rmapy,rmapy+15 do
@@ -181,8 +184,7 @@ end
 do_fade,fade_timer = true,8 -- fade in
 
 function spawn_p_in_curr_room()
-	restore_room()
-	spawn_room()
+	restore_and_spawn_room()
 	spawn_p(room_checkpoint.x, room_checkpoint.y - 1)
 end
 
@@ -916,6 +918,7 @@ function do_boss_die(t)
 		if not t.air then
 			if play_anim(t, 10, t.s_die.f) then
 				room_num_bads = 0
+				do_not_restore = true
 			end
 			-- don't want to keep doing physics when dead
 			-- this would break if he was on an ice block and you broke it
