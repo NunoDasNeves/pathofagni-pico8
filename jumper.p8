@@ -188,6 +188,7 @@ function spawn_p_in_curr_room()
 	spawn_p(room_checkpoint.x, room_checkpoint.y - 1)
 end
 
+-- TODO token reduction
 snd_knight_hit,
 snd_door_open,
 snd_p_respawn,
@@ -209,18 +210,29 @@ snd_wizard_tp
 =
 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23
 
+-- TODO token reduction
 function snd(s)
 	sfx(s)
 end
 
--- TODO token reduction?
--- for state_music rooms: call start_music() when entering these rooms (i.e. we need one after a silent room to restart music)
--- play the start of the music, overlaps with start_music_rooms
-silent_rooms,intro_rooms,start_music_rooms = {},{[23]=1, [8]=1, [7]=1},{[7]=1, [8]=1}
--- silent rooms includes all rooms we want regular music to fade out, and NOT play on respawn (including boss rooms)
-for i in all{0,1,14,15,16,17} do
-	silent_rooms[i] = 1
+function make_set(keys)
+	local table = {}
+	for i in all(keys) do
+		table[i] = 1
+	end
+	return table
 end
+
+-- music control
+-- start_music() is always called on spawn
+-- boss music starts from boss monster's code
+-- silent rooms: regular music fade out, and NOT play on respawn
+-- intro_rooms: play the intro of the regular music
+-- start_music_rooms: call start_music() when entering these rooms
+silent_rooms,intro_rooms,start_music_rooms = 
+	make_set{0,1,14,15,16,17},
+	make_set{7,8,23},
+	make_set{7,8}
 
 function start_music()
 	if intro_rooms[room_i] then
@@ -228,7 +240,6 @@ function start_music()
 	elseif not silent_rooms[room_i] then
 		music(2, 200, 3)
 	end
-	-- boss music will start from boss monster's code
 end
 
 function fade_update()
