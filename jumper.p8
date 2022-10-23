@@ -62,10 +62,10 @@ if dbg then
 end
 ]]
 
-room_old, -- for restore
-room_num_bads, -- for unlock (bads door)
-room_num_unlit, -- for unlock (lanterns door)
-room_checkpoint -- checkpoint thang
+room_old,
+room_num_bads,
+room_num_unlit,
+room_checkpoint
 =
 nil,0,0,nil
 
@@ -81,18 +81,9 @@ function get_room_xy(i)
 	}
 end
 
---function in_room(x,y)
---	if 		x < room_x or x >= room_x+128 or
---			y < room_y or y >= room_y+128 then
---		return false
---	end
---	return true
---end
-
 is_end = false
 
 function update_room()
-	-- update room and camera to where player currently is
 	local oldi,
 		  rx,ry = 
 		  room_i,
@@ -100,7 +91,6 @@ function update_room()
 	if rx >= 0 then
 		local newi = rx % 8 + ry * 8
 		move_room(newi)
-		-- spawn the room if it's a new room
 		if oldi != newi then
 			-- give player a little kick through the door
 			if p.alive and not p.spawn then
@@ -113,7 +103,6 @@ function update_room()
 				-- due to stay-on-platform-assist, the player could stand on the air if we don't do this
 				p.air = true
 			end
-			-- fade out music and stuff
 			if silent_rooms[room_i] then
 				music(-1,3000,3)
 			elseif start_music_rooms[room_i] then
@@ -139,8 +128,6 @@ function update_rain_h(t)
 	t.hh = t.h
 end
 
--- spawn thangs in current room
--- save room
 function restore_and_spawn_room()
 	if do_not_restore then
 		del(thang, p)
@@ -306,9 +293,7 @@ function draw_thang(t)
 end
 
 function draw_shot(t)
-	-- tracer
 	line(t.x, t.y, t.endx, t.endy, t.trace_color)
-	--arrow
 	line(t.arrowx, t.arrowy, t.endx, t.endy, t.arrow_color)
 end
 
@@ -441,10 +426,6 @@ function end_text(xoff,yoff)
 	spr(236,47+xoff,60+yoff,4,2)	
 	print('BY nUNO dAS nEVES', 29+xoff, 78+yoff, 11)
 	print('the end', 49+xoff, 94+yoff, 7)
-
-	--[[
-	sspr((236 % 16) * 8, (236 \ 16) * 8, 32, 16, 31+xoff, 50+yoff, 64, 32)
-	]]
 end
 
 function _draw()
@@ -487,9 +468,6 @@ function _draw()
 			end
 		end
 	end
-
---end
---function a()
 
 	camera(room_x,room_y)
 	palt(0b0000000000000001)
@@ -618,7 +596,6 @@ thang_dat = {
 		teeter = false,
 		spawn = true,
 		stops_projs = false,
-		--  coll dimensions
 		ftw = 1, -- 1 because we just care about pixel coords
 		ftx = 3,
 		fty = 8,
@@ -708,7 +685,6 @@ thang_dat = {
 		draw = draw_knight,
 		hp = 5,
 		atking = false,
-		-- draw sword/sword hitbox present
 		swrd_fr = 0,
 		phase = 0, -- stand, walk, jump
 		atktimer = 0, -- how long since last attack
@@ -746,7 +722,7 @@ thang_dat = {
 		hp = 5,
 		shooting = false,
 		shspeed = 6,
-		goingrght = true, -- going to go after shooting 
+		goingrght = true,
 		phase = 0,
 		invis = false,
 		invistimer = 0,
@@ -761,7 +737,7 @@ thang_dat = {
 		draw = draw_wizard,
 		z = 2,
 		hp = 5,
-		air = false, -- never be in air
+		air = false, -- special case for wizard
 		template = enemy,
 		phase = 0,
 		tping = false,
