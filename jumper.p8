@@ -930,7 +930,8 @@ function dist_until_flag(x,y,flag,dir,vert)
 		x\8,y\8,
 		x\128,y\128,
 		vert and 0 or dir,vert and dir or 0
-	while true do
+
+	while mx\16 == xroomorig and my\16 == yroomorig do
 		local tile = mget(mx, my)
 		if fget(tile, flag) then
 			break
@@ -938,9 +939,6 @@ function dist_until_flag(x,y,flag,dir,vert)
 		mx += xinc
 		my += yinc
 		tiles += 1
-		if mx\16 != xroomorig or my\16 != yroomorig then
-			break
-		end
 	end
 	-- in the wall already
 	if tiles == 0 then
@@ -953,12 +951,10 @@ end
 
 function do_boss_die(t)
 	if not t.alive then
-		t.stops_projs = false
-		t.s = t.i + t.s_die.s
+		t.stops_projs,t.s = false,t.i + t.s_die.s
 		if not t.air then
 			if play_anim(t, 10, t.s_die.f) then
-				room_num_bads = 0
-				do_not_restore = true
+				room_num_bads,do_not_restore = 0,true
 			end
 			-- don't want to keep doing physics when dead
 			-- this would break if he was on an ice block and you broke it
@@ -972,8 +968,7 @@ function do_bad_die(t)
 	-- if dead, play death animation, delete t when done
 	-- return true if dead
 	if not t.alive then
-		t.stops_projs = false
-		t.s = 104
+		t.stops_projs,t.s = false,104
 		if play_anim(t, 5, 3) then
 			del(thang, t)
 			room_num_bads -= 1
@@ -986,9 +981,8 @@ end
 function check_bad_coll_spikes(t)
 	if coll_spikes(t) then
 		snd(snd_hit)
-		t.alive = false
+		t.alive,t.s = false,104
 		reset_anim_state(t)
-		t.s = 104
 		return true
 	end
 	return false
@@ -1034,10 +1028,9 @@ function update_shot(t)
 		end
 	elseif t.fcnt < 5 then
 		t.trace_color = 12
-	else
+	elseif t.fcnt < 7 then
 		t.trace_color,t.arrow_color = 1,12
-	end
-	if t.fcnt > 6 then
+	else
 		t.arrow_color = 1
 	end
 	t.fcnt += 1
