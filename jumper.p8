@@ -201,9 +201,11 @@ snd_wizard_tp
 =
 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23
 
--- TODO token reduction
+sfx_on = true
 function snd(s)
-	sfx(s)
+	if sfx_on then
+		sfx(s)
+	end
 end
 
 function make_set(keys)
@@ -216,7 +218,6 @@ end
 
 -- music control
 -- start_music() is always called on spawn
--- boss music starts from boss monster's code
 -- silent rooms: regular music fade out, and NOT play on respawn
 -- intro_rooms: play the intro of the regular music
 -- start_music_rooms: call start_music() when entering these rooms
@@ -225,12 +226,26 @@ silent_rooms,intro_rooms,start_music_rooms =
 	make_set{7,8,23},
 	make_set{7,8}
 
-function start_music()
-	if intro_rooms[room_i] then
-		music(0, 0, 3)
-	elseif not silent_rooms[room_i] then
-		music(2, 200, 3)
-	end
+music_on = true
+music_track,music_fade = -1,0
+
+function resume_music()
+	music(music_track, music_fade)
+end
+
+function start_music(is_boss)
+	if music_on then
+		music_track,music_fade=-1,0
+		if is_boss then
+			music_track = 24
+		elseif intro_rooms[room_i] then
+			music_track = 0
+		elseif not silent_rooms[room_i] then
+			music(2, 200, 3)
+			music_track,music_fade = 2,200
+		end
+		music(music_track, music_fade, 3)
+	end	
 end
 
 function fade_update()
@@ -261,13 +276,34 @@ function _update()
 end
 
 function _init()
+	--[[
 	menuitem(
-		1,
+		2,
 		"reset room",
 		kill_p	
 	)
 	menuitem(
-		2,
+		3,
+		"toggle sfx",
+		function()
+			sfx_on = not sfx_on
+		end
+	)]]
+	menuitem(
+		4,
+		"toggle music",
+		function()
+			music_on = not music_on
+			if music_on then
+				resume_music()
+			else
+				music(-1)
+			end
+		end
+	)
+	--[[
+	menuitem(
+		5,
 		"reset progress",
 		function()
 			dset(0,0)
@@ -275,6 +311,7 @@ function _init()
 			spawn_p_in_curr_room()
 		end
 	)
+	]]
 	cartdata('nunodasneves_path_of_agni_v1')
 	init_thang_dat()
 	move_room(dget(0) == 0 and 23 or dget(1))
@@ -1168,7 +1205,7 @@ function update_archer(t)
 			t.s = t.i
 			local r = get_room_xy(room_i)
 			if p.y > r.y + 16 then
-				music(24, 0, 3)
+				start_music(true)
 				t.phase = 1
 			end
 			return
@@ -1506,7 +1543,7 @@ function update_wizard(t)
 			end
 			local r = get_room_xy(room_i)
 			if p.y > r.y + 16 then
-				music(24, 0, 3)
+				start_music(true)
 				t.phase = 1
 				t.y += t.hover_up and 2 or 1
 				start_tp(t)
@@ -1742,7 +1779,7 @@ function update_knight(t)
 				-- don't advance phase if p is dead
 				if p.alive and dir != 0 then
 					t.phase = 1
-					music(24, 0, 3)
+					start_music(true)
 				end
 			end
 
