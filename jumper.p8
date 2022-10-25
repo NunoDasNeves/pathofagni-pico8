@@ -301,7 +301,6 @@ function _init()
 			end
 		end
 	)
-	--[[
 	menuitem(
 		5,
 		"reset progress",
@@ -311,7 +310,6 @@ function _init()
 			spawn_p_in_curr_room()
 		end
 	)
-	]]
 	cartdata('nunodasneves_path_of_agni_v1')
 	init_thang_dat()
 	move_room(dget(0) == 0 and 23 or dget(1))
@@ -1893,8 +1891,7 @@ function update_bat(b)
 	--end
 
 	-- move the bat
-	local b2p = {x=p.x-b.x,y=p.y-b.y}
-	local dist_to_p = dist2p(b.x,b.y)
+	local b2p,dist_to_p = {x=p.x-b.x,y=p.y-b.y},dist2p(b.x,b.y)
 	local in_range = dist_to_p < 56 and true or false
 	local go_to_p = in_range
 
@@ -2426,14 +2423,12 @@ function phys_jump(t,newx,newy,oldair)
 	-- where our head at? offset from cy a little so this always happens before phys_walls
 	-- this avoids wall bonking on a flat ceiling
 	-- use foot x - this avoids ceiling bonking when next to a wall
-	local hdy = newy + t.cy - 0.1
-	local hdxl = newx + t.ftx
-	local hdxr = hdxl + t.ftw
+	local hdy,hdxl = newy + t.cy - 0.1,newx + t.ftx
 
 	-- ceiling
 	if 	t.air and (
 				collmap(hdxl,hdy,1) or
-				collmap(hdxr,hdy,1)) then
+				collmap(hdxl + t.ftw,hdy,1)) then
 		if not oldair then
 			t.air,t.vy = false,0
 		else
@@ -2459,20 +2454,12 @@ function phys_walls(t,newx,newy)
 		r_pen = cr - rounddown(cr,8)
 	end
 	
-	local oldnewx = newx
-	if t.vx < 0 then
+	if l_pen > 0 then
 		newx += l_pen
-	elseif t.vx > 0 then
-		newx -= r_pen
-	else
-		if l_pen > 0 then
-			newx += l_pen
-		elseif r_pen > 0 then
-			newx -= r_pen
-		end
+		t.vx = 0
 	end
-
-	if oldnewx != newx then
+	if r_pen > 0 then
+		newx -= r_pen
 		t.vx = 0
 	end
 
