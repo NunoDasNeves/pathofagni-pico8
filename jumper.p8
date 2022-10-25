@@ -635,7 +635,7 @@ thang_dat = {
 		ftx = 3,
 		fty = 8,
 		ch = 4,
-		cw = 5,
+		cw = 5.99,
 		cx = 1,
 		cy = 2,
 		-- hurtbox dimensions are hardcoded in hit_p
@@ -794,7 +794,6 @@ thang_dat = {
 		burn = kill_ice_proj,
 		draw = draw_smol_thang,
 		template = smol_thang,
-		speed = 3,
 		die_yinc = 0.5,
 		s_die_s = 108
 	},
@@ -2238,16 +2237,16 @@ ball_dirs = {
 }
 
 function apply_ball_prop(f,prop)
-	f.sfr,f.vx,f.vy,f.xflip,f.yflip = prop[1],prop[2] * f.speed,prop[3] * f.speed,prop[4],prop[5]
+	-- speed = 3
+	f.sfr,f.vx,f.vy,f.xflip,f.yflip = prop[1],prop[2] * 3,prop[3] * 3,prop[4],prop[5]
 end
 
 function make_fireball(xdir, ydir)
 	local f = {
-		x = p.x + (p.w - 4)/2,
-		y = p.y + (p.h - 4)/2,
+		x = p.x + 2,
+		y = p.y + 2,
 		s = 80,
 		alive = true,
-		speed = 3,
 		update = update_fireball,
 		fcnt = 0,
 		list = fireball,
@@ -2294,7 +2293,7 @@ function update_fireball(f)
 	-- hit blocks
 	-- check two points to make it harder to abuse shooting straight up/down past blocks
 	if 
-			collmap(f.x+3,  f.y+2, 1) or
+			collmap(f.x+2.99,  f.y+2, 1) or
 			collmap(f.x+1,  f.y+2, 1) or
 			-- kill fireball if it leaves the map (upper levels)
 			f.x < -4 or f.y < -4 then
@@ -2448,21 +2447,16 @@ function phys_walls(t,newx,newy)
 	if 	collmap(cl, cb, 1) or 
 			collmap(cl, ct, 1) then
 		l_pen = roundup(cl,8) - cl
+		newx += l_pen
+		t.vx = 0
 	end
 	if 	collmap(cr, cb, 1) or 
 			collmap(cr, ct, 1) then
 		r_pen = cr - rounddown(cr,8)
-	end
-	
-	if l_pen > 0 then
-		newx += l_pen
-		t.vx = 0
-	end
-	if r_pen > 0 then
 		newx -= r_pen
 		t.vx = 0
 	end
-
+	
 	return newx
 end
 
