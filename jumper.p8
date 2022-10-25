@@ -103,11 +103,13 @@ function update_room()
 				-- due to stay-on-platform-assist, the player could stand on the air if we don't do this
 				p.air = true
 			end
+
 			if silent_rooms[room_i] then
-				music(-1,3000,3)
-			elseif start_music_rooms[room_i] then
+				stop_music(3000)
+			else
 				start_music()
 			end
+
 			do_not_restore = false
 			restore_and_spawn_room()
 			add(thang,p)
@@ -227,23 +229,24 @@ silent_rooms,intro_rooms,start_music_rooms =
 	make_set{7,8}
 
 music_on = true
-music_track,music_fade = -1,0
 
-function resume_music()
-	music(music_track, music_fade)
+function stop_music(fade)
+	music_track,music_fade = -1,0
+	music(-1,fade)
 end
 
 function start_music(is_boss)
-	if music_on then
-		music_track,music_fade=-1,0
-		if is_boss then
-			music_track = 24
-		elseif intro_rooms[room_i] then
-			music_track = 0
-		elseif not silent_rooms[room_i] then
-			music(2, 200, 3)
-			music_track,music_fade = 2,200
-		end
+	local playing = music_track != -1
+	music_fade = 0
+	if is_boss then
+		music_track = 24
+	elseif intro_rooms[room_i] then
+		music_track = 0
+	elseif not silent_rooms[room_i] then
+		music_track,music_fade = 2,200
+	end
+	-- only play if nothing is playing...
+	if music_on and not playing then
 		music(music_track, music_fade, 3)
 	end	
 end
@@ -276,11 +279,13 @@ function _update()
 end
 
 function _init()
-	--[[
 	menuitem(
 		2,
 		"reset room",
-		kill_p	
+		function()
+			do_not_restore = false
+			kill_p()
+		end
 	)
 	menuitem(
 		3,
@@ -288,14 +293,14 @@ function _init()
 		function()
 			sfx_on = not sfx_on
 		end
-	)]]
+	)
 	menuitem(
 		4,
 		"toggle music",
 		function()
 			music_on = not music_on
 			if music_on then
-				resume_music()
+				music(music_track, music_fade)
 			else
 				music(-1)
 			end
@@ -311,6 +316,8 @@ function _init()
 		end
 	)
 	cartdata('nunodasneves_path_of_agni_v1')
+	-- need to set up music state
+	stop_music()
 	init_thang_dat()
 	move_room(dget(0) == 0 and 23 or dget(1))
 	spawn_p_in_curr_room()	
@@ -947,11 +954,14 @@ function dist_until_flag(x,y,flag,dir,vert)
 end
 
 function do_boss_die(t)
+	if t.donezo then
+		return true
+	end
 	if not t.alive then
 		t.stops_projs,t.s = false,t.i + t.s_die.s
 		if not t.air then
 			if play_anim(t, 10, t.s_die.f) then
-				room_num_bads,do_not_restore = 0,true
+				room_num_bads,do_not_restore,t.donezo = 0,true,true
 			end
 			-- don't want to keep doing physics when dead
 			-- this would break if he was on an ice block and you broke it
@@ -1170,7 +1180,7 @@ function update_archer(t)
 	if do_bad_burning(t) then
 		if not t.alive then
 			snd(snd_knight_die)
-			music(-1,0,3)
+			stop_music()
 		end
 		return
 	-- not burning or dead
@@ -1480,7 +1490,7 @@ function update_wizard(t)
 	if do_bad_burning(t) then
 		if not t.alive then
 			snd(snd_knight_die)
-			music(-1,0,3)
+			stop_music()
 		end
 		return
 	elseif oldburning then
@@ -1726,7 +1736,7 @@ function update_knight(t)
 	if do_bad_burning(t) then
 		if not t.alive then
 			snd(snd_knight_die)
-			music(-1,0,3)
+			stop_music()
 		end
 		return
 	elseif oldburning then
@@ -2010,7 +2020,7 @@ end
 
 function kill_p()
 	snd(snd_p_die)
-	music(-1,800,3)
+	stop_music(800)
 	p.alive,p.s = false,71
 	reset_anim_state(p)
 end
