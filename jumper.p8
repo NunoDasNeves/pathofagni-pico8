@@ -1342,7 +1342,7 @@ function start_tp(t)
 						if d < minplat_d then
 							minplat,minplat_d = plat,d
 						end
-					elseif d > 48 then
+					elseif d > 46 then -- almost 5 tiles
 						add(plats, plat)
 					end
 				end
