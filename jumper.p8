@@ -2032,6 +2032,7 @@ function hit_p(x,y,w,h)
 				4.99,4.99)
 end
 
+p_shbuf = {x={cnt=0},y={cnt=0}}
 function update_p()
 	if p.spawn or not p.alive then
 		respawn_update_p()
@@ -2130,40 +2131,41 @@ function update_p()
 		return
 	end
 
+	-- shooting
+	function buffer_dir(btn_minus, btn_plus, xy)
+		if btn(btn_minus) then
+			p_shbuf[xy].dir = -1
+			p_shbuf[xy].cnt = 3
+		elseif btn(btn_plus) then
+			p_shbuf[xy].dir = 1
+			p_shbuf[xy].cnt = 3
+		elseif p_shbuf[xy].cnt > 0 then
+			p_shbuf[xy].cnt -= 1
+		-- note else -- it will not reset dir for another frame
+		else
+			p_shbuf[xy].dir = 0
+		end
+	end
+	buffer_dir(⬆️,⬇️,'y')
+	buffer_dir(⬅️,➡️,'x')
+
 	local oldsh = p.sh
 	if btn(❎) then
 		if p.shcount == 0 then
 			p.sh = true
 		end
 		for t in all(thang) do
-			if t.i == 257 and hit_p(t.x+3.5,t.y+3.5,1,t.h) then
+			if t.i == 257 and hit_p(t.x+3,t.y,1.99,t.h) then
 				p.sh = false
-			end
-		end
-		if p.sh then
-			local xdir,ydir = 0,0
-			if btn(⬆️) then
-				ydir = -1
-			elseif btn(⬇️) then
-				ydir = 1
-			end
-			if btn(⬅️) then
-				xdir = -1
-			elseif btn(➡️) then
-				xdir = 1
-			-- default x dir, only if a direction hasn't been buffered,
-			-- and only if y dir is 0, to allow straight up and down
-			elseif p.shbuf == nil and ydir == 0 then
-				xdir = p.rght and 1 or -1
-			end
-			if xdir != 0 or ydir != 0 then
-				p.shbuf = {x = xdir, y = ydir}
 			end
 		end
 	else -- release - fire
 		if p.sh then
-			make_fireball(p.shbuf.x, p.shbuf.y)
-			p.shcount, p.shbuf = 10, nil
+			if p_shbuf.x.dir == 0 and p_shbuf.y.dir == 0 then
+				p_shbuf.x.dir = p.rght and 1 or -1
+			end
+			make_fireball(p_shbuf.x.dir, p_shbuf.y.dir)
+			p.shcount = 10
 		end
 		p.sh = false
 	end
