@@ -464,10 +464,10 @@ function draw_fade(timer, color)
 end
 
 function title_text(xoff,yoff)
-	print('path of', 50+xoff, 54+yoff,7)
+	print('path of', 50+xoff, 53+yoff,7)
 	spr(236,47+xoff,60+yoff,4,2)	
 	--print('BY nUNO dAS nEVES', 29+xoff, 78+yoff, 11)
-	print('demo 7', 51+xoff, 78+yoff, 11)
+	print('demo 7', 51+xoff, 79+yoff, 11)
 end
 
 function _draw()
@@ -503,7 +503,8 @@ function _draw()
 				print('the end', 49+c[1], 94+c[2], 7)
 			end
 			pal()
-			end_text(0,0)
+			title_text(0,0)
+			print('the end', 49, 94, 7)
 			if end_flash < 24 then
 				draw_fade(end_flash,7)
 				end_flash += 1
