@@ -310,6 +310,7 @@ function _init()
 		5,
 		"reset progress",
 		function()
+			stop_music()
 			dset(0,0)
 			move_room(23)
 			spawn_p_in_curr_room()
