@@ -39,27 +39,25 @@ function dist2p(x,y)
 	return sqrt(dx*dx + dy*dy)
 end
 
-dbg,dbgstr = true,''
+--dbgstr = ''
 
 -- disable btnp repeating
 poke(0x5f5c, 255)
 
 --[[
-if dbg then
-	menuitem(
-		1,
-		"<- skip ->",
-		function(b)
-			move_room((room_i + 24 + (b == 1 and -1 or 1)) % 24)
-			spawn_p_in_curr_room()
-			_update()
-			_draw()
-			flip()
-			music(-1)
-			return true
-		end
-	)
-end
+menuitem(
+	1,
+	"<- skip ->",
+	function(b)
+		move_room((room_i + 24 + (b == 1 and -1 or 1)) % 24)
+		spawn_p_in_curr_room()
+		_update()
+		_draw()
+		flip()
+		music(-1)
+		return true
+	end
+)
 ]]
 
 room_old,
@@ -288,6 +286,7 @@ function _init()
 			kill_p()
 		end
 	)
+	--[[
 	menuitem(
 		3,
 		"toggle sfx",
@@ -295,6 +294,7 @@ function _init()
 			sfx_on = not sfx_on
 		end
 	)
+	]]
 	menuitem(
 		4,
 		"toggle music",
@@ -557,9 +557,7 @@ function _draw()
 		draw_fade(fade_timer,0)
 	end
 
-	if dbg then
-		print(dbgstr,8,0,7)
-	end
+	--print(dbgstr,8,0,7)
 end
 -->8
 --thang - entity/actor
@@ -657,7 +655,7 @@ thang_dat = {
 		stops_projs = false,
 	},
 	[82] = { -- lantern
-		lit = false,
+		-- lit = false, -- nil is good enough
 		update = update_lantern,
 		burn = burn_lantern,
 		hx = 2,
@@ -1932,9 +1930,8 @@ function update_bat(b)
 		else
 			local rndx,rndy = rnd(2) - 1, rnd(2) - 1
 			local len = sqrt(rndx*rndx + rndy*rndy)
-			b.vx,b.vy = rndx * 0.5/len,rndy * 0.4/len
-			-- reset quicker if we're in range
-			b.dircount = in_range and 20 or 60
+			-- normalize and multiply; reset quicker if we're in range
+			b.vx,b.vy,b.dircount = rndx * 0.5/len,rndy * 0.4/len, in_range and 20 or 60
 		end
 	end
 	b.dircount -= 1
@@ -1948,14 +1945,17 @@ end
 function burn_lantern(l)
 	if not l.lit then
 		snd(snd_lantern_light)
-		room_num_unlit -= 1
-		l.lit,l.s = true,83
+		l.lit,l.s,l.lit_t = true,83,time()
 	end
 end
 
 function update_lantern(l)
 	if l.lit then
 		loop_anim(l,5,2)
+		if not l.sub_unlit and time() - l.lit_t > 0.6 then
+			room_num_unlit -= 1
+			l.sub_unlit = true
+		end
 	end
 end
 
