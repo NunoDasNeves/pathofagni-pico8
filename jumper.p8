@@ -223,8 +223,6 @@ silent_rooms,intro_rooms,start_music_rooms =
 	make_set{7,8,23},
 	make_set{7,8}
 
-music_on = true
-
 function stop_music(fade)
 	music_track,music_fade = -1,0
 	music(-1,fade)
@@ -275,6 +273,27 @@ function _update()
 	end
 end
 
+music_on = false
+
+function toggle_music()
+	music_on = not music_on
+	if music_on then
+		music(music_track, music_fade)
+		menuitem(
+			4,
+			"turn music off",
+			toggle_music
+		)
+	else
+		music(-1)
+		menuitem(
+			4,
+			"turn music on",
+			toggle_music
+		)
+	end
+end
+
 function _init()
 	menuitem(
 		2,
@@ -284,18 +303,8 @@ function _init()
 			kill_p()
 		end
 	)
-	menuitem(
-		4,
-		"toggle music",
-		function()
-			music_on = not music_on
-			if music_on then
-				music(music_track, music_fade)
-			else
-				music(-1)
-			end
-		end
-	)
+	-- turn it on and set up menu
+	toggle_music()
 	menuitem(
 		5,
 		"reset progress",
