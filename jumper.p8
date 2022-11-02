@@ -39,8 +39,6 @@ function dist2p(x,y)
 	return sqrt(dx*dx + dy*dy)
 end
 
---dbgstr = ''
-
 -- disable btnp repeating
 poke(0x5f5c, 255)
 
@@ -203,11 +201,11 @@ snd_wizard_tp
 =
 4, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23
 
-sfx_on = true
+--sfx_on = true
 function snd(s)
-	if sfx_on then
+	--if sfx_on then
 		sfx(s)
-	end
+	--end
 end
 
 function make_set(keys)
@@ -320,6 +318,7 @@ function _init()
 			spawn_p_in_curr_room()
 		end
 	)
+	
 	cartdata('nunodasneves_path_of_agni_v1')
 	-- need to set up music state
 	stop_music()
@@ -367,8 +366,6 @@ function draw_wizard(t)
 	else
 		draw_thang(t)
 		if t.shield then
-			--0b1001110010010011
-			--5/200 = 0.025
 			circ(t.x+3,t.y+4,6,9)
 			fillp((0b1101101110011100 >>< sin(t.shieldtimer*0.025)*2.99) + 0b0.1)
 			circfill(t.x+3,t.y+4,6,10)
@@ -410,7 +407,6 @@ end
 rain_patterns,dither_patterns,fade_patterns =
 --rain
 {
-	--0b1011101010101110.1,0b1110101110101010.1,0b1010111010111010.1,0b1010101011101011.1
 	0b1011101110101110.1,0b1110101110111010.1,0b1010111010111011.1,0b1011101011101011.1
 }
 --dither
@@ -559,8 +555,6 @@ function _draw()
 	if do_fade then
 		draw_fade(fade_timer,0)
 	end
-
-	--print(dbgstr,8,0,7)
 end
 -->8
 --thang - entity/actor
