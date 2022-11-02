@@ -522,7 +522,7 @@ function _draw()
 	print_in_room(23, '⬅️➡️ move\n🅾️ z jump\n❎ x fire', 46, 68, 6)
 	if room_sign then
 		print_in_room(22, 'psst!\nfire in any\ndirection!\n❎+⬆️\n❎+⬅️+⬇️', 75, 55, 6)
-		print_in_room(20, 'psst!\nto float\nhold ❎', 36, 75, 6)
+		print_in_room(20, 'psst!\nhold ❎\nto float', 36, 75, 6)
 		print_in_room(9, '  psst!\n  float\n  into\n  tricky\nspots', 40, 34, 6)
 	end
 
@@ -2046,8 +2046,8 @@ function update_p()
 	-- grounded ax
 	local ax = 1
 	p.max_vx = 1.4
-	-- stop moving for 4 frames after firing (grounded)
-	if p.shcount >= 6 and not p.air then
+	-- stop moving for some frames after firing (grounded)
+	if p.shcount >= 7 and not p.air then
 		p.max_vx = 0
 	elseif p.sh and not p.air then
 		p.max_vx = 0
