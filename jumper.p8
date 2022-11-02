@@ -465,10 +465,9 @@ function draw_fade(timer, color)
 end
 
 function title_text(xoff,yoff)
-	print('path of', 50+xoff, 53+yoff,7)
-	spr(236,47+xoff,60+yoff,4,2)	
-	--print('BY nUNO dAS nEVES', 29+xoff, 78+yoff, 11)
-	print('demo 7', 51+xoff, 79+yoff, 11)
+	print('path of', 50+xoff, 52+yoff,7)
+	spr(236,47+xoff,60+yoff+sin(time()/2)*1.1,4,2)	
+	print('by nuno das neves', 29+xoff, 79+yoff, 11)
 end
 
 function _draw()
@@ -610,7 +609,7 @@ function init_thang_dat()
 		check_shoot = check_throw_icepick,
 		hp = 3,
 		shspeed = 8, -- only used by shooter
-		shooting = false,
+		--shooting = false, -- nil is good enough
 		goingrght = true, -- going to go after throwing
 		template = enemy,
 		range = 48, -- only used by thrower
@@ -761,11 +760,11 @@ thang_dat = {
 		update = update_archer,
 		burn = burn_archer_wizard,
 		hp = 5,
-		shooting = false,
+		--shooting = false, -- nil is good enough
 		shspeed = 6,
 		goingrght = true,
 		phase = 0,
-		invis = false,
+		--invis = false, -- nil is good enough
 		invistimer = 0,
 		template = enemy,
 		s_burn_s = 12,
