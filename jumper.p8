@@ -1,7 +1,7 @@
 pico-8 cartridge // http://www.pico-8.com
 version 38
 __lua__
--- 'Path of Agni' demo build #7
+-- 'Path of Agni'
 -- by Nuno Das Neves
 
 function copy_into(a, b)
@@ -467,7 +467,7 @@ end
 function title_text(xoff,yoff)
 	print('path of', 50+xoff, 52+yoff,7)
 	spr(236,47+xoff,60+yoff+sin(time()/2)*1.1,4,2)	
-	print('by nuno das neves', 29+xoff, 79+yoff, 11)
+	print('by nuno das neves', 29+xoff, 78+yoff, 11)
 end
 
 function _draw()
