@@ -52,7 +52,7 @@ menuitem(
 		_update()
 		_draw()
 		flip()
-		music(-1)
+		stop_music()
 		return true
 	end
 )
@@ -201,11 +201,8 @@ snd_wizard_tp
 =
 4, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23
 
---sfx_on = true
 function snd(s)
-	--if sfx_on then
 		sfx(s)
-	--end
 end
 
 function make_set(keys)
@@ -287,15 +284,6 @@ function _init()
 			kill_p()
 		end
 	)
-	--[[
-	menuitem(
-		3,
-		"toggle sfx",
-		function()
-			sfx_on = not sfx_on
-		end
-	)
-	]]
 	menuitem(
 		4,
 		"toggle music",
