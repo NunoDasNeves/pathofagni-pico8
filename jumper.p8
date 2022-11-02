@@ -1296,10 +1296,7 @@ function update_archer(t)
 	local phys_result = phys_thang(t, oldair)
 
 	if phys_result.hit_wall then
-		if t.air then
-			t.vx = -oldvx
-		end
-		-- oops going other way now
+		t.vx = -oldvx
 		t.goingrght = not t.goingrght
 	end
 
@@ -2381,8 +2378,22 @@ function phys_thang(t, oldair)
 		end
 	end
 
-	local pushx = phys_walls(t,newx,newy)
-	ret.hit_wall, newx = pushx != newx, pushx
+	-- used to be phys_walls
+	local cl,ct = newx + t.cx,newy + t.cy
+	local cr,cb = cl + t.cw,ct + t.ch
+
+	if 	collmap(cl, cb, 1) or 
+			collmap(cl, ct, 1) then
+		newx += roundup(cl,8) - cl
+		t.vx = 0
+		ret.hit_wall = true
+	end
+	if 	collmap(cr, cb, 1) or 
+			collmap(cr, ct, 1) then
+		newx -= cr - rounddown(cr,8)
+		t.vx = 0
+		ret.hit_wall = true
+	end
 
 	if oldair and not t.air then
 		ret.landed = true
@@ -2451,26 +2462,6 @@ function phys_jump(t,newx,newy,oldair)
 	end
 
 	return newy
-end
-
-function phys_walls(t,newx,newy)
-	local cl,ct = newx + t.cx,newy + t.cy
-	local cr,cb,l_pen,r_pen = cl + t.cw,ct + t.ch,0,0
-
-	if 	collmap(cl, cb, 1) or 
-			collmap(cl, ct, 1) then
-		l_pen = roundup(cl,8) - cl
-		newx += l_pen
-		t.vx = 0
-	end
-	if 	collmap(cr, cb, 1) or 
-			collmap(cr, ct, 1) then
-		r_pen = cr - rounddown(cr,8)
-		newx -= r_pen
-		t.vx = 0
-	end
-	
-	return newx
 end
 
 __gfx__
