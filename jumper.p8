@@ -1202,7 +1202,7 @@ function update_archer(t)
 		if t.phase == 0 then
 			t.s = t.i
 			local r = get_room_xy(room_i)
-			if p.y > r.y + 16 then
+			if p.y > r.y + 20 then
 				start_music(true)
 				t.phase = 1
 			end
