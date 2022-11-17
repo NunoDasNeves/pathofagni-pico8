@@ -1191,7 +1191,7 @@ function update_archer(t)
 		t.vx = 0
 	end
 
-	if t.shooting then
+	if t.shooting and t.alive then
 		t.s = t.i + (t.air and 9 or 3)
 		shoot_shot(t)
 	-- else we walking or jumping
