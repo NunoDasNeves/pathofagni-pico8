@@ -856,6 +856,7 @@ end
 
 function update_iceblock(t)
 	if not t.alive then
+		t.stops_projs = false;
 		if loop_anim(t,2,3) then
 			del(thang, t)
 		end
