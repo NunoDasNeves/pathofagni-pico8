@@ -303,8 +303,6 @@ function _init()
 			kill_p()
 		end
 	)
-	-- turn it on and set up menu
-	toggle_music()
 	menuitem(
 		5,
 		"reset progress",
@@ -315,6 +313,8 @@ function _init()
 			spawn_p_in_curr_room()
 		end
 	)
+	-- turn it on and set up menu
+	toggle_music()
 	
 	cartdata('nunodasneves_path_of_agni_v1')
 	-- need to set up music state
@@ -2128,6 +2128,8 @@ function update_p()
 	end
 
 	-- shooting
+	-- buffer each (x and y) directions separately for a couple of frames
+	-- this helps to shoot diagonally more consistently
 	function buffer_dir(btn_minus, btn_plus, xy)
 		if btn(btn_minus) then
 			p_shbuf[xy].dir = -1
@@ -2150,6 +2152,7 @@ function update_p()
 		if p.shcount == 0 then
 			p.sh = true
 		end
+		-- check for rain
 		for t in all(thang) do
 			if t.i == 257 and hit_p(t.x+3,t.y,1.99,t.h) then
 				p.sh = false
