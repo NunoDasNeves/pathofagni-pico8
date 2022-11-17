@@ -202,10 +202,6 @@ snd_wizard_tp
 =
 4, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23
 
-function snd(s)
-		sfx(s)
-end
-
 function make_set(keys)
 	local table = {}
 	for i in all(keys) do
@@ -847,7 +843,7 @@ function update_door(t)
 			end
 		end
 	elseif num <= 0 then
-		snd(snd_door_open)
+		sfx(snd_door_open)
 		t.open = true
 		mset(mx,my,t.i)
 		mset(mx,my+1,31)
@@ -865,7 +861,7 @@ end
 
 function burn_iceblock(t)
 	if t.alive then
-		snd(snd_ice_break)
+		sfx(snd_ice_break)
 		t.s,t.alive = 88,false
 		mset(t.x\8,t.y\8,31)
 		for t in all(rain) do
@@ -875,7 +871,7 @@ function burn_iceblock(t)
 end
 
 function kill_ice_proj(t)
-	snd(snd_ice_break)
+	sfx(snd_ice_break)
 	kill_ball(t)
 end
 
@@ -983,7 +979,7 @@ end
 
 function check_bad_coll_spikes(t)
 	if coll_spikes(t) then
-		snd(snd_hit)
+		sfx(snd_hit)
 		t.alive,t.s = false,104
 		reset_anim_state(t)
 		return true
@@ -1133,7 +1129,7 @@ function shoot_shot(t)
 		t.shooting = false
 		reset_anim_state(t)
 	elseif t.fr == 2 and t.fcnt == 1 then
-		snd(snd_shooter_shot)
+		sfx(snd_shooter_shot)
 		local orig_y = t.y + 3
 		local shleft,shright,shot = 
 			dist_until_flag(t.x + 4, t.y + 4, 1, -1),
@@ -1175,13 +1171,13 @@ function update_archer(t)
 	local oldburning = t.burning
 	if do_bad_burning(t) then
 		if not t.alive then
-			snd(snd_knight_die)
+			sfx(snd_knight_die)
 			stop_music()
 		end
 		return
 	-- not burning or dead
 	elseif oldburning then
-		snd(snd_archer_invis)
+		sfx(snd_archer_invis)
 		t.invis,t.stops_projs,t.invistimer,t.shooting = true, false, 70, false
 		reset_anim_state(t)
 	end
@@ -1238,7 +1234,7 @@ function update_archer(t)
 					t.rght = not t.rght
 				-- big jump
 				elseif choice == 1 then
-					snd(snd_knight_jump)
+					sfx(snd_knight_jump)
 					t.air,t.vy = true,-4
 				-- fall down
 				else
@@ -1278,7 +1274,7 @@ function update_archer(t)
 			end
 			--
 			if t.invistimer == 15 then
-				snd(snd_archer_invis)
+				sfx(snd_archer_invis)
 			elseif t.invistimer <= 0 then
 				t.stops_projs,t.invis,t.pal_k = true,false,{}
 			end
@@ -1305,7 +1301,7 @@ end
 
 function burn_bad(t)
 	if t.alive and not t.burning then
-		snd(snd_hit)
+		sfx(snd_hit)
 		t.hp -= 1
 		reset_anim_state(t)
 		t.burning = true
@@ -1319,7 +1315,7 @@ end
 function start_tp(t)
 	t.tping,t.stops_projs = true,false
 	reset_anim_state(t)
-	snd(snd_wizard_tp)
+	sfx(snd_wizard_tp)
 	-- find tp plat
 	local plats,minplat_d,minplat,plat = {},999
 	-- start inside borders
@@ -1482,7 +1478,7 @@ function update_wizard(t)
 	local oldburning = t.burning
 	if do_bad_burning(t) then
 		if not t.alive then
-			snd(snd_knight_die)
+			sfx(snd_knight_die)
 			stop_music()
 		end
 		return
@@ -1516,7 +1512,7 @@ function update_wizard(t)
 			t.castu.state = 1
 			reset_anim_state(t.castu)
 			t.castu = nil
-			snd(t.spell.snd)
+			sfx(t.spell.snd)
 		elseif t.shcount <= 0 then
 			reset_anim_state(t)
 			-- now use shcount for resting
@@ -1596,7 +1592,7 @@ function update_frog(t)
 			if t.croak then
 				-- play full idle anim (croak)
 				if play_anim(t, 5, 2) then
-					snd(snd_frog_croak)
+					sfx(snd_frog_croak)
 					t.croak = false
 					reset_anim_state(t)
 				end
@@ -1608,7 +1604,7 @@ function update_frog(t)
 				end
 			end
 			if p.sh then
-				snd(snd_frog_jump)
+				sfx(snd_frog_jump)
 				t.vy,t.vx,t.air = -3.5, 1.2 * dir, true
 			end
 		else -- angry - jump rapidly at player
@@ -1616,7 +1612,7 @@ function update_frog(t)
 				t.angry, t.pal_v = false,pal_icefrog_v
 			else
 				t.jcount -= 1
-				snd(snd_frog_jump)
+				sfx(snd_frog_jump)
 				-- small jump
 				if not t.bounced or t.do_smol then
 					t.vy,t.do_smol = -2.5,false
@@ -1678,7 +1674,7 @@ function burn_knight(t)
 	if t.atking and t.fr > 0 then
 		burn_bad(t)
 	elseif t.alive then
-		snd(snd_knight_hit)
+		sfx(snd_knight_hit)
 	end
 end
 
@@ -1728,7 +1724,7 @@ function update_knight(t)
 
 	if do_bad_burning(t) then
 		if not t.alive then
-			snd(snd_knight_die)
+			sfx(snd_knight_die)
 			stop_music()
 		end
 		return
@@ -1749,11 +1745,11 @@ function update_knight(t)
 				reset_anim_state(t)
 			elseif t.fr > 0 then
 				if t.phase == 1 and t.fr == 1 and t.fcnt == 1 then
-					snd(snd_knight_swing)
+					sfx(snd_knight_swing)
 				end
 				-- jump!
 				if t.phase == 2 and not t.air and t.fr == 1 and t.fcnt == 1 then
-					snd(snd_knight_jump)
+					sfx(snd_knight_jump)
 					t.vy,t.vx,t.air = -3,t.rght and 1 or -1,true
 				end
 				t.swrd_draw,t.swrd_hit,t.swrd_fr = true,true,t.fr-1
@@ -1932,7 +1928,7 @@ end
 
 function burn_lantern(l)
 	if not l.lit then
-		snd(snd_lantern_light)
+		sfx(snd_lantern_light)
 		l.lit,l.s,l.lit_t = true,83,time()
 	end
 end
@@ -2011,7 +2007,7 @@ function spawn_p(x,y)
 end
 
 function kill_p()
-	snd(snd_p_die)
+	sfx(snd_p_die)
 	stop_music(800)
 	p.alive,p.s = false,71
 	reset_anim_state(p)
@@ -2110,9 +2106,9 @@ function update_p()
 	p.teeter = not p.air and coll_edge(p,p.x,true)
 
 	if phys_result.landed then
-		snd(snd_p_land)
+		sfx(snd_p_land)
 	elseif jumped and not phys_result.ceil_cancel then
-		snd(snd_p_jump)
+		sfx(snd_p_jump)
 	end
 
 	if coll_spikes(p) then
@@ -2169,11 +2165,11 @@ function update_p()
 	if p.sh then
 		p.s = 94
 		if not oldsh then
-			snd(snd_p_shoot)
+			sfx(snd_p_shoot)
 			reset_anim_state(p)
 		end
 		if loop_anim(p,3,2) then
-			snd(snd_p_shoot)
+			sfx(snd_p_shoot)
 		end
 
 	elseif not p.air then
@@ -2221,7 +2217,7 @@ function respawn_update_p()
 			p.s,p.spawn = 64,false
 			start_music()
 		elseif p.fr == 0 and p.fcnt == 1 then
-			snd(snd_p_respawn, 3)
+			sfx(snd_p_respawn, 3)
 		end
 	end
 end
