@@ -109,8 +109,9 @@ function update_room()
 			do_not_restore = false
 			restore_and_spawn_room()
 			add(thang,p)
-			dset(0,1)
-			dset(1,room_i)
+			dset(0,1) -- 'restore progress' flag
+			dset(1,room_i) -- save room
+			dset(2,0) -- 'boss is dead' flag
 		end
 	else
 		p.x = -10
@@ -308,18 +309,17 @@ function _init()
 		"reset progress",
 		function()
 			stop_music()
-			dset(0,0)
+			dset(0,0) -- clear 'restore progress' flag
 			move_room(23)
 			spawn_p_in_curr_room()
 		end
 	)
-	-- turn it on and set up menu
-	toggle_music()
-	
-	cartdata('nunodasneves_path_of_agni_v1')
-	-- need to set up music state
-	stop_music()
 	init_thang_dat()
+	-- set up music state
+	toggle_music()
+	stop_music()
+	-- restore progress, or start from beginning
+	cartdata('nunodasneves_path_of_agni_v1')
 	move_room(dget(0) == 0 and 23 or dget(1))
 	spawn_p_in_curr_room()	
 end
@@ -950,17 +950,17 @@ function dist_until_flag(x,y,flag,dir,vert)
 end
 
 function do_boss_die(t)
-	if t.donezo then
-		return true
+	if dget(2) == 1 then
+		t.alive,t.air,t.fr,t.fcnt = false,false,t.s_die.f,10 -- so play_anim below returns true
 	end
 	if not t.alive then
 		t.stops_projs,t.s = false,t.i + t.s_die.s
 		if not t.air then
 			if play_anim(t, 10, t.s_die.f) then
-				room_num_bads,do_not_restore,t.donezo = 0,true,true
+				room_num_bads,do_not_restore = 0,true
+				dset(2,1) -- 'boss is dead' flag
 			end
-			-- don't want to keep doing physics when dead
-			-- this would break if he was on an ice block and you broke it
+			-- done; stop doing physics
 			return true
 		end
 	end
@@ -1888,9 +1888,6 @@ function update_bat(b)
 	end
 
 	loop_anim(b,4,2)
-	--if loop_anim(b,4,2) then
-		--snd(snd_bat_flap)
-	--end
 
 	-- move the bat
 	local b2p,dist_to_p = {x=p.x-b.x,y=p.y-b.y},dist2p(b.x,b.y)
@@ -1982,7 +1979,6 @@ function spawn_thang(i,x,y)
 		s = i,
 		fr = 0,
 		fcnt = 0,
-		-- functions
 		draw = draw_thang,
 		burn = no_thang,
 		-- misc
@@ -2074,7 +2070,6 @@ function update_p()
 		elseif p.onice then
 			p.vx *= 0.9
 		else
-			-- ground
 			p.vx *= 0.6
 		end
 	end
@@ -2099,11 +2094,9 @@ function update_p()
 	local oldx,oldy = p.x,p.y
 	local phys_result = phys_thang(p, oldair)
 
-	-- fall off platform only if
-	-- holding direction of movement
-	-- kill 2 bugs with one hack
-	-- here - you slip off ice,
-	-- and fall when it's destroyed
+	-- fall off platform only if holding direction of movement
+	-- except you slip off ice,
+	-- (and this also ensures falling when it's destroyed)
 	if phys_result.fell and not p.onice then
 		if 		btn(⬅️) and p.vx < 0 or
 				btn(➡️) and p.vx > 0 then
@@ -2128,8 +2121,8 @@ function update_p()
 	end
 
 	-- shooting
-	-- buffer each (x and y) directions separately for a couple of frames
-	-- this helps to shoot diagonally more consistently
+	-- buffer x and y directions separately for a couple of frames
+	-- helps to shoot diagonally more consistently
 	function buffer_dir(btn_minus, btn_plus, xy)
 		if btn(btn_minus) then
 			p_shbuf[xy].dir = -1
@@ -2407,8 +2400,7 @@ end
 
 -- t.vy > 0
 function phys_fall(t,newx,newy)
-
-	-- where our feeeeet at?
+	-- feet
 	local fty = newy + t.h
 	local ftxl = newx + t.ftx
 	local ftxr = ftxl + t.ftw
@@ -2444,7 +2436,7 @@ end
 
 -- t.vy < 0
 function phys_jump(t,newx,newy,oldair)
-	-- where our head at? offset from cy a little so this always happens before phys_walls
+	-- offset from cy a little so this always happens before phys_walls
 	-- this avoids wall bonking on a flat ceiling
 	-- use foot x - this avoids ceiling bonking when next to a wall
 	local hdy,hdxl = newy + t.cy - 0.1,newx + t.ftx
