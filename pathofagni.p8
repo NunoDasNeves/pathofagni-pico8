@@ -58,12 +58,12 @@ menuitem(
 )
 ]]
 
-room_old,
 room_num_bads,
 room_num_unlit,
-room_checkpoint
+room_old
 =
-nil,0,0,nil
+0,0,nil
+--room_checkpoint = nil -- implicit
 
 function move_room(i)
 	local r = get_room_xy(i)
@@ -77,7 +77,7 @@ function get_room_xy(i)
 	}
 end
 
-is_end = false
+--is_end = false -- implicit
 
 function update_room()
 	local oldi,
@@ -764,7 +764,6 @@ thang_dat = {
 		s_die = {s=13, f=3}
 	},
 	[224] = { -- wizard
-		init = init_wizard,
 		update = update_wizard,
 		burn = burn_archer_wizard,
 		draw = draw_wizard,
@@ -1308,10 +1307,6 @@ function burn_bad(t)
 	end
 end
 
-function init_wizard(t)
-	t.y -= 1
-end
-
 function start_tp(t)
 	t.tping,t.stops_projs = true,false
 	reset_anim_state(t)
@@ -1523,6 +1518,10 @@ function update_wizard(t)
 	else
 		-- idle
 		if t.phase == 0 then
+			if not t.y_up then
+				t.y_up = true
+				t.y -= 1
+			end
 			-- hover
 			t.s = t.i
 			if play_anim(t, 20, 1) then
@@ -1534,7 +1533,6 @@ function update_wizard(t)
 			if p.y > r.y + 16 then
 				start_music(true)
 				t.phase = 1
-				t.y += t.hover_up and 2 or 1
 				start_tp(t)
 			end
 			t.shcount = 0
