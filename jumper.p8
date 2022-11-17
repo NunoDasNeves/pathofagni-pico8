@@ -1,8 +1,8 @@
 pico-8 cartridge // http://www.pico-8.com
 version 38
 __lua__
--- 'Path of Agni'
--- by Nuno Das Neves
+-- 'path of agni'
+-- by nuno das neves
 
 function copy_into(a, b)
 	for k,v in pairs(a) do
